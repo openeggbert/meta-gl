@@ -611,12 +611,12 @@ namespace metagl
 
     void glBufferData(BufferTarget target, std::ptrdiff_t size, const void* data, BufferUsage usage)
     {
-        detail::g_gl.BufferData(detail::to_raw(target), static_cast<detail::GLsizeiptr>(size), data, detail::to_raw(usage));
+        detail::g_gl.BufferData(detail::to_raw(target), static_cast<metagl::GLsizeiptr>(size), data, detail::to_raw(usage));
     }
 
     void glBufferSubData(BufferTarget target, std::ptrdiff_t offset, std::ptrdiff_t size, const void* data)
     {
-        detail::g_gl.BufferSubData(detail::to_raw(target), static_cast<detail::GLintptr>(offset), static_cast<detail::GLsizeiptr>(size), data);
+        detail::g_gl.BufferSubData(detail::to_raw(target), static_cast<metagl::GLintptr>(offset), static_cast<metagl::GLsizeiptr>(size), data);
     }
 
     void glBindBufferBase(BufferTarget target, unsigned int index, unsigned int buffer)
@@ -777,14 +777,14 @@ namespace metagl
 
     void glVertexAttribPointer(unsigned int index, int size, DataType type, unsigned char normalized, std::size_t stride, const void* pointer)
     {
-        detail::g_gl.VertexAttribPointer(index, size, detail::to_raw(type), normalized, static_cast<detail::GLsizei>(stride), pointer);
+        detail::g_gl.VertexAttribPointer(index, size, detail::to_raw(type), normalized, static_cast<metagl::GLsizei>(stride), pointer);
     }
 
     // ---- Commands ----
 
     void glClear(ClearBufferBit mask)
     {
-        detail::g_gl.Clear(static_cast<detail::GLbitfield>(mask));
+        detail::g_gl.Clear(static_cast<metagl::GLbitfield>(mask));
     }
 
     void glClearColor(float red, float green, float blue, float alpha)
@@ -839,7 +839,7 @@ namespace metagl
     void glPixelStoreParam(PixelStoreParam pname, int param)
     {
         if (!detail::g_gl.PixelStorei) return;
-        detail::GLenum raw = 0;
+        metagl::GLenum raw = 0;
         switch (pname)
         {
             case PixelStoreParam::UnpackAlignment: raw = detail::GL_UNPACK_ALIGNMENT; break;
@@ -852,7 +852,7 @@ namespace metagl
                       PixelFormat format, PixelType type, const void* pixels)
     {
         detail::g_gl.TexImage2D(
-            detail::to_raw(target), level, static_cast<detail::GLint>(detail::to_raw(internalformat)),
+            detail::to_raw(target), level, static_cast<metagl::GLint>(detail::to_raw(internalformat)),
             width, height, border,
             detail::to_raw(format), detail::to_raw(type), pixels);
     }

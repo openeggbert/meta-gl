@@ -8,8 +8,8 @@
 namespace metagl::detail
 {
     // Raw GL function pointer typedefs (kept private to this TU)
-    using PFNGLGENBUFFERSPROC        = void (*)(GLint n, GLuint* buffers);
-    using PFNGLDELETEBUFFERSPROC     = void (*)(GLint n, const GLuint* buffers);
+    using PFNGLGENBUFFERSPROC        = void (*)(GLsizei n, GLuint* buffers);
+    using PFNGLDELETEBUFFERSPROC     = void (*)(GLsizei n, const GLuint* buffers);
     using PFNGLBINDBUFFERPROC        = void (*)(GLenum target, GLuint buffer);
     using PFNGLBUFFERDATAPROC        = void (*)(GLenum target, GLsizeiptr size, const void* data, GLenum usage);
     using PFNGLBUFFERSUBDATAPROC     = void (*)(GLenum target, GLintptr offset, GLsizeiptr size, const void* data);
@@ -20,10 +20,10 @@ namespace metagl::detail
     using PFNGLGETINTEGERVPROC       = void (*)(GLenum pname, GLint* data);
 
     using PFNGLCREATESHADERPROC      = GLuint (*)(GLenum type);
-    using PFNGLSHADERSOURCEPROC      = void (*)(GLuint shader, GLint count, const GLchar* const* string, const GLint* length);
+    using PFNGLSHADERSOURCEPROC      = void (*)(GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length);
     using PFNGLCOMPILESHADERPROC     = void (*)(GLuint shader);
     using PFNGLGETSHADERIVPROC       = void (*)(GLuint shader, GLenum pname, GLint* params);
-    using PFNGLGETSHADERINFOLOGPROC  = void (*)(GLuint shader, GLint bufSize, GLint* length, GLchar* infoLog);
+    using PFNGLGETSHADERINFOLOGPROC  = void (*)(GLuint shader, GLsizei bufSize, GLsizei* length, GLchar* infoLog);
     using PFNGLDELETESHADERPROC      = void (*)(GLuint shader);
 
     using PFNGLCREATEPROGRAMPROC     = GLuint (*)(void);
@@ -31,7 +31,7 @@ namespace metagl::detail
     using PFNGLDETACHSHADERPROC      = void (*)(GLuint program, GLuint shader);
     using PFNGLLINKPROGRAMPROC       = void (*)(GLuint program);
     using PFNGLGETPROGRAMIVPROC      = void (*)(GLuint program, GLenum pname, GLint* params);
-    using PFNGLGETPROGRAMINFOLOGPROC = void (*)(GLuint program, GLint bufSize, GLint* length, GLchar* infoLog);
+    using PFNGLGETPROGRAMINFOLOGPROC = void (*)(GLuint program, GLsizei bufSize, GLsizei* length, GLchar* infoLog);
     using PFNGLUSEPROGRAMPROC        = void (*)(GLuint program);
     using PFNGLDELETEPROGRAMPROC     = void (*)(GLuint program);
 
@@ -40,10 +40,10 @@ namespace metagl::detail
     using PFNGLUNIFORM1FPROC         = void (*)(GLint location, GLfloat v0);
     using PFNGLUNIFORM3FPROC         = void (*)(GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
     using PFNGLUNIFORM4FPROC         = void (*)(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
-    using PFNGLUNIFORMMATRIX4FVPROC  = void (*)(GLint location, GLint count, GLboolean transpose, const GLfloat* value);
+    using PFNGLUNIFORMMATRIX4FVPROC  = void (*)(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
 
-    using PFNGLGENVERTEXARRAYSPROC     = void (*)(GLint n, GLuint* arrays);
-    using PFNGLDELETEVERTEXARRAYSPROC  = void (*)(GLint n, const GLuint* arrays);
+    using PFNGLGENVERTEXARRAYSPROC     = void (*)(GLsizei n, GLuint* arrays);
+    using PFNGLDELETEVERTEXARRAYSPROC  = void (*)(GLsizei n, const GLuint* arrays);
     using PFNGLBINDVERTEXARRAYPROC     = void (*)(GLuint array);
     using PFNGLENABLEATTRIBARRAYPROC   = void (*)(GLuint index);
     using PFNGLVERTEXATTRIBPOINTERPROC = void (*)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* pointer);
@@ -594,190 +594,190 @@ namespace metagl
 
     // ---- Buffers ----
 
-    void glGenBuffers(int n, unsigned int* buffers)
+    void glGenBuffers(GLsizei n, GLuint* buffers)
     {
         detail::g_gl.GenBuffers(n, buffers);
     }
 
-    void glDeleteBuffers(int n, const unsigned int* buffers)
+    void glDeleteBuffers(GLsizei n, const GLuint* buffers)
     {
         detail::g_gl.DeleteBuffers(n, buffers);
     }
 
-    void glBindBuffer(BufferTarget target, unsigned int buffer)
+    void glBindBuffer(BufferTarget target, GLuint buffer)
     {
         detail::g_gl.BindBuffer(detail::to_raw(target), buffer);
     }
 
-    void glBufferData(BufferTarget target, std::ptrdiff_t size, const void* data, BufferUsage usage)
+    void glBufferData(BufferTarget target, GLsizeiptr size, const void* data, BufferUsage usage)
     {
-        detail::g_gl.BufferData(detail::to_raw(target), static_cast<metagl::GLsizeiptr>(size), data, detail::to_raw(usage));
+        detail::g_gl.BufferData(detail::to_raw(target), size, data, detail::to_raw(usage));
     }
 
-    void glBufferSubData(BufferTarget target, std::ptrdiff_t offset, std::ptrdiff_t size, const void* data)
+    void glBufferSubData(BufferTarget target, GLintptr offset, GLsizeiptr size, const void* data)
     {
-        detail::g_gl.BufferSubData(detail::to_raw(target), static_cast<metagl::GLintptr>(offset), static_cast<metagl::GLsizeiptr>(size), data);
+        detail::g_gl.BufferSubData(detail::to_raw(target), offset, size, data);
     }
 
-    void glBindBufferBase(BufferTarget target, unsigned int index, unsigned int buffer)
+    void glBindBufferBase(BufferTarget target, GLuint index, GLuint buffer)
     {
         detail::g_gl.BindBufferBase(detail::to_raw(target), index, buffer);
     }
 
     // ---- Context info ----
 
-    const char* glGetString(StringName name)
+    const GLchar* glGetString(StringName name)
     {
-        return reinterpret_cast<const char*>(detail::g_gl.GetString(detail::to_raw(name)));
+        return reinterpret_cast<const GLchar*>(detail::g_gl.GetString(detail::to_raw(name)));
     }
 
-    const char* glGetStringi(StringName name, unsigned int index)
+    const GLchar* glGetStringi(StringName name, GLuint index)
     {
         if (!detail::g_gl.GetStringi) return nullptr;
-        return reinterpret_cast<const char*>(detail::g_gl.GetStringi(detail::to_raw(name), index));
+        return reinterpret_cast<const GLchar*>(detail::g_gl.GetStringi(detail::to_raw(name), index));
     }
 
-    void glGetIntegerv(IntegerName pname, int* data)
+    void glGetIntegerv(IntegerName pname, GLint* data)
     {
         detail::g_gl.GetIntegerv(detail::to_raw(pname), data);
     }
 
-    void glGetIntegervRaw(unsigned int pname, int* data)
+    void glGetIntegervRaw(GLenum pname, GLint* data)
     {
         detail::g_gl.GetIntegerv(pname, data);
     }
 
     // ---- Shaders ----
 
-    unsigned int glCreateShader(ShaderType type)
+    GLuint glCreateShader(ShaderType type)
     {
         return detail::g_gl.CreateShader(detail::to_raw(type));
     }
 
-    void glShaderSource(unsigned int shader, int count, const char* const* string, const int* length)
+    void glShaderSource(GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length)
     {
         detail::g_gl.ShaderSource(shader, count, string, length);
     }
 
-    void glCompileShader(unsigned int shader)
+    void glCompileShader(GLuint shader)
     {
         detail::g_gl.CompileShader(shader);
     }
 
-    void glGetShaderiv(unsigned int shader, ShaderParameter pname, int* params)
+    void glGetShaderiv(GLuint shader, ShaderParameter pname, GLint* params)
     {
         detail::g_gl.GetShaderiv(shader, detail::to_raw(pname), params);
     }
 
-    void glGetShaderInfoLog(unsigned int shader, int bufSize, int* length, char* infoLog)
+    void glGetShaderInfoLog(GLuint shader, GLsizei bufSize, GLsizei* length, GLchar* infoLog)
     {
         detail::g_gl.GetShaderInfoLog(shader, bufSize, length, infoLog);
     }
 
-    void glDeleteShader(unsigned int shader)
+    void glDeleteShader(GLuint shader)
     {
         detail::g_gl.DeleteShader(shader);
     }
 
     // ---- Programs ----
 
-    unsigned int glCreateProgram()
+    GLuint glCreateProgram()
     {
         return detail::g_gl.CreateProgram();
     }
 
-    void glAttachShader(unsigned int program, unsigned int shader)
+    void glAttachShader(GLuint program, GLuint shader)
     {
         detail::g_gl.AttachShader(program, shader);
     }
 
-    void glDetachShader(unsigned int program, unsigned int shader)
+    void glDetachShader(GLuint program, GLuint shader)
     {
         detail::g_gl.DetachShader(program, shader);
     }
 
-    void glLinkProgram(unsigned int program)
+    void glLinkProgram(GLuint program)
     {
         detail::g_gl.LinkProgram(program);
     }
 
-    void glGetProgramiv(unsigned int program, ProgramParameter pname, int* params)
+    void glGetProgramiv(GLuint program, ProgramParameter pname, GLint* params)
     {
         detail::g_gl.GetProgramiv(program, detail::to_raw(pname), params);
     }
 
-    void glGetProgramInfoLog(unsigned int program, int bufSize, int* length, char* infoLog)
+    void glGetProgramInfoLog(GLuint program, GLsizei bufSize, GLsizei* length, GLchar* infoLog)
     {
         detail::g_gl.GetProgramInfoLog(program, bufSize, length, infoLog);
     }
 
-    void glUseProgram(unsigned int program)
+    void glUseProgram(GLuint program)
     {
         detail::g_gl.UseProgram(program);
     }
 
-    void glDeleteProgram(unsigned int program)
+    void glDeleteProgram(GLuint program)
     {
         detail::g_gl.DeleteProgram(program);
     }
 
     // ---- Uniforms ----
 
-    int glGetUniformLocation(unsigned int program, const char* name)
+    GLint glGetUniformLocation(GLuint program, const GLchar* name)
     {
         return detail::g_gl.GetUniformLocation(program, name);
     }
 
-    void glUniform1i(int location, int v0)
+    void glUniform1i(GLint location, GLint v0)
     {
         detail::g_gl.Uniform1i(location, v0);
     }
 
-    void glUniform1f(int location, float v0)
+    void glUniform1f(GLint location, GLfloat v0)
     {
         detail::g_gl.Uniform1f(location, v0);
     }
 
-    void glUniform3f(int location, float v0, float v1, float v2)
+    void glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2)
     {
         detail::g_gl.Uniform3f(location, v0, v1, v2);
     }
 
-    void glUniform4f(int location, float v0, float v1, float v2, float v3)
+    void glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
     {
         detail::g_gl.Uniform4f(location, v0, v1, v2, v3);
     }
 
-    void glUniformMatrix4fv(int location, int count, unsigned char transpose, const float* value)
+    void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)
     {
         detail::g_gl.UniformMatrix4fv(location, count, transpose, value);
     }
 
     // ---- Vertex arrays ----
 
-    void glGenVertexArrays(int n, unsigned int* arrays)
+    void glGenVertexArrays(GLsizei n, GLuint* arrays)
     {
         detail::g_gl.GenVertexArrays(n, arrays);
     }
 
-    void glDeleteVertexArrays(int n, const unsigned int* arrays)
+    void glDeleteVertexArrays(GLsizei n, const GLuint* arrays)
     {
         detail::g_gl.DeleteVertexArrays(n, arrays);
     }
 
-    void glBindVertexArray(unsigned int array)
+    void glBindVertexArray(GLuint array)
     {
         detail::g_gl.BindVertexArray(array);
     }
 
-    void glEnableVertexAttribArray(unsigned int index)
+    void glEnableVertexAttribArray(GLuint index)
     {
         detail::g_gl.EnableVertexAttribArray(index);
     }
 
-    void glVertexAttribPointer(unsigned int index, int size, DataType type, unsigned char normalized, std::size_t stride, const void* pointer)
+    void glVertexAttribPointer(GLuint index, GLint size, DataType type, GLboolean normalized, GLsizei stride, const void* pointer)
     {
-        detail::g_gl.VertexAttribPointer(index, size, detail::to_raw(type), normalized, static_cast<metagl::GLsizei>(stride), pointer);
+        detail::g_gl.VertexAttribPointer(index, size, detail::to_raw(type), normalized, stride, pointer);
     }
 
     // ---- Commands ----
@@ -787,56 +787,56 @@ namespace metagl
         detail::g_gl.Clear(static_cast<metagl::GLbitfield>(mask));
     }
 
-    void glClearColor(float red, float green, float blue, float alpha)
+    void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
     {
         detail::g_gl.ClearColor(red, green, blue, alpha);
     }
 
-    void glViewport(int x, int y, int width, int height)
+    void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
     {
         detail::g_gl.Viewport(x, y, width, height);
     }
 
-    void glDrawArrays(PrimitiveType mode, int first, int count)
+    void glDrawArrays(PrimitiveType mode, GLint first, GLsizei count)
     {
         detail::g_gl.DrawArrays(detail::to_raw(mode), first, count);
     }
 
-    void glDrawElements(PrimitiveType mode, int count, DataType type, const void* indices)
+    void glDrawElements(PrimitiveType mode, GLsizei count, DataType type, const void* indices)
     {
         detail::g_gl.DrawElements(detail::to_raw(mode), count, detail::to_raw(type), indices);
     }
 
     // ---- Textures ----
 
-    void glGenTextures(int n, unsigned int* textures)
+    void glGenTextures(GLsizei n, GLuint* textures)
     {
         detail::g_gl.GenTextures(n, textures);
     }
 
-    void glDeleteTextures(int n, const unsigned int* textures)
+    void glDeleteTextures(GLsizei n, const GLuint* textures)
     {
         detail::g_gl.DeleteTextures(n, textures);
     }
 
-    void glBindTexture(TextureTarget target, unsigned int texture)
+    void glBindTexture(TextureTarget target, GLuint texture)
     {
         detail::g_gl.BindTexture(detail::to_raw(target), texture);
     }
 
-    void glActiveTexture(unsigned int textureUnit)
+    void glActiveTexture(GLenum textureUnit)
     {
         if (detail::g_gl.ActiveTexture)
             detail::g_gl.ActiveTexture(detail::GL_TEXTURE0 + textureUnit);
     }
 
-    void glPixelStorei(unsigned int pname, int param)
+    void glPixelStorei(GLenum pname, GLint param)
     {
         if (detail::g_gl.PixelStorei)
             detail::g_gl.PixelStorei(pname, param);
     }
 
-    void glPixelStoreParam(PixelStoreParam pname, int param)
+    void glPixelStoreParam(PixelStoreParam pname, GLint param)
     {
         if (!detail::g_gl.PixelStorei) return;
         metagl::GLenum raw = 0;
@@ -847,8 +847,8 @@ namespace metagl
         detail::g_gl.PixelStorei(raw, param);
     }
 
-    void glTexImage2D(TextureTarget target, int level, PixelFormat internalformat,
-                      int width, int height, int border,
+    void glTexImage2D(TextureTarget target, GLint level, PixelFormat internalformat,
+                      GLsizei width, GLsizei height, GLint border,
                       PixelFormat format, PixelType type, const void* pixels)
     {
         detail::g_gl.TexImage2D(
@@ -857,7 +857,7 @@ namespace metagl
             detail::to_raw(format), detail::to_raw(type), pixels);
     }
 
-    void glTexParameteri(TextureTarget target, TextureParameter pname, int param)
+    void glTexParameteri(TextureTarget target, TextureParameter pname, GLint param)
     {
         detail::g_gl.TexParameteri(detail::to_raw(target), detail::to_raw(pname), param);
     }
@@ -891,7 +891,7 @@ namespace metagl
         detail::g_gl.BlendFunc(detail::to_raw(sfactor), detail::to_raw(dfactor));
     }
 
-    void glBlendFuncRaw(unsigned int sfactor, unsigned int dfactor)
+    void glBlendFuncRaw(GLenum sfactor, GLenum dfactor)
     {
         detail::g_gl.BlendFunc(sfactor, dfactor);
     }
@@ -902,19 +902,19 @@ namespace metagl
             detail::g_gl.DepthFunc(detail::to_raw(func));
     }
 
-    void glDepthMask(unsigned char flag)
+    void glDepthMask(GLboolean flag)
     {
         if (detail::g_gl.DepthMask)
             detail::g_gl.DepthMask(flag);
     }
 
-    void glClearDepth(double depth)
+    void glClearDepth(GLdouble depth)
     {
         if (detail::g_gl.ClearDepth)
             detail::g_gl.ClearDepth(depth);
     }
 
-    void glClearDepthf(float depth)
+    void glClearDepthf(GLfloat depth)
     {
         if (detail::g_gl.ClearDepthf)
             detail::g_gl.ClearDepthf(depth);

@@ -149,6 +149,11 @@ namespace metagl
         InfoLogLength
     };
 
+    enum class PixelStoreParam
+    {
+        UnpackAlignment
+    };
+
     enum class BlendFactor
     {
         Zero,
@@ -159,7 +164,7 @@ namespace metagl
         OneMinusDstAlpha
     };
 
-    enum class ClearBufferBit : GLbitfield
+    enum class ClearBufferBit : unsigned int
     {
         Color   = 0x00004000,
         Depth   = 0x00000100,
@@ -169,6 +174,6 @@ namespace metagl
     inline ClearBufferBit operator|(ClearBufferBit a, ClearBufferBit b)
     {
         return static_cast<ClearBufferBit>(
-            static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
+            static_cast<unsigned int>(a) | static_cast<unsigned int>(b));
     }
 }

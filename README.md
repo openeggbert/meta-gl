@@ -1,6 +1,8 @@
 # meta-gl
 
-`meta-gl` is a low-level, type-safe C++20 wrapper over raw OpenGL function pointers.
+`meta-gl` is a low-level, type-safe C++23 wrapper targeting **OpenGL ES 3.0 or higher**.
+
+OpenGL or OpenGL ES older than 3.0 are not supported.
 
 It is the foundation layer used by [easy-gl](../easy-gl) and provides:
 
@@ -21,7 +23,7 @@ Host application
 
 ## Requirements
 
-- C++20 compiler
+- C++23 compiler
 - CMake `3.23+`
 - A host-side GL context (provided externally)
 
@@ -90,4 +92,4 @@ metagl::GLuint shader = metagl::GlCreateShader(metagl::ShaderType::Vertex);
 - Raw OpenGL values (`GL_ARRAY_BUFFER`, `GL_VERTEX_SHADER`, …) stay **internal** to meta-gl.
 - Callers use `enum class` values; conversions to `GLenum` happen inside `metagl::detail`.
 - No OpenGL headers are exposed in public headers.
-- OpenGL ES support is a future option; only the OpenGL backend is currently implemented.
+- Only OpenGL ES 3.0 or higher is supported; plain OpenGL and OpenGL ES older than 3.0 are not supported.

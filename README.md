@@ -1,8 +1,8 @@
 # meta-gl
 
-`meta-gl` is a low-level, type-safe C++23 wrapper targeting **OpenGL ES 3.0 or higher**.
+`meta-gl` is a low-level, type-safe C++23 wrapper targeting **OpenGL ES 2.0 or higher**.
 
-OpenGL or OpenGL ES older than 3.0 are not supported.
+OpenGL or OpenGL ES older than 2.0 are not supported.
 
 It is the foundation layer used by [easy-gl](../easy-gl) and provides:
 

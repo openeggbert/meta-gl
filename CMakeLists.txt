@@ -35,6 +35,7 @@ target_sources(meta-gl
 target_include_directories(meta-gl
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/Khronos>
         $<INSTALL_INTERFACE:include>
 )
 

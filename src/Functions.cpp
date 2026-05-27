@@ -1,173 +1,12 @@
 #include "metagl/metagl.hpp"
 
-#include <cstddef>
-
 // ============================================================
-// Internal raw GL types and function pointer typedefs
+// Internal function pointer table and converters
 // ============================================================
 namespace metagl::detail
 {
-    // Raw GL function pointer typedefs (kept private to this TU)
-    using PFNGLGENBUFFERSPROC        = void (*)(GLsizei n, GLuint* buffers);
-    using PFNGLDELETEBUFFERSPROC     = void (*)(GLsizei n, const GLuint* buffers);
-    using PFNGLBINDBUFFERPROC        = void (*)(GLenum target, GLuint buffer);
-    using PFNGLBUFFERDATAPROC        = void (*)(GLenum target, GLsizeiptr size, const void* data, GLenum usage);
-    using PFNGLBUFFERSUBDATAPROC     = void (*)(GLenum target, GLintptr offset, GLsizeiptr size, const void* data);
-    using PFNGLBINDBUFFERBASEPROC    = void (*)(GLenum target, GLuint index, GLuint buffer);
-
-    using PFNGLGETSTRINGPROC         = const unsigned char* (*)(GLenum name);
-    using PFNGLGETSTRINGIPROC        = const unsigned char* (*)(GLenum name, GLuint index);
-    using PFNGLGETINTEGERVPROC       = void (*)(GLenum pname, GLint* data);
-
-    using PFNGLCREATESHADERPROC      = GLuint (*)(GLenum type);
-    using PFNGLSHADERSOURCEPROC      = void (*)(GLuint shader, GLsizei count, const GLchar* const* string, const GLint* length);
-    using PFNGLCOMPILESHADERPROC     = void (*)(GLuint shader);
-    using PFNGLGETSHADERIVPROC       = void (*)(GLuint shader, GLenum pname, GLint* params);
-    using PFNGLGETSHADERINFOLOGPROC  = void (*)(GLuint shader, GLsizei bufSize, GLsizei* length, GLchar* infoLog);
-    using PFNGLDELETESHADERPROC      = void (*)(GLuint shader);
-
-    using PFNGLCREATEPROGRAMPROC     = GLuint (*)(void);
-    using PFNGLATTACHSHADERPROC      = void (*)(GLuint program, GLuint shader);
-    using PFNGLDETACHSHADERPROC      = void (*)(GLuint program, GLuint shader);
-    using PFNGLLINKPROGRAMPROC       = void (*)(GLuint program);
-    using PFNGLGETPROGRAMIVPROC      = void (*)(GLuint program, GLenum pname, GLint* params);
-    using PFNGLGETPROGRAMINFOLOGPROC = void (*)(GLuint program, GLsizei bufSize, GLsizei* length, GLchar* infoLog);
-    using PFNGLUSEPROGRAMPROC        = void (*)(GLuint program);
-    using PFNGLDELETEPROGRAMPROC     = void (*)(GLuint program);
-
-    using PFNGLGETUNIFORMLOCATIONPROC = GLint (*)(GLuint program, const GLchar* name);
-    using PFNGLUNIFORM1IPROC         = void (*)(GLint location, GLint v0);
-    using PFNGLUNIFORM1FPROC         = void (*)(GLint location, GLfloat v0);
-    using PFNGLUNIFORM3FPROC         = void (*)(GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
-    using PFNGLUNIFORM4FPROC         = void (*)(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
-    using PFNGLUNIFORMMATRIX4FVPROC  = void (*)(GLint location, GLsizei count, GLboolean transpose, const GLfloat* value);
-
-    using PFNGLGENVERTEXARRAYSPROC     = void (*)(GLsizei n, GLuint* arrays);
-    using PFNGLDELETEVERTEXARRAYSPROC  = void (*)(GLsizei n, const GLuint* arrays);
-    using PFNGLBINDVERTEXARRAYPROC     = void (*)(GLuint array);
-    using PFNGLENABLEATTRIBARRAYPROC   = void (*)(GLuint index);
-    using PFNGLVERTEXATTRIBPOINTERPROC = void (*)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* pointer);
-
-    using PFNGLCLEARPROC      = void (*)(GLbitfield mask);
-    using PFNGLCLEARCOLORPROC = void (*)(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-    using PFNGLVIEWPORTPROC   = void (*)(GLint x, GLint y, GLsizei width, GLsizei height);
-    using PFNGLDRAWARRAYSPROC  = void (*)(GLenum mode, GLint first, GLsizei count);
-    using PFNGLDRAWELEMENTSPROC = void (*)(GLenum mode, GLsizei count, GLenum type, const void* indices);
-
-    using PFNGLGENTEXTURESPROC   = void (*)(GLsizei n, GLuint* textures);
-    using PFNGLDELETETEXTURESPROC = void (*)(GLsizei n, const GLuint* textures);
-    using PFNGLBINDTEXTUREPROC   = void (*)(GLenum target, GLuint texture);
-    using PFNGLACTIVETEXTUREPROC = void (*)(GLenum texture);
-    using PFNGLPIXELSTOREIPROC   = void (*)(GLenum pname, GLint param);
-    using PFNGLTEXIMAGE2DPROC    = void (*)(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* pixels);
-    using PFNGLTEXPARAMETERIPROC = void (*)(GLenum target, GLenum pname, GLint param);
-
-    using PFNGLENABLEPROC     = void (*)(GLenum cap);
-    using PFNGLDISABLEPROC    = void (*)(GLenum cap);
-    using PFNGLBLENDFUNCPROC  = void (*)(GLenum sfactor, GLenum dfactor);
-    using PFNGLDEPTHFUNCPROC  = void (*)(GLenum func);
-    using PFNGLDEPTHMASKPROC  = void (*)(GLboolean flag);
-    using PFNGLCLEARDEPTHPROC = void (*)(GLdouble depth);
-    using PFNGLCLEARDEPTHFPROC = void (*)(GLfloat depth);
-    using PFNGLCULLFACEPROC   = void (*)(GLenum mode);
-    using PFNGLFRONTFACEPROC  = void (*)(GLenum mode);
-
-    // ============================================================
-    // Raw GL constants (hidden inside detail)
-    // ============================================================
-
-    // String names
-    constexpr GLenum GL_VENDOR                    = 0x1F00;
-    constexpr GLenum GL_RENDERER                  = 0x1F01;
-    constexpr GLenum GL_VERSION                   = 0x1F02;
-    constexpr GLenum GL_EXTENSIONS                = 0x1F03;
-    constexpr GLenum GL_SHADING_LANGUAGE_VERSION  = 0x8B8C;
-
-    // Integer names
-    constexpr GLenum GL_MAJOR_VERSION    = 0x821B;
-    constexpr GLenum GL_MINOR_VERSION    = 0x821C;
-    constexpr GLenum GL_NUM_EXTENSIONS   = 0x821D;
-    constexpr GLenum GL_MAX_TEXTURE_SIZE = 0x0D33;
-    constexpr GLenum GL_VIEWPORT         = 0x0BA2;
-
-    // Texture targets / params / filters / wrap
-    constexpr GLenum GL_TEXTURE_2D         = 0x0DE1;
-    constexpr GLenum GL_TEXTURE_MAG_FILTER = 0x2800;
-    constexpr GLenum GL_TEXTURE_MIN_FILTER = 0x2801;
-    constexpr GLenum GL_TEXTURE_WRAP_S     = 0x2802;
-    constexpr GLenum GL_TEXTURE_WRAP_T     = 0x2803;
-    constexpr GLenum GL_NEAREST            = 0x2600;
-    constexpr GLenum GL_LINEAR             = 0x2601;
-    constexpr GLenum GL_CLAMP_TO_EDGE      = 0x812F;
-    constexpr GLenum GL_RGBA               = 0x1908;
-    constexpr GLenum GL_BGRA               = 0x80E1;
-    constexpr GLenum GL_TEXTURE0           = 0x84C0;
-    constexpr GLenum GL_UNPACK_ALIGNMENT   = 0x0CF5;
-
-    // Blend / state
-    constexpr GLenum GL_BLEND             = 0x0BE2;
-    constexpr GLenum GL_SCISSOR_TEST      = 0x0C11;
-    constexpr GLenum GL_SRC_ALPHA         = 0x0302;
-    constexpr GLenum GL_ONE_MINUS_SRC_ALPHA = 0x0303;
-    constexpr GLenum GL_DST_ALPHA         = 0x0304;
-    constexpr GLenum GL_ONE_MINUS_DST_ALPHA = 0x0305;
-
-    // Depth
-    constexpr GLenum GL_DEPTH_TEST = 0x0B71;
-    constexpr GLenum GL_NEVER      = 0x0200;
-    constexpr GLenum GL_LESS       = 0x0201;
-    constexpr GLenum GL_EQUAL      = 0x0202;
-    constexpr GLenum GL_LEQUAL     = 0x0203;
-    constexpr GLenum GL_GREATER    = 0x0204;
-    constexpr GLenum GL_NOTEQUAL   = 0x0205;
-    constexpr GLenum GL_GEQUAL     = 0x0206;
-    constexpr GLenum GL_ALWAYS     = 0x0207;
-
-    // Culling
-    constexpr GLenum GL_CULL_FACE = 0x0B44;
-    constexpr GLenum GL_FRONT     = 0x0404;
-    constexpr GLenum GL_BACK      = 0x0405;
-    constexpr GLenum GL_CW        = 0x0900;
-    constexpr GLenum GL_CCW       = 0x0901;
-    constexpr GLenum GL_FRONT_AND_BACK = 0x0408;
-
-    // Buffer targets
-    constexpr GLenum GL_ARRAY_BUFFER         = 0x8892;
-    constexpr GLenum GL_ELEMENT_ARRAY_BUFFER = 0x8893;
-    constexpr GLenum GL_UNIFORM_BUFFER       = 0x8A11;
-    constexpr GLenum GL_COPY_READ_BUFFER     = 0x8F36;
-    constexpr GLenum GL_COPY_WRITE_BUFFER    = 0x8F37;
-    constexpr GLenum GL_STATIC_DRAW          = 0x88E4;
-    constexpr GLenum GL_DYNAMIC_DRAW         = 0x88E8;
-
-    // Shader types
-    constexpr GLenum GL_VERTEX_SHADER          = 0x8B31;
-    constexpr GLenum GL_FRAGMENT_SHADER        = 0x8B30;
-    constexpr GLenum GL_GEOMETRY_SHADER        = 0x8DD9;
-    constexpr GLenum GL_TESS_CONTROL_SHADER    = 0x8E88;
-    constexpr GLenum GL_TESS_EVALUATION_SHADER = 0x8E87;
-    constexpr GLenum GL_COMPUTE_SHADER         = 0x91B9;
-    constexpr GLenum GL_COMPILE_STATUS         = 0x8B81;
-    constexpr GLenum GL_LINK_STATUS            = 0x8B82;
-    constexpr GLenum GL_INFO_LOG_LENGTH        = 0x8B84;
-
-    // Primitive types
-    constexpr GLenum GL_POINTS         = 0x0000;
-    constexpr GLenum GL_LINES          = 0x0001;
-    constexpr GLenum GL_LINE_LOOP      = 0x0002;
-    constexpr GLenum GL_LINE_STRIP     = 0x0003;
-    constexpr GLenum GL_TRIANGLES      = 0x0004;
-    constexpr GLenum GL_TRIANGLE_STRIP = 0x0005;
-    constexpr GLenum GL_TRIANGLE_FAN   = 0x0006;
-
-    // Data types
-    constexpr GLenum GL_FLOAT          = 0x1406;
-    constexpr GLenum GL_BYTE           = 0x1400;
-    constexpr GLenum GL_UNSIGNED_BYTE  = 0x1401;
-    constexpr GLenum GL_SHORT          = 0x1402;
-    constexpr GLenum GL_UNSIGNED_SHORT = 0x1403;
-    constexpr GLenum GL_INT            = 0x1404;
-    constexpr GLenum GL_UNSIGNED_INT   = 0x1405;
+    // GL_BGRA is not in core GLES — extension-only (GL_EXT_bgra)
+    constexpr GLenum GL_BGRA_EXT = 0x80E1;
 
     // ============================================================
     // Function pointer table
@@ -210,16 +49,16 @@ namespace metagl::detail
         PFNGLUNIFORM4FPROC          Uniform4f          = nullptr;
         PFNGLUNIFORMMATRIX4FVPROC   UniformMatrix4fv   = nullptr;
 
-        PFNGLGENVERTEXARRAYSPROC     GenVertexArrays         = nullptr;
-        PFNGLDELETEVERTEXARRAYSPROC  DeleteVertexArrays      = nullptr;
-        PFNGLBINDVERTEXARRAYPROC     BindVertexArray         = nullptr;
-        PFNGLENABLEATTRIBARRAYPROC   EnableVertexAttribArray = nullptr;
-        PFNGLVERTEXATTRIBPOINTERPROC VertexAttribPointer     = nullptr;
+        PFNGLGENVERTEXARRAYSPROC           GenVertexArrays         = nullptr;
+        PFNGLDELETEVERTEXARRAYSPROC        DeleteVertexArrays      = nullptr;
+        PFNGLBINDVERTEXARRAYPROC           BindVertexArray         = nullptr;
+        PFNGLENABLEVERTEXATTRIBARRAYPROC   EnableVertexAttribArray = nullptr;
+        PFNGLVERTEXATTRIBPOINTERPROC       VertexAttribPointer     = nullptr;
 
-        PFNGLCLEARPROC       Clear      = nullptr;
-        PFNGLCLEARCOLORPROC  ClearColor = nullptr;
-        PFNGLVIEWPORTPROC    Viewport   = nullptr;
-        PFNGLDRAWARRAYSPROC  DrawArrays  = nullptr;
+        PFNGLCLEARPROC        Clear       = nullptr;
+        PFNGLCLEARCOLORPROC   ClearColor  = nullptr;
+        PFNGLVIEWPORTPROC     Viewport    = nullptr;
+        PFNGLDRAWARRAYSPROC   DrawArrays  = nullptr;
         PFNGLDRAWELEMENTSPROC DrawElements = nullptr;
 
         PFNGLGENTEXTURESPROC    GenTextures    = nullptr;
@@ -235,7 +74,6 @@ namespace metagl::detail
         PFNGLBLENDFUNCPROC   BlendFunc   = nullptr;
         PFNGLDEPTHFUNCPROC   DepthFunc   = nullptr;
         PFNGLDEPTHMASKPROC   DepthMask   = nullptr;
-        PFNGLCLEARDEPTHPROC  ClearDepth  = nullptr;
         PFNGLCLEARDEPTHFPROC ClearDepthf = nullptr;
         PFNGLCULLFACEPROC    CullFace    = nullptr;
         PFNGLFRONTFACEPROC   FrontFace   = nullptr;
@@ -355,7 +193,7 @@ namespace metagl::detail
         switch (f)
         {
             case PixelFormat::Rgba: return GL_RGBA;
-            case PixelFormat::Bgra: return GL_BGRA;
+            case PixelFormat::Bgra: return GL_BGRA_EXT;
         }
         return GL_RGBA;
     }
@@ -478,8 +316,8 @@ namespace metagl::detail
     {
         switch (f)
         {
-            case BlendFactor::Zero:             return 0;
-            case BlendFactor::One:              return 1;
+            case BlendFactor::Zero:             return GL_ZERO;
+            case BlendFactor::One:              return GL_ONE;
             case BlendFactor::SrcAlpha:         return GL_SRC_ALPHA;
             case BlendFactor::OneMinusSrcAlpha: return GL_ONE_MINUS_SRC_ALPHA;
             case BlendFactor::DstAlpha:         return GL_DST_ALPHA;
@@ -542,13 +380,13 @@ namespace metagl
         gl.GenVertexArrays         = load<PFNGLGENVERTEXARRAYSPROC>(loader, "glGenVertexArrays");
         gl.DeleteVertexArrays      = load<PFNGLDELETEVERTEXARRAYSPROC>(loader, "glDeleteVertexArrays");
         gl.BindVertexArray         = load<PFNGLBINDVERTEXARRAYPROC>(loader, "glBindVertexArray");
-        gl.EnableVertexAttribArray = load<PFNGLENABLEATTRIBARRAYPROC>(loader, "glEnableVertexAttribArray");
+        gl.EnableVertexAttribArray = load<PFNGLENABLEVERTEXATTRIBARRAYPROC>(loader, "glEnableVertexAttribArray");
         gl.VertexAttribPointer     = load<PFNGLVERTEXATTRIBPOINTERPROC>(loader, "glVertexAttribPointer");
 
-        gl.Clear       = load<PFNGLCLEARPROC>(loader, "glClear");
-        gl.ClearColor  = load<PFNGLCLEARCOLORPROC>(loader, "glClearColor");
-        gl.Viewport    = load<PFNGLVIEWPORTPROC>(loader, "glViewport");
-        gl.DrawArrays  = load<PFNGLDRAWARRAYSPROC>(loader, "glDrawArrays");
+        gl.Clear        = load<PFNGLCLEARPROC>(loader, "glClear");
+        gl.ClearColor   = load<PFNGLCLEARCOLORPROC>(loader, "glClearColor");
+        gl.Viewport     = load<PFNGLVIEWPORTPROC>(loader, "glViewport");
+        gl.DrawArrays   = load<PFNGLDRAWARRAYSPROC>(loader, "glDrawArrays");
         gl.DrawElements = load<PFNGLDRAWELEMENTSPROC>(loader, "glDrawElements");
 
         gl.GenTextures    = load<PFNGLGENTEXTURESPROC>(loader, "glGenTextures");
@@ -564,7 +402,6 @@ namespace metagl
         gl.BlendFunc   = load<PFNGLBLENDFUNCPROC>(loader, "glBlendFunc");
         gl.DepthFunc   = load<PFNGLDEPTHFUNCPROC>(loader, "glDepthFunc");
         gl.DepthMask   = load<PFNGLDEPTHMASKPROC>(loader, "glDepthMask");
-        gl.ClearDepth  = load<PFNGLCLEARDEPTHPROC>(loader, "glClearDepth");
         gl.ClearDepthf = load<PFNGLCLEARDEPTHFPROC>(loader, "glClearDepthf");
         gl.CullFace    = load<PFNGLCULLFACEPROC>(loader, "glCullFace");
         gl.FrontFace   = load<PFNGLFRONTFACEPROC>(loader, "glFrontFace");
@@ -827,7 +664,7 @@ namespace metagl
     void glActiveTexture(GLenum textureUnit)
     {
         if (detail::g_gl.ActiveTexture)
-            detail::g_gl.ActiveTexture(detail::GL_TEXTURE0 + textureUnit);
+            detail::g_gl.ActiveTexture(GL_TEXTURE0 + textureUnit);
     }
 
     void glPixelStorei(GLenum pname, GLint param)
@@ -842,7 +679,7 @@ namespace metagl
         metagl::GLenum raw = 0;
         switch (pname)
         {
-            case PixelStoreParam::UnpackAlignment: raw = detail::GL_UNPACK_ALIGNMENT; break;
+            case PixelStoreParam::UnpackAlignment: raw = GL_UNPACK_ALIGNMENT; break;
         }
         detail::g_gl.PixelStorei(raw, param);
     }
@@ -906,12 +743,6 @@ namespace metagl
     {
         if (detail::g_gl.DepthMask)
             detail::g_gl.DepthMask(flag);
-    }
-
-    void glClearDepth(GLdouble depth)
-    {
-        if (detail::g_gl.ClearDepth)
-            detail::g_gl.ClearDepth(depth);
     }
 
     void glClearDepthf(GLfloat depth)

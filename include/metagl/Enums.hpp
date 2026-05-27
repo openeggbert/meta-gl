@@ -166,9 +166,9 @@ namespace metagl
 
     enum class ClearBufferBit : unsigned int
     {
-        Color   = 0x00004000,
-        Depth   = 0x00000100,
-        Stencil = 0x00000400
+        Color   = GL_COLOR_BUFFER_BIT,
+        Depth   = GL_DEPTH_BUFFER_BIT,
+        Stencil = GL_STENCIL_BUFFER_BIT
     };
 
     inline ClearBufferBit operator|(ClearBufferBit a, ClearBufferBit b)

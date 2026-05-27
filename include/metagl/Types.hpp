@@ -1,22 +1,23 @@
 #pragma once
 
-#include <cstddef>
+#ifndef GL_GLES_PROTOTYPES
+#define GL_GLES_PROTOTYPES 0
+#endif
+#include <GLES3/gl32.h>
 
 namespace metagl
 {
-    /// Function pointer type compatible with SDL_GL_GetProcAddress, glfwGetProcAddress, etc.
     using GlGetProcAddressFn = void* (*)(const char* name);
 
-    // GL scalar type aliases — public API, usable by easy-gl and other callers
-    using GLsizei    = int;
-    using GLuint     = unsigned int;
-    using GLint      = int;
-    using GLenum     = unsigned int;
-    using GLchar     = char;
-    using GLboolean  = unsigned char;
-    using GLbitfield = unsigned int;
-    using GLfloat    = float;
-    using GLdouble   = double;
-    using GLsizeiptr = long;
-    using GLintptr   = long;
+    using ::GLenum;
+    using ::GLuint;
+    using ::GLint;
+    using ::GLsizei;
+    using ::GLchar;
+    using ::GLboolean;
+    using ::GLbitfield;
+    using ::GLfloat;
+    using ::GLubyte;
+    using ::GLsizeiptr;
+    using ::GLintptr;
 }

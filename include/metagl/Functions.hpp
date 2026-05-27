@@ -80,7 +80,6 @@ namespace metagl
     void glBlendFunc(BlendFactor sfactor, BlendFactor dfactor);
     void glDepthFunc(CompareFunc func);
     void glDepthMask(GLboolean flag);
-    void glClearDepth(GLdouble depth);
     void glClearDepthf(GLfloat depth);
     void glCullFace(CullFace mode);
     void glFrontFace(FrontFace mode);

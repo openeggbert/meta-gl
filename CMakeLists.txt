@@ -9,7 +9,7 @@ add_library(meta-gl)
 add_library(meta-gl::meta-gl ALIAS meta-gl)
 
 set_target_properties(meta-gl PROPERTIES
-    CXX_STANDARD 20
+    CXX_STANDARD 23
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
     VERSION ${PROJECT_VERSION}

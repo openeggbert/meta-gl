@@ -3,6 +3,13 @@
 #include "Types.hpp"
 #include "Enums.hpp"
 
+#include <array>
+#include <concepts>
+#include <cstddef>
+#include <initializer_list>
+#include <ranges>
+#include <type_traits>
+
 namespace metagl
 {
     // State Management
@@ -756,4 +763,596 @@ namespace metagl
     // Robustness
     // #358 (3.2+) Returns the graphics reset status for robustness/error recovery
     GraphicsResetStatus glGetGraphicsResetStatus(void);
+
+    // -------------------------------------------------------------------------
+    // Convenience dispatch API
+    // -------------------------------------------------------------------------
+    // These helpers keep the 358 gl* wrappers above one-to-one with OpenGL_ES.md,
+    // while providing a smaller C++ API on top. They use concepts and if constexpr,
+    // so dispatch is resolved at compile time and there are no runtime branches.
+    // The helper names still start with gl; only the typed suffix is removed
+    // (for example glUniform1f/glUniform1i/glUniform1ui -> glUniform).
+
+    template<typename T>
+    concept UniformScalar =
+        std::same_as<std::remove_cvref_t<T>, GLfloat> ||
+        std::same_as<std::remove_cvref_t<T>, GLint> ||
+        std::same_as<std::remove_cvref_t<T>, GLuint>;
+
+    template<typename T>
+    concept UniformFloatScalar =
+        std::same_as<std::remove_cvref_t<T>, GLfloat>;
+
+    template<typename T>
+    concept UniformVector =
+        std::ranges::contiguous_range<T> &&
+        std::ranges::sized_range<T> &&
+        UniformScalar<std::ranges::range_value_t<T>>;
+
+    template<typename T>
+    concept UniformFloatVector =
+        std::ranges::contiguous_range<T> &&
+        std::ranges::sized_range<T> &&
+        UniformFloatScalar<std::ranges::range_value_t<T>>;
+
+    namespace detail
+    {
+        template<std::size_t Components>
+        inline constexpr bool IsUniformComponentCount = Components >= 1 && Components <= 4;
+
+        template<std::size_t Columns, std::size_t Rows>
+        inline constexpr bool IsUniformMatrixShape =
+            Columns >= 2 && Columns <= 4 &&
+            Rows >= 2 && Rows <= 4;
+
+        // #166-#185 - dispatch helper for glUniform*v variants.
+        template<std::size_t Components, UniformScalar T>
+        inline void glUniformVectorDispatch(GLint location, GLsizei count, const T* data)
+        {
+            using Value = std::remove_cvref_t<T>;
+
+            if constexpr (std::same_as<Value, GLfloat>)
+            {
+                if constexpr (Components == 1) { glUniform1fv(location, count, data); }
+                else if constexpr (Components == 2) { glUniform2fv(location, count, data); }
+                else if constexpr (Components == 3) { glUniform3fv(location, count, data); }
+                else if constexpr (Components == 4) { glUniform4fv(location, count, data); }
+            }
+            else if constexpr (std::same_as<Value, GLint>)
+            {
+                if constexpr (Components == 1) { glUniform1iv(location, count, data); }
+                else if constexpr (Components == 2) { glUniform2iv(location, count, data); }
+                else if constexpr (Components == 3) { glUniform3iv(location, count, data); }
+                else if constexpr (Components == 4) { glUniform4iv(location, count, data); }
+            }
+            else if constexpr (std::same_as<Value, GLuint>)
+            {
+                if constexpr (Components == 1) { glUniform1uiv(location, count, data); }
+                else if constexpr (Components == 2) { glUniform2uiv(location, count, data); }
+                else if constexpr (Components == 3) { glUniform3uiv(location, count, data); }
+                else if constexpr (Components == 4) { glUniform4uiv(location, count, data); }
+            }
+        }
+
+        // #205-#224 - dispatch helper for glProgramUniform*v variants.
+        template<std::size_t Components, UniformScalar T>
+        inline void glProgramUniformVectorDispatch(GLuint program, GLint location, GLsizei count, const T* data)
+        {
+            using Value = std::remove_cvref_t<T>;
+
+            if constexpr (std::same_as<Value, GLfloat>)
+            {
+                if constexpr (Components == 1) { glProgramUniform1fv(program, location, count, data); }
+                else if constexpr (Components == 2) { glProgramUniform2fv(program, location, count, data); }
+                else if constexpr (Components == 3) { glProgramUniform3fv(program, location, count, data); }
+                else if constexpr (Components == 4) { glProgramUniform4fv(program, location, count, data); }
+            }
+            else if constexpr (std::same_as<Value, GLint>)
+            {
+                if constexpr (Components == 1) { glProgramUniform1iv(program, location, count, data); }
+                else if constexpr (Components == 2) { glProgramUniform2iv(program, location, count, data); }
+                else if constexpr (Components == 3) { glProgramUniform3iv(program, location, count, data); }
+                else if constexpr (Components == 4) { glProgramUniform4iv(program, location, count, data); }
+            }
+            else if constexpr (std::same_as<Value, GLuint>)
+            {
+                if constexpr (Components == 1) { glProgramUniform1uiv(program, location, count, data); }
+                else if constexpr (Components == 2) { glProgramUniform2uiv(program, location, count, data); }
+                else if constexpr (Components == 3) { glProgramUniform3uiv(program, location, count, data); }
+                else if constexpr (Components == 4) { glProgramUniform4uiv(program, location, count, data); }
+            }
+        }
+
+        // #186-#194 - dispatch helper for glUniformMatrix*fv variants.
+        template<std::size_t Columns, std::size_t Rows>
+        inline void glUniformMatrixDispatch(GLint location, GLsizei count, GLboolean transpose, const GLfloat* data)
+        {
+            if constexpr (Columns == 2 && Rows == 2) { glUniformMatrix2fv(location, count, transpose, data); }
+            else if constexpr (Columns == 3 && Rows == 3) { glUniformMatrix3fv(location, count, transpose, data); }
+            else if constexpr (Columns == 4 && Rows == 4) { glUniformMatrix4fv(location, count, transpose, data); }
+            else if constexpr (Columns == 2 && Rows == 3) { glUniformMatrix2x3fv(location, count, transpose, data); }
+            else if constexpr (Columns == 2 && Rows == 4) { glUniformMatrix2x4fv(location, count, transpose, data); }
+            else if constexpr (Columns == 3 && Rows == 2) { glUniformMatrix3x2fv(location, count, transpose, data); }
+            else if constexpr (Columns == 3 && Rows == 4) { glUniformMatrix3x4fv(location, count, transpose, data); }
+            else if constexpr (Columns == 4 && Rows == 2) { glUniformMatrix4x2fv(location, count, transpose, data); }
+            else if constexpr (Columns == 4 && Rows == 3) { glUniformMatrix4x3fv(location, count, transpose, data); }
+        }
+
+        // #225-#233 - dispatch helper for glProgramUniformMatrix*fv variants.
+        template<std::size_t Columns, std::size_t Rows>
+        inline void glProgramUniformMatrixDispatch(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat* data)
+        {
+            if constexpr (Columns == 2 && Rows == 2) { glProgramUniformMatrix2fv(program, location, count, transpose, data); }
+            else if constexpr (Columns == 3 && Rows == 3) { glProgramUniformMatrix3fv(program, location, count, transpose, data); }
+            else if constexpr (Columns == 4 && Rows == 4) { glProgramUniformMatrix4fv(program, location, count, transpose, data); }
+            else if constexpr (Columns == 2 && Rows == 3) { glProgramUniformMatrix2x3fv(program, location, count, transpose, data); }
+            else if constexpr (Columns == 2 && Rows == 4) { glProgramUniformMatrix2x4fv(program, location, count, transpose, data); }
+            else if constexpr (Columns == 3 && Rows == 2) { glProgramUniformMatrix3x2fv(program, location, count, transpose, data); }
+            else if constexpr (Columns == 3 && Rows == 4) { glProgramUniformMatrix3x4fv(program, location, count, transpose, data); }
+            else if constexpr (Columns == 4 && Rows == 2) { glProgramUniformMatrix4x2fv(program, location, count, transpose, data); }
+            else if constexpr (Columns == 4 && Rows == 3) { glProgramUniformMatrix4x3fv(program, location, count, transpose, data); }
+        }
+    }
+
+    // #162/#170/#178 - scalar uniform dispatch: float, int, unsigned int.
+    template<UniformScalar T>
+    inline void glUniform(GLint location, T value)
+    {
+        using Value = std::remove_cvref_t<T>;
+
+        if constexpr (std::same_as<Value, GLfloat>)
+        {
+            glUniform1f(location, value);
+        }
+        else if constexpr (std::same_as<Value, GLint>)
+        {
+            glUniform1i(location, value);
+        }
+        else if constexpr (std::same_as<Value, GLuint>)
+        {
+            glUniform1ui(location, value);
+        }
+    }
+
+    // #163/#171/#179 - vec2/ivec2/uvec2 uniform dispatch.
+    template<UniformScalar T>
+    inline void glUniform(GLint location, T v0, T v1)
+    {
+        using Value = std::remove_cvref_t<T>;
+
+        if constexpr (std::same_as<Value, GLfloat>)
+        {
+            glUniform2f(location, v0, v1);
+        }
+        else if constexpr (std::same_as<Value, GLint>)
+        {
+            glUniform2i(location, v0, v1);
+        }
+        else if constexpr (std::same_as<Value, GLuint>)
+        {
+            glUniform2ui(location, v0, v1);
+        }
+    }
+
+    // #164/#172/#180 - vec3/ivec3/uvec3 uniform dispatch.
+    template<UniformScalar T>
+    inline void glUniform(GLint location, T v0, T v1, T v2)
+    {
+        using Value = std::remove_cvref_t<T>;
+
+        if constexpr (std::same_as<Value, GLfloat>)
+        {
+            glUniform3f(location, v0, v1, v2);
+        }
+        else if constexpr (std::same_as<Value, GLint>)
+        {
+            glUniform3i(location, v0, v1, v2);
+        }
+        else if constexpr (std::same_as<Value, GLuint>)
+        {
+            glUniform3ui(location, v0, v1, v2);
+        }
+    }
+
+    // #165/#173/#181 - vec4/ivec4/uvec4 uniform dispatch.
+    template<UniformScalar T>
+    inline void glUniform(GLint location, T v0, T v1, T v2, T v3)
+    {
+        using Value = std::remove_cvref_t<T>;
+
+        if constexpr (std::same_as<Value, GLfloat>)
+        {
+            glUniform4f(location, v0, v1, v2, v3);
+        }
+        else if constexpr (std::same_as<Value, GLint>)
+        {
+            glUniform4i(location, v0, v1, v2, v3);
+        }
+        else if constexpr (std::same_as<Value, GLuint>)
+        {
+            glUniform4ui(location, v0, v1, v2, v3);
+        }
+    }
+
+    // #166-#185 - contiguous range uniform dispatch.
+    // Components=1 maps to glUniform1*v, Components=2 to glUniform2*v, etc.
+    template<std::size_t Components = 1, UniformVector Vec>
+        requires detail::IsUniformComponentCount<Components>
+    inline void glUniform(GLint location, const Vec& values)
+    {
+        using Value = std::ranges::range_value_t<Vec>;
+
+        const auto* data = std::ranges::data(values);
+        const auto count = static_cast<GLsizei>(std::ranges::size(values) / Components);
+        detail::glUniformVectorDispatch<Components, Value>(location, count, data);
+    }
+
+    // #166-#185 - fixed-size std::array convenience; N=2/3/4 means vec2/vec3/vec4.
+    template<UniformScalar T, std::size_t N>
+        requires detail::IsUniformComponentCount<N>
+    inline void glUniform(GLint location, const std::array<T, N>& values)
+    {
+        detail::glUniformVectorDispatch<N, T>(location, 1, values.data());
+    }
+
+    // #166-#185 - fixed-size C array convenience; N=2/3/4 means vec2/vec3/vec4.
+    template<UniformScalar T, std::size_t N>
+        requires detail::IsUniformComponentCount<N>
+    inline void glUniform(GLint location, const T (&values)[N])
+    {
+        detail::glUniformVectorDispatch<N, T>(location, 1, values);
+    }
+
+    // #166-#185 - initializer_list overload for contiguous range dispatch.
+    template<std::size_t Components = 1, UniformScalar T>
+        requires detail::IsUniformComponentCount<Components>
+    inline void glUniform(GLint location, std::initializer_list<T> values)
+    {
+        const auto count = static_cast<GLsizei>(values.size() / Components);
+        detail::glUniformVectorDispatch<Components, T>(location, count, values.begin());
+    }
+
+    // #186-#194 - square matrix uniform dispatch. Size=2/3/4 maps to mat2/mat3/mat4.
+    template<std::size_t Size, UniformFloatVector Vec>
+        requires (Size >= 2 && Size <= 4)
+    inline void glUniformMatrix(GLint location, const Vec& values, GLboolean transpose = GL_FALSE)
+    {
+        const auto* data = std::ranges::data(values);
+        const auto count = static_cast<GLsizei>(std::ranges::size(values) / (Size * Size));
+        detail::glUniformMatrixDispatch<Size, Size>(location, count, transpose, data);
+    }
+
+    // #186-#194 - rectangular matrix uniform dispatch. Columns x Rows maps to glUniformMatrixCxRfv.
+    template<std::size_t Columns, std::size_t Rows, UniformFloatVector Vec>
+        requires detail::IsUniformMatrixShape<Columns, Rows>
+    inline void glUniformMatrix(GLint location, const Vec& values, GLboolean transpose = GL_FALSE)
+    {
+        const auto* data = std::ranges::data(values);
+        const auto count = static_cast<GLsizei>(std::ranges::size(values) / (Columns * Rows));
+        detail::glUniformMatrixDispatch<Columns, Rows>(location, count, transpose, data);
+    }
+
+    // #186-#194 - square matrix initializer_list overload.
+    template<std::size_t Size>
+        requires (Size >= 2 && Size <= 4)
+    inline void glUniformMatrix(GLint location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
+    {
+        const auto count = static_cast<GLsizei>(values.size() / (Size * Size));
+        detail::glUniformMatrixDispatch<Size, Size>(location, count, transpose, values.begin());
+    }
+
+    // #186-#194 - rectangular matrix initializer_list overload.
+    template<std::size_t Columns, std::size_t Rows>
+        requires detail::IsUniformMatrixShape<Columns, Rows>
+    inline void glUniformMatrix(GLint location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
+    {
+        const auto count = static_cast<GLsizei>(values.size() / (Columns * Rows));
+        detail::glUniformMatrixDispatch<Columns, Rows>(location, count, transpose, values.begin());
+    }
+
+    // #201/#209/#217 - scalar program-uniform dispatch: float, int, unsigned int.
+    template<UniformScalar T>
+    inline void glProgramUniform(GLuint program, GLint location, T value)
+    {
+        using Value = std::remove_cvref_t<T>;
+
+        if constexpr (std::same_as<Value, GLfloat>)
+        {
+            glProgramUniform1f(program, location, value);
+        }
+        else if constexpr (std::same_as<Value, GLint>)
+        {
+            glProgramUniform1i(program, location, value);
+        }
+        else if constexpr (std::same_as<Value, GLuint>)
+        {
+            glProgramUniform1ui(program, location, value);
+        }
+    }
+
+    // #202/#210/#218 - vec2/ivec2/uvec2 program-uniform dispatch.
+    template<UniformScalar T>
+    inline void glProgramUniform(GLuint program, GLint location, T v0, T v1)
+    {
+        using Value = std::remove_cvref_t<T>;
+
+        if constexpr (std::same_as<Value, GLfloat>)
+        {
+            glProgramUniform2f(program, location, v0, v1);
+        }
+        else if constexpr (std::same_as<Value, GLint>)
+        {
+            glProgramUniform2i(program, location, v0, v1);
+        }
+        else if constexpr (std::same_as<Value, GLuint>)
+        {
+            glProgramUniform2ui(program, location, v0, v1);
+        }
+    }
+
+    // #203/#211/#219 - vec3/ivec3/uvec3 program-uniform dispatch.
+    template<UniformScalar T>
+    inline void glProgramUniform(GLuint program, GLint location, T v0, T v1, T v2)
+    {
+        using Value = std::remove_cvref_t<T>;
+
+        if constexpr (std::same_as<Value, GLfloat>)
+        {
+            glProgramUniform3f(program, location, v0, v1, v2);
+        }
+        else if constexpr (std::same_as<Value, GLint>)
+        {
+            glProgramUniform3i(program, location, v0, v1, v2);
+        }
+        else if constexpr (std::same_as<Value, GLuint>)
+        {
+            glProgramUniform3ui(program, location, v0, v1, v2);
+        }
+    }
+
+    // #204/#212/#220 - vec4/ivec4/uvec4 program-uniform dispatch.
+    template<UniformScalar T>
+    inline void glProgramUniform(GLuint program, GLint location, T v0, T v1, T v2, T v3)
+    {
+        using Value = std::remove_cvref_t<T>;
+
+        if constexpr (std::same_as<Value, GLfloat>)
+        {
+            glProgramUniform4f(program, location, v0, v1, v2, v3);
+        }
+        else if constexpr (std::same_as<Value, GLint>)
+        {
+            glProgramUniform4i(program, location, v0, v1, v2, v3);
+        }
+        else if constexpr (std::same_as<Value, GLuint>)
+        {
+            glProgramUniform4ui(program, location, v0, v1, v2, v3);
+        }
+    }
+
+    // #205-#224 - contiguous range program-uniform dispatch.
+    template<std::size_t Components = 1, UniformVector Vec>
+        requires detail::IsUniformComponentCount<Components>
+    inline void glProgramUniform(GLuint program, GLint location, const Vec& values)
+    {
+        using Value = std::ranges::range_value_t<Vec>;
+
+        const auto* data = std::ranges::data(values);
+        const auto count = static_cast<GLsizei>(std::ranges::size(values) / Components);
+        detail::glProgramUniformVectorDispatch<Components, Value>(program, location, count, data);
+    }
+
+    // #205-#224 - fixed-size std::array program-uniform convenience; N=2/3/4 means vec2/vec3/vec4.
+    template<UniformScalar T, std::size_t N>
+        requires detail::IsUniformComponentCount<N>
+    inline void glProgramUniform(GLuint program, GLint location, const std::array<T, N>& values)
+    {
+        detail::glProgramUniformVectorDispatch<N, T>(program, location, 1, values.data());
+    }
+
+    // #205-#224 - fixed-size C array program-uniform convenience; N=2/3/4 means vec2/vec3/vec4.
+    template<UniformScalar T, std::size_t N>
+        requires detail::IsUniformComponentCount<N>
+    inline void glProgramUniform(GLuint program, GLint location, const T (&values)[N])
+    {
+        detail::glProgramUniformVectorDispatch<N, T>(program, location, 1, values);
+    }
+
+    // #205-#224 - initializer_list program-uniform overload.
+    template<std::size_t Components = 1, UniformScalar T>
+        requires detail::IsUniformComponentCount<Components>
+    inline void glProgramUniform(GLuint program, GLint location, std::initializer_list<T> values)
+    {
+        const auto count = static_cast<GLsizei>(values.size() / Components);
+        detail::glProgramUniformVectorDispatch<Components, T>(program, location, count, values.begin());
+    }
+
+    // #225-#233 - square matrix program-uniform dispatch. Size=2/3/4 maps to mat2/mat3/mat4.
+    template<std::size_t Size, UniformFloatVector Vec>
+        requires (Size >= 2 && Size <= 4)
+    inline void glProgramUniformMatrix(GLuint program, GLint location, const Vec& values, GLboolean transpose = GL_FALSE)
+    {
+        const auto* data = std::ranges::data(values);
+        const auto count = static_cast<GLsizei>(std::ranges::size(values) / (Size * Size));
+        detail::glProgramUniformMatrixDispatch<Size, Size>(program, location, count, transpose, data);
+    }
+
+    // #225-#233 - rectangular matrix program-uniform dispatch. Columns x Rows maps to glProgramUniformMatrixCxRfv.
+    template<std::size_t Columns, std::size_t Rows, UniformFloatVector Vec>
+        requires detail::IsUniformMatrixShape<Columns, Rows>
+    inline void glProgramUniformMatrix(GLuint program, GLint location, const Vec& values, GLboolean transpose = GL_FALSE)
+    {
+        const auto* data = std::ranges::data(values);
+        const auto count = static_cast<GLsizei>(std::ranges::size(values) / (Columns * Rows));
+        detail::glProgramUniformMatrixDispatch<Columns, Rows>(program, location, count, transpose, data);
+    }
+
+    // #225-#233 - square matrix program-uniform initializer_list overload.
+    template<std::size_t Size>
+        requires (Size >= 2 && Size <= 4)
+    inline void glProgramUniformMatrix(GLuint program, GLint location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
+    {
+        const auto count = static_cast<GLsizei>(values.size() / (Size * Size));
+        detail::glProgramUniformMatrixDispatch<Size, Size>(program, location, count, transpose, values.begin());
+    }
+
+    // #225-#233 - rectangular matrix program-uniform initializer_list overload.
+    template<std::size_t Columns, std::size_t Rows>
+        requires detail::IsUniformMatrixShape<Columns, Rows>
+    inline void glProgramUniformMatrix(GLuint program, GLint location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
+    {
+        const auto count = static_cast<GLsizei>(values.size() / (Columns * Rows));
+        detail::glProgramUniformMatrixDispatch<Columns, Rows>(program, location, count, transpose, values.begin());
+    }
+
+    struct FloatTag {};
+    struct IntTag {};
+    struct UIntTag {};
+
+    namespace detail
+    {
+        template<typename T>
+        struct VertexAttributeTraits;
+
+        template<>
+        struct VertexAttributeTraits<GLfloat>
+        {
+            using Tag = FloatTag;
+            static constexpr DataType Type = DataType::Float;
+        };
+
+        template<>
+        struct VertexAttributeTraits<GLint>
+        {
+            using Tag = IntTag;
+            static constexpr DataType Type = DataType::Int;
+        };
+
+        template<>
+        struct VertexAttributeTraits<GLuint>
+        {
+            using Tag = UIntTag;
+            static constexpr DataType Type = DataType::UnsignedInt;
+        };
+
+        // #73 - dispatch helper for floating-point vertex attributes.
+        template<typename T>
+        inline void glVertexAttribPointerDispatch(FloatTag, GLuint index, GLint size, GLboolean normalized, GLsizei stride, const void* pointer)
+        {
+            glVertexAttribPointer(index, size, VertexAttributeTraits<T>::Type, normalized, stride, pointer);
+        }
+
+        // #74 - dispatch helper for signed integer vertex attributes.
+        template<typename T>
+        inline void glVertexAttribPointerDispatch(IntTag, GLuint index, GLint size, GLboolean, GLsizei stride, const void* pointer)
+        {
+            glVertexAttribIPointer(index, size, VertexAttributeTraits<T>::Type, stride, pointer);
+        }
+
+        // #74 - dispatch helper for unsigned integer vertex attributes.
+        template<typename T>
+        inline void glVertexAttribPointerDispatch(UIntTag, GLuint index, GLint size, GLboolean, GLsizei stride, const void* pointer)
+        {
+            glVertexAttribIPointer(index, size, VertexAttributeTraits<T>::Type, stride, pointer);
+        }
+    }
+
+    template<typename T>
+    concept VertexAttributeScalar = requires
+    {
+        typename detail::VertexAttributeTraits<std::remove_cvref_t<T>>::Tag;
+    };
+
+    // #73-#74 - tag/constexpr dispatch for float/int/unsigned vertex attribute pointers.
+    // GLfloat dispatches to glVertexAttribPointer; GLint/GLuint dispatch to glVertexAttribIPointer.
+    template<VertexAttributeScalar T>
+    inline void glVertexAttribPointer(GLuint index, GLint size, GLboolean normalized = GL_FALSE, GLsizei stride = 0, const void* pointer = nullptr)
+    {
+        using Value = std::remove_cvref_t<T>;
+        using Tag = typename detail::VertexAttributeTraits<Value>::Tag;
+
+        detail::glVertexAttribPointerDispatch<Value>(Tag{}, index, size, normalized, stride, pointer);
+    }
+
+    // #76 - scalar float vertex attribute dispatch.
+    inline void glVertexAttrib(GLuint index, GLfloat x)
+    {
+        glVertexAttrib1f(index, x);
+    }
+
+    // #77 - vec2 float vertex attribute dispatch.
+    inline void glVertexAttrib(GLuint index, GLfloat x, GLfloat y)
+    {
+        glVertexAttrib2f(index, x, y);
+    }
+
+    // #78 - vec3 float vertex attribute dispatch.
+    inline void glVertexAttrib(GLuint index, GLfloat x, GLfloat y, GLfloat z)
+    {
+        glVertexAttrib3f(index, x, y, z);
+    }
+
+    // #79/#84/#85 - vec4/ivec4/uvec4 vertex attribute dispatch.
+    template<VertexAttributeScalar T>
+    inline void glVertexAttrib(GLuint index, T x, T y, T z, T w)
+    {
+        using Value = std::remove_cvref_t<T>;
+
+        if constexpr (std::same_as<Value, GLfloat>)
+        {
+            glVertexAttrib4f(index, x, y, z, w);
+        }
+        else if constexpr (std::same_as<Value, GLint>)
+        {
+            glVertexAttribI4i(index, x, y, z, w);
+        }
+        else if constexpr (std::same_as<Value, GLuint>)
+        {
+            glVertexAttribI4ui(index, x, y, z, w);
+        }
+    }
+
+    // #80-#83/#86-#87 - pointer/range vertex attribute dispatch.
+    template<std::size_t Components = 4, VertexAttributeScalar T>
+        requires detail::IsUniformComponentCount<Components>
+    inline void glVertexAttrib(GLuint index, const T* values)
+    {
+        using Value = std::remove_cvref_t<T>;
+
+        if constexpr (std::same_as<Value, GLfloat>)
+        {
+            if constexpr (Components == 1) { glVertexAttrib1fv(index, values); }
+            else if constexpr (Components == 2) { glVertexAttrib2fv(index, values); }
+            else if constexpr (Components == 3) { glVertexAttrib3fv(index, values); }
+            else if constexpr (Components == 4) { glVertexAttrib4fv(index, values); }
+        }
+        else if constexpr (std::same_as<Value, GLint>)
+        {
+            static_assert(Components == 4, "OpenGL ES only has glVertexAttribI4iv for integer constant attributes.");
+            glVertexAttribI4iv(index, values);
+        }
+        else if constexpr (std::same_as<Value, GLuint>)
+        {
+            static_assert(Components == 4, "OpenGL ES only has glVertexAttribI4uiv for unsigned integer constant attributes.");
+            glVertexAttribI4uiv(index, values);
+        }
+    }
+
+    // #80-#83/#86-#87 - fixed-size std::array vertex attribute dispatch.
+    template<VertexAttributeScalar T, std::size_t N>
+        requires detail::IsUniformComponentCount<N>
+    inline void glVertexAttrib(GLuint index, const std::array<T, N>& values)
+    {
+        glVertexAttrib<N, T>(index, values.data());
+    }
+
+    // #80-#83/#86-#87 - fixed-size C array vertex attribute dispatch.
+    template<VertexAttributeScalar T, std::size_t N>
+        requires detail::IsUniformComponentCount<N>
+    inline void glVertexAttrib(GLuint index, const T (&values)[N])
+    {
+        glVertexAttrib<N, T>(index, values);
+    }
+
+
 }

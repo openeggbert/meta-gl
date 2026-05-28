@@ -9,15 +9,26 @@ namespace metagl
 {
     using GlGetProcAddressFn = void* (*)(const char* name);
 
-    using ::GLenum;
-    using ::GLuint;
-    using ::GLint;
-    using ::GLsizei;
-    using ::GLchar;
-    using ::GLboolean;
     using ::GLbitfield;
+    using ::GLboolean;
+    using ::GLbyte;
+    using ::GLchar;
+    using ::GLclampf;
+    using ::GLenum;
+    using ::GLfixed;
     using ::GLfloat;
-    using ::GLubyte;
-    using ::GLsizeiptr;
+    using ::GLhalf;
+    using ::GLint;
+    using ::GLint64;
     using ::GLintptr;
+    using ::GLshort;
+    using ::GLsizei;
+    using ::GLsizeiptr;
+    using ::GLsync;
+    using ::GLubyte;
+    using ::GLuint;
+    using ::GLuint64;
+    using ::GLushort;
+    using ::GLvoid;
+    using ::GLDEBUGPROC;
 }

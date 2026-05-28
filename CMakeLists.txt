@@ -18,6 +18,7 @@ set_target_properties(meta-gl PROPERTIES
 target_sources(meta-gl
     PRIVATE
         src/Functions.cpp
+        src/Context.cpp
 )
 
 target_sources(meta-gl
@@ -30,6 +31,10 @@ target_sources(meta-gl
         include/metagl/Enums.hpp
         include/metagl/Functions.hpp
         include/metagl/Loader.hpp
+        include/metagl/Context.hpp
+        include/metagl/Capabilities.hpp
+        include/metagl/ContextEvents.hpp
+        include/metagl/Emscripten.hpp
 )
 
 target_include_directories(meta-gl

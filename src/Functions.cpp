@@ -1,6 +1,9 @@
 #include "metagl/metagl.hpp"
 
+#include <string>
+#include <string_view>
 #include <type_traits>
+#include <unordered_map>
 
 namespace metagl::detail
 {
@@ -380,15 +383,193 @@ namespace metagl::detail
         PFNGLGETGRAPHICSRESETSTATUSPROC GetGraphicsResetStatus = nullptr;
     };
 
-    static GlTable g_gl;
+    GlTable g_gl;
+
+    // Forward declaration — implemented in Context.cpp.
+    void UpdateContextAfterLoad();
+
+    // Maps each GL function name to whether it was successfully loaded.
+    std::unordered_map<std::string, bool> g_function_availability;
 
     template <typename T>
     static T load(GlGetProcAddressFn loader, const char* name)
     {
-        return reinterpret_cast<T>(loader(name));
+        void* ptr = loader(name);
+        g_function_availability[name] = (ptr != nullptr);
+        return reinterpret_cast<T>(ptr);
     }
 
-    static bool all_loaded(const GlTable& gl)
+    // ---------------------------------------------------------------------------
+    // Version-aware validation helpers
+    //
+    // Only the minimum functions required for each API level are checked.
+    // Missing higher-level functions do NOT prevent successful initialization.
+    // ---------------------------------------------------------------------------
+
+    /// GLES 2.0 core — the absolute minimum required for any GLES/WebGL context.
+    static bool gles2_minimum_loaded(const GlTable& gl)
+    {
+        return
+            // State management
+            gl.Enable != nullptr &&
+            gl.Disable != nullptr &&
+            gl.BlendFunc != nullptr &&
+            gl.BlendEquation != nullptr &&
+            gl.ColorMask != nullptr &&
+            gl.DepthFunc != nullptr &&
+            gl.DepthMask != nullptr &&
+            gl.DepthRangef != nullptr &&
+            gl.StencilFunc != nullptr &&
+            gl.StencilFuncSeparate != nullptr &&
+            gl.StencilOp != nullptr &&
+            gl.StencilOpSeparate != nullptr &&
+            gl.StencilMask != nullptr &&
+            gl.StencilMaskSeparate != nullptr &&
+            gl.Scissor != nullptr &&
+            gl.Viewport != nullptr &&
+            gl.CullFace != nullptr &&
+            gl.FrontFace != nullptr &&
+            gl.LineWidth != nullptr &&
+            gl.PolygonOffset != nullptr &&
+            gl.SampleCoverage != nullptr &&
+            gl.Hint != nullptr &&
+            gl.PixelStorei != nullptr &&
+            gl.Finish != nullptr &&
+            gl.Flush != nullptr &&
+            // Queries
+            gl.GetError != nullptr &&
+            gl.GetBooleanv != nullptr &&
+            gl.GetIntegerv != nullptr &&
+            gl.GetFloatv != nullptr &&
+            gl.GetString != nullptr &&
+            // Buffers
+            gl.GenBuffers != nullptr &&
+            gl.DeleteBuffers != nullptr &&
+            gl.BindBuffer != nullptr &&
+            gl.BufferData != nullptr &&
+            gl.BufferSubData != nullptr &&
+            gl.IsBuffer != nullptr &&
+            gl.GetBufferParameteriv != nullptr &&
+            // Vertex attributes
+            gl.EnableVertexAttribArray != nullptr &&
+            gl.DisableVertexAttribArray != nullptr &&
+            gl.VertexAttribPointer != nullptr &&
+            gl.VertexAttrib1f != nullptr &&
+            gl.VertexAttrib2f != nullptr &&
+            gl.VertexAttrib3f != nullptr &&
+            gl.VertexAttrib4f != nullptr &&
+            gl.VertexAttrib1fv != nullptr &&
+            gl.VertexAttrib2fv != nullptr &&
+            gl.VertexAttrib3fv != nullptr &&
+            gl.VertexAttrib4fv != nullptr &&
+            gl.GetVertexAttribfv != nullptr &&
+            gl.GetVertexAttribiv != nullptr &&
+            gl.GetVertexAttribPointerv != nullptr &&
+            // Drawing
+            gl.DrawArrays != nullptr &&
+            gl.DrawElements != nullptr &&
+            gl.ReadPixels != nullptr &&
+            // Clear
+            gl.Clear != nullptr &&
+            gl.ClearColor != nullptr &&
+            gl.ClearDepthf != nullptr &&
+            gl.ClearStencil != nullptr &&
+            // State queries
+            gl.IsEnabled != nullptr &&
+            // Blend (GLES2 core extended blend functions)
+            gl.BlendColor != nullptr &&
+            gl.BlendEquationSeparate != nullptr &&
+            gl.BlendFuncSeparate != nullptr &&
+            // Shaders
+            gl.CreateShader != nullptr &&
+            gl.DeleteShader != nullptr &&
+            gl.ShaderSource != nullptr &&
+            gl.CompileShader != nullptr &&
+            gl.GetShaderiv != nullptr &&
+            gl.GetShaderInfoLog != nullptr &&
+            gl.GetShaderSource != nullptr &&
+            gl.GetShaderPrecisionFormat != nullptr &&
+            gl.IsShader != nullptr &&
+            gl.ShaderBinary != nullptr &&
+            gl.ReleaseShaderCompiler != nullptr &&
+            // Programs
+            gl.CreateProgram != nullptr &&
+            gl.DeleteProgram != nullptr &&
+            gl.AttachShader != nullptr &&
+            gl.DetachShader != nullptr &&
+            gl.GetAttachedShaders != nullptr &&
+            gl.LinkProgram != nullptr &&
+            gl.UseProgram != nullptr &&
+            gl.ValidateProgram != nullptr &&
+            gl.GetProgramiv != nullptr &&
+            gl.GetProgramInfoLog != nullptr &&
+            gl.IsProgram != nullptr &&
+            gl.BindAttribLocation != nullptr &&
+            gl.GetAttribLocation != nullptr &&
+            gl.GetActiveAttrib != nullptr &&
+            gl.GetUniformLocation != nullptr &&
+            gl.GetActiveUniform != nullptr &&
+            gl.Uniform1f != nullptr &&
+            gl.Uniform2f != nullptr &&
+            gl.Uniform3f != nullptr &&
+            gl.Uniform4f != nullptr &&
+            gl.Uniform1fv != nullptr &&
+            gl.Uniform2fv != nullptr &&
+            gl.Uniform3fv != nullptr &&
+            gl.Uniform4fv != nullptr &&
+            gl.Uniform1i != nullptr &&
+            gl.Uniform2i != nullptr &&
+            gl.Uniform3i != nullptr &&
+            gl.Uniform4i != nullptr &&
+            gl.Uniform1iv != nullptr &&
+            gl.Uniform2iv != nullptr &&
+            gl.Uniform3iv != nullptr &&
+            gl.Uniform4iv != nullptr &&
+            gl.UniformMatrix2fv != nullptr &&
+            gl.UniformMatrix3fv != nullptr &&
+            gl.UniformMatrix4fv != nullptr &&
+            gl.GetUniformfv != nullptr &&
+            gl.GetUniformiv != nullptr &&
+            // Textures
+            gl.GenTextures != nullptr &&
+            gl.DeleteTextures != nullptr &&
+            gl.BindTexture != nullptr &&
+            gl.ActiveTexture != nullptr &&
+            gl.IsTexture != nullptr &&
+            gl.TexImage2D != nullptr &&
+            gl.TexSubImage2D != nullptr &&
+            gl.CompressedTexImage2D != nullptr &&
+            gl.CompressedTexSubImage2D != nullptr &&
+            gl.CopyTexImage2D != nullptr &&
+            gl.CopyTexSubImage2D != nullptr &&
+            gl.GenerateMipmap != nullptr &&
+            gl.TexParameterf != nullptr &&
+            gl.TexParameteri != nullptr &&
+            gl.TexParameterfv != nullptr &&
+            gl.TexParameteriv != nullptr &&
+            gl.GetTexParameterfv != nullptr &&
+            gl.GetTexParameteriv != nullptr &&
+            // Framebuffers
+            gl.GenFramebuffers != nullptr &&
+            gl.DeleteFramebuffers != nullptr &&
+            gl.BindFramebuffer != nullptr &&
+            gl.IsFramebuffer != nullptr &&
+            gl.CheckFramebufferStatus != nullptr &&
+            gl.FramebufferTexture2D != nullptr &&
+            gl.FramebufferRenderbuffer != nullptr &&
+            gl.GetFramebufferAttachmentParameteriv != nullptr &&
+            // Renderbuffers
+            gl.GenRenderbuffers != nullptr &&
+            gl.DeleteRenderbuffers != nullptr &&
+            gl.BindRenderbuffer != nullptr &&
+            gl.IsRenderbuffer != nullptr &&
+            gl.RenderbufferStorage != nullptr &&
+            gl.GetRenderbufferParameteriv != nullptr;
+    }
+
+    /// Legacy helper kept for diagnostics — checks all 358 GLES 3.2 functions.
+    /// Not used by Initialize(); provided for completeness and testing.
+    [[maybe_unused]] static bool all_loaded(const GlTable& gl)
     {
         return
             gl.Enable != nullptr &&
@@ -1119,13 +1300,30 @@ namespace metagl
         gl.GetObjectPtrLabel = detail::load<PFNGLGETOBJECTPTRLABELPROC>(loader, "glGetObjectPtrLabel");
         gl.GetGraphicsResetStatus = detail::load<PFNGLGETGRAPHICSRESETSTATUSPROC>(loader, "glGetGraphicsResetStatus");
 
-        gl.initialized = detail::all_loaded(gl);
+        // Initialization succeeds when the GLES 2.0 minimum set is available.
+        // Higher-level functions (GLES 3.0/3.1/3.2) may be absent on
+        // WebGL 1, WebGL 2, or older Android devices — that is not an error.
+        gl.initialized = detail::gles2_minimum_loaded(gl);
+
+        if (gl.initialized)
+        {
+            // Detect capabilities and update context state.
+            detail::UpdateContextAfterLoad();
+        }
+
         return gl.initialized;
     }
 
     bool IsInitialized()
     {
         return detail::g_gl.initialized;
+    }
+
+    bool IsFunctionAvailable(std::string_view name) noexcept
+    {
+        auto it = detail::g_function_availability.find(std::string(name));
+        if (it == detail::g_function_availability.end()) return false;
+        return it->second;
     }
 
     // #1

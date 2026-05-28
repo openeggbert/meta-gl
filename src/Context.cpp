@@ -1,0 +1,245 @@
+#include "metagl/metagl.hpp"
+
+#include <algorithm>
+#include <string>
+#include <string_view>
+#include <vector>
+
+// ---------------------------------------------------------------------------
+// Module-level state
+// ---------------------------------------------------------------------------
+namespace metagl::detail
+{
+    static ContextInfo  g_context_info{};
+    static Capabilities g_capabilities{};
+    static std::vector<ContextListener*> g_listeners{};
+
+    static bool parse_version(const char* ptr, int& major, int& minor)
+    {
+        if (!ptr || !*ptr) return false;
+        major = 0;
+        minor = 0;
+        while (*ptr >= '0' && *ptr <= '9')
+            major = major * 10 + (*ptr++ - '0');
+        if (*ptr == '.') ++ptr;
+        while (*ptr >= '0' && *ptr <= '9')
+            minor = minor * 10 + (*ptr++ - '0');
+        return major > 0 || minor > 0;
+    }
+
+    // Called by Functions.cpp Initialize() after function pointers are loaded.
+    // Uses the public metagl::gl* API which is valid at this point.
+    void UpdateContextAfterLoad()
+    {
+        Capabilities caps{};
+        ContextInfo  info{};
+
+        auto to_str = [](const GLubyte* p) -> std::string
+        {
+            return p ? reinterpret_cast<const char*>(p) : "";
+        };
+
+        caps.version_string           = to_str(metagl::glGetString(metagl::StringName::Version));
+        caps.vendor                   = to_str(metagl::glGetString(metagl::StringName::Vendor));
+        caps.renderer                 = to_str(metagl::glGetString(metagl::StringName::Renderer));
+        caps.shading_language_version = to_str(metagl::glGetString(metagl::StringName::ShadingLanguageVersion));
+
+#ifdef __EMSCRIPTEN__
+        info.api   = ApiKind::WebGL;
+        info.webgl = true;
+        if (caps.version_string.find("WebGL 2") != std::string::npos ||
+            caps.version_string.find("OpenGL ES 3") != std::string::npos)
+        {
+            info.webgl2 = true;
+            caps.webgl2 = true;
+            info.major  = 3;
+            info.minor  = 0;
+        }
+        else
+        {
+            info.webgl1 = true;
+            caps.webgl1 = true;
+            info.major  = 2;
+            info.minor  = 0;
+        }
+#else
+        const bool is_es = caps.version_string.find("OpenGL ES") != std::string::npos;
+        if (is_es)
+        {
+            info.api = ApiKind::OpenGLES;
+            // Skip "OpenGL ES "
+            const char* v = caps.version_string.c_str();
+            if (caps.version_string.size() > 10) v += 10;
+            parse_version(v, info.major, info.minor);
+        }
+        else
+        {
+            info.api = ApiKind::OpenGLES;
+            metagl::glGetIntegerv(metagl::GetParameter::MajorVersion, &info.major);
+            metagl::glGetIntegerv(metagl::GetParameter::MinorVersion, &info.minor);
+            if (info.major == 0)
+                parse_version(caps.version_string.c_str(), info.major, info.minor);
+        }
+#endif
+
+        // GLES version flags
+        if (info.major >= 2)                               { caps.gles20 = true; info.gles2  = true; }
+        if (info.major >= 3)                               { caps.gles30 = true; info.gles3  = true; }
+        if (info.major == 3 && info.minor >= 1)            { caps.gles31 = true; info.gles31 = true; }
+        if (info.major == 3 && info.minor >= 2)            { caps.gles32 = true; info.gles32 = true; }
+
+        // Extensions
+        if (info.major >= 3)
+        {
+            int num = 0;
+            metagl::glGetIntegerv(metagl::GetParameter::NumExtensions, &num);
+            for (int i = 0; i < num; ++i)
+            {
+                const GLubyte* ext = metagl::glGetStringi(
+                    metagl::StringName::Extensions, static_cast<GLuint>(i));
+                if (ext) caps.extensions.push_back(reinterpret_cast<const char*>(ext));
+            }
+        }
+        else
+        {
+            const GLubyte* raw = metagl::glGetString(metagl::StringName::Extensions);
+            if (raw)
+            {
+                std::string s(reinterpret_cast<const char*>(raw));
+                std::string::size_type pos = 0;
+                while ((pos = s.find(' ')) != std::string::npos)
+                {
+                    std::string tok = s.substr(0, pos);
+                    if (!tok.empty()) caps.extensions.push_back(std::move(tok));
+                    s.erase(0, pos + 1);
+                }
+                if (!s.empty()) caps.extensions.push_back(std::move(s));
+            }
+        }
+
+        info.generation = g_context_info.generation + 1;
+        info.status     = ContextStatus::Current;
+
+        g_capabilities = std::move(caps);
+        g_context_info = std::move(info);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+namespace metagl
+{
+    ContextInfo GetContextInfo() noexcept
+    {
+        return detail::g_context_info;
+    }
+
+    std::uint64_t GetContextGeneration() noexcept
+    {
+        return detail::g_context_info.generation;
+    }
+
+    ContextStatus GetContextStatus() noexcept
+    {
+        return detail::g_context_info.status;
+    }
+
+    bool IsContextLost() noexcept
+    {
+        return detail::g_context_info.status == ContextStatus::Lost;
+    }
+
+    void MarkContextLost() noexcept
+    {
+        detail::g_context_info.status = ContextStatus::Lost;
+    }
+
+    void MarkContextRestored() noexcept
+    {
+        detail::g_context_info.status = ContextStatus::Restored;
+    }
+
+    void SetContextInfo(ContextInfo info) noexcept
+    {
+        detail::g_context_info = std::move(info);
+    }
+
+    const Capabilities& GetCapabilities() noexcept
+    {
+        return detail::g_capabilities;
+    }
+
+    bool SupportsGLES20() noexcept { return detail::g_capabilities.gles20; }
+    bool SupportsGLES30() noexcept { return detail::g_capabilities.gles30; }
+    bool SupportsGLES31() noexcept { return detail::g_capabilities.gles31; }
+    bool SupportsGLES32() noexcept { return detail::g_capabilities.gles32; }
+    bool SupportsWebGL2() noexcept { return detail::g_capabilities.webgl2; }
+
+    bool HasExtension(std::string_view extensionName) noexcept
+    {
+        const auto& exts = detail::g_capabilities.extensions;
+        return std::any_of(exts.begin(), exts.end(),
+            [&](const std::string& e) { return e == extensionName; });
+    }
+
+    void AddContextListener(ContextListener* listener)
+    {
+        if (!listener) return;
+        detail::g_listeners.push_back(listener);
+    }
+
+    void RemoveContextListener(ContextListener* listener)
+    {
+        auto& v = detail::g_listeners;
+        v.erase(std::remove(v.begin(), v.end(), listener), v.end());
+    }
+
+    void NotifyContextLost()
+    {
+        MarkContextLost();
+        for (auto* l : detail::g_listeners)
+            if (l) l->on_context_lost();
+    }
+
+    void NotifyContextRestored()
+    {
+        MarkContextRestored();
+        for (auto* l : detail::g_listeners)
+            if (l) l->on_context_restored();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Emscripten platform hooks
+// ---------------------------------------------------------------------------
+#ifdef __EMSCRIPTEN__
+#include <emscripten/html5.h>
+
+namespace metagl
+{
+    static EM_BOOL emscripten_context_lost_cb(int, const void*, void*)
+    {
+        NotifyContextLost();
+        return EM_TRUE;
+    }
+
+    static EM_BOOL emscripten_context_restored_cb(int, const void*, void*)
+    {
+        // Caller must invoke LoadCurrentContext() to reload function pointers
+        // before rendering.
+        NotifyContextRestored();
+        return EM_FALSE;
+    }
+
+    bool InstallEmscriptenContextLossCallbacks(const char* canvasSelector)
+    {
+        const char* target = canvasSelector ? canvasSelector : "#canvas";
+        EMSCRIPTEN_RESULT r1 = emscripten_set_webglcontextlost_callback(
+            target, nullptr, EM_FALSE, emscripten_context_lost_cb);
+        EMSCRIPTEN_RESULT r2 = emscripten_set_webglcontextrestored_callback(
+            target, nullptr, EM_FALSE, emscripten_context_restored_cb);
+        return (r1 == EMSCRIPTEN_RESULT_SUCCESS) && (r2 == EMSCRIPTEN_RESULT_SUCCESS);
+    }
+}
+#endif // __EMSCRIPTEN__

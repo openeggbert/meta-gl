@@ -73,7 +73,22 @@ namespace metagl
         FuncSubtract        = GL_FUNC_SUBTRACT,
         FuncReverseSubtract = GL_FUNC_REVERSE_SUBTRACT,
         Min                 = GL_MIN,  ///< ES 3.0+
-        Max                 = GL_MAX   ///< ES 3.0+
+        Max                 = GL_MAX,  ///< ES 3.0+
+        Multiply            = GL_MULTIPLY,
+        Screen              = GL_SCREEN,
+        Overlay             = GL_OVERLAY,
+        Darken              = GL_DARKEN,
+        Lighten             = GL_LIGHTEN,
+        ColorDodge          = GL_COLORDODGE,
+        ColorBurn           = GL_COLORBURN,
+        HardLight           = GL_HARDLIGHT,
+        SoftLight           = GL_SOFTLIGHT,
+        Difference          = GL_DIFFERENCE,
+        Exclusion           = GL_EXCLUSION,
+        HslHue              = GL_HSL_HUE,
+        HslSaturation       = GL_HSL_SATURATION,
+        HslColor            = GL_HSL_COLOR,
+        HslLuminosity       = GL_HSL_LUMINOSITY
     };
 
     // -------------------------------------------------------------------------
@@ -1170,6 +1185,7 @@ namespace metagl
     // -------------------------------------------------------------------------
     enum class SyncFlushMask : GLbitfield
     {
+        None     = 0,
         Commands = GL_SYNC_FLUSH_COMMANDS_BIT
     };
 
@@ -1244,6 +1260,7 @@ namespace metagl
     // -------------------------------------------------------------------------
     enum class DebugSource : GLenum
     {
+        DontCare = GL_DONT_CARE,
         Api            = GL_DEBUG_SOURCE_API,
         WindowSystem   = GL_DEBUG_SOURCE_WINDOW_SYSTEM,
         ShaderCompiler = GL_DEBUG_SOURCE_SHADER_COMPILER,
@@ -1257,6 +1274,7 @@ namespace metagl
     // -------------------------------------------------------------------------
     enum class DebugType : GLenum
     {
+        DontCare = GL_DONT_CARE,
         Error               = GL_DEBUG_TYPE_ERROR,
         DeprecatedBehavior  = GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR,
         UndefinedBehavior   = GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR,
@@ -1273,6 +1291,7 @@ namespace metagl
     // -------------------------------------------------------------------------
     enum class DebugSeverity : GLenum
     {
+        DontCare = GL_DONT_CARE,
         High         = GL_DEBUG_SEVERITY_HIGH,
         Medium       = GL_DEBUG_SEVERITY_MEDIUM,
         Low          = GL_DEBUG_SEVERITY_LOW,
@@ -1669,6 +1688,132 @@ namespace metagl
         Color   = GL_COLOR,
         Depth   = GL_DEPTH,
         Stencil = GL_STENCIL
+    };
+
+
+    // -------------------------------------------------------------------------
+    // Additional exact API categories used by generated Functions wrappers.
+    // -------------------------------------------------------------------------
+    enum class DrawBuffer : GLenum
+    {
+        None = GL_NONE,
+        Back = GL_BACK,
+        ColorAttachment0 = GL_COLOR_ATTACHMENT0,
+        ColorAttachment1 = GL_COLOR_ATTACHMENT1,
+        ColorAttachment2 = GL_COLOR_ATTACHMENT2,
+        ColorAttachment3 = GL_COLOR_ATTACHMENT3,
+        ColorAttachment4 = GL_COLOR_ATTACHMENT4,
+        ColorAttachment5 = GL_COLOR_ATTACHMENT5,
+        ColorAttachment6 = GL_COLOR_ATTACHMENT6,
+        ColorAttachment7 = GL_COLOR_ATTACHMENT7,
+        ColorAttachment8 = GL_COLOR_ATTACHMENT8,
+        ColorAttachment9 = GL_COLOR_ATTACHMENT9,
+        ColorAttachment10 = GL_COLOR_ATTACHMENT10,
+        ColorAttachment11 = GL_COLOR_ATTACHMENT11,
+        ColorAttachment12 = GL_COLOR_ATTACHMENT12,
+        ColorAttachment13 = GL_COLOR_ATTACHMENT13,
+        ColorAttachment14 = GL_COLOR_ATTACHMENT14,
+        ColorAttachment15 = GL_COLOR_ATTACHMENT15,
+        ColorAttachment16 = GL_COLOR_ATTACHMENT16,
+        ColorAttachment17 = GL_COLOR_ATTACHMENT17,
+        ColorAttachment18 = GL_COLOR_ATTACHMENT18,
+        ColorAttachment19 = GL_COLOR_ATTACHMENT19,
+        ColorAttachment20 = GL_COLOR_ATTACHMENT20,
+        ColorAttachment21 = GL_COLOR_ATTACHMENT21,
+        ColorAttachment22 = GL_COLOR_ATTACHMENT22,
+        ColorAttachment23 = GL_COLOR_ATTACHMENT23,
+        ColorAttachment24 = GL_COLOR_ATTACHMENT24,
+        ColorAttachment25 = GL_COLOR_ATTACHMENT25,
+        ColorAttachment26 = GL_COLOR_ATTACHMENT26,
+        ColorAttachment27 = GL_COLOR_ATTACHMENT27,
+        ColorAttachment28 = GL_COLOR_ATTACHMENT28,
+        ColorAttachment29 = GL_COLOR_ATTACHMENT29,
+        ColorAttachment30 = GL_COLOR_ATTACHMENT30,
+        ColorAttachment31 = GL_COLOR_ATTACHMENT31
+    };
+
+    enum class ReadBuffer : GLenum
+    {
+        None = GL_NONE,
+        Back = GL_BACK,
+        ColorAttachment0 = GL_COLOR_ATTACHMENT0,
+        ColorAttachment1 = GL_COLOR_ATTACHMENT1,
+        ColorAttachment2 = GL_COLOR_ATTACHMENT2,
+        ColorAttachment3 = GL_COLOR_ATTACHMENT3,
+        ColorAttachment4 = GL_COLOR_ATTACHMENT4,
+        ColorAttachment5 = GL_COLOR_ATTACHMENT5,
+        ColorAttachment6 = GL_COLOR_ATTACHMENT6,
+        ColorAttachment7 = GL_COLOR_ATTACHMENT7,
+        ColorAttachment8 = GL_COLOR_ATTACHMENT8,
+        ColorAttachment9 = GL_COLOR_ATTACHMENT9,
+        ColorAttachment10 = GL_COLOR_ATTACHMENT10,
+        ColorAttachment11 = GL_COLOR_ATTACHMENT11,
+        ColorAttachment12 = GL_COLOR_ATTACHMENT12,
+        ColorAttachment13 = GL_COLOR_ATTACHMENT13,
+        ColorAttachment14 = GL_COLOR_ATTACHMENT14,
+        ColorAttachment15 = GL_COLOR_ATTACHMENT15,
+        ColorAttachment16 = GL_COLOR_ATTACHMENT16,
+        ColorAttachment17 = GL_COLOR_ATTACHMENT17,
+        ColorAttachment18 = GL_COLOR_ATTACHMENT18,
+        ColorAttachment19 = GL_COLOR_ATTACHMENT19,
+        ColorAttachment20 = GL_COLOR_ATTACHMENT20,
+        ColorAttachment21 = GL_COLOR_ATTACHMENT21,
+        ColorAttachment22 = GL_COLOR_ATTACHMENT22,
+        ColorAttachment23 = GL_COLOR_ATTACHMENT23,
+        ColorAttachment24 = GL_COLOR_ATTACHMENT24,
+        ColorAttachment25 = GL_COLOR_ATTACHMENT25,
+        ColorAttachment26 = GL_COLOR_ATTACHMENT26,
+        ColorAttachment27 = GL_COLOR_ATTACHMENT27,
+        ColorAttachment28 = GL_COLOR_ATTACHMENT28,
+        ColorAttachment29 = GL_COLOR_ATTACHMENT29,
+        ColorAttachment30 = GL_COLOR_ATTACHMENT30,
+        ColorAttachment31 = GL_COLOR_ATTACHMENT31
+    };
+
+    // Binary formats are implementation-specific numeric values reported by the driver.
+    enum class ShaderBinaryFormat : GLenum {};
+    enum class ProgramBinaryFormat : GLenum {};
+
+    enum class GetPointerParameter : GLenum
+    {
+        DebugCallbackFunction = GL_DEBUG_CALLBACK_FUNCTION,
+        DebugCallbackUserParam = GL_DEBUG_CALLBACK_USER_PARAM
+    };
+
+    enum class MultisampleParameter : GLenum
+    {
+        SamplePosition = GL_SAMPLE_POSITION
+    };
+
+    enum class InternalFormatTarget : GLenum
+    {
+        Renderbuffer = GL_RENDERBUFFER,
+        Texture2DMultisample = GL_TEXTURE_2D_MULTISAMPLE,
+        Texture2DMultisampleArray = GL_TEXTURE_2D_MULTISAMPLE_ARRAY
+    };
+
+    enum class InternalFormatParameter : GLenum
+    {
+        Samples = GL_SAMPLES,
+        NumSampleCounts = GL_NUM_SAMPLE_COUNTS
+    };
+
+    enum class ProgramPipelineParameter : GLenum
+    {
+        ActiveProgram = GL_ACTIVE_PROGRAM,
+        ValidateStatus = GL_VALIDATE_STATUS,
+        InfoLogLength = GL_INFO_LOG_LENGTH,
+        VertexShader = GL_VERTEX_SHADER,
+        FragmentShader = GL_FRAGMENT_SHADER,
+        GeometryShader = GL_GEOMETRY_SHADER,
+        TessControlShader = GL_TESS_CONTROL_SHADER,
+        TessEvaluationShader = GL_TESS_EVALUATION_SHADER,
+        ComputeShader = GL_COMPUTE_SHADER
+    };
+
+    enum class SyncFlag : GLbitfield
+    {
+        None = 0
     };
 
 } // namespace metagl

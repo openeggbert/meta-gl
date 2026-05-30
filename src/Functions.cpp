@@ -1,4 +1,5 @@
 #include "metagl/metagl.hpp"
+#include "metagl/Debug.hpp"
 
 #include <string>
 #include <string_view>
@@ -1330,240 +1331,282 @@ namespace metagl
     void glEnable(Capability cap)
     {
         detail::g_gl.Enable(detail::to_gl_enum(cap));
+        METAGL_DEBUG_LOG_VOID("glEnable", cap);
     }
 
     // #2
     void glDisable(Capability cap)
     {
         detail::g_gl.Disable(detail::to_gl_enum(cap));
+        METAGL_DEBUG_LOG_VOID("glDisable", cap);
     }
 
     // #3
     void glEnablei(Capability target, GLuint index)
     {
         detail::g_gl.Enablei(detail::to_gl_enum(target), index);
+        METAGL_DEBUG_LOG_VOID("glEnablei", target, index);
     }
 
     // #4
     void glDisablei(Capability target, GLuint index)
     {
         detail::g_gl.Disablei(detail::to_gl_enum(target), index);
+        METAGL_DEBUG_LOG_VOID("glDisablei", target, index);
     }
 
     // #5
     GLboolean glIsEnabled(Capability cap)
     {
-        return detail::g_gl.IsEnabled(detail::to_gl_enum(cap));
+        const auto _r = detail::g_gl.IsEnabled(detail::to_gl_enum(cap));
+        METAGL_DEBUG_LOG("glIsEnabled", _r, cap);
+        return _r;
     }
 
     // #6
     GLboolean glIsEnabledi(Capability target, GLuint index)
     {
-        return detail::g_gl.IsEnabledi(detail::to_gl_enum(target), index);
+        const auto _r = detail::g_gl.IsEnabledi(detail::to_gl_enum(target), index);
+        METAGL_DEBUG_LOG("glIsEnabledi", _r, target, index);
+        return _r;
     }
 
     // #7
     void glBlendFunc(BlendFactor sfactor, BlendFactor dfactor)
     {
         detail::g_gl.BlendFunc(detail::to_gl_enum(sfactor), detail::to_gl_enum(dfactor));
+        METAGL_DEBUG_LOG_VOID("glBlendFunc", sfactor, dfactor);
     }
 
     // #8
     void glBlendFuncSeparate(BlendFactor sfactorRGB, BlendFactor dfactorRGB, BlendFactor sfactorAlpha, BlendFactor dfactorAlpha)
     {
         detail::g_gl.BlendFuncSeparate(detail::to_gl_enum(sfactorRGB), detail::to_gl_enum(dfactorRGB), detail::to_gl_enum(sfactorAlpha), detail::to_gl_enum(dfactorAlpha));
+        METAGL_DEBUG_LOG_VOID("glBlendFuncSeparate", sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha);
     }
 
     // #9
     void glBlendFunci(GLuint buf, BlendFactor src, BlendFactor dst)
     {
         detail::g_gl.BlendFunci(buf, detail::to_gl_enum(src), detail::to_gl_enum(dst));
+        METAGL_DEBUG_LOG_VOID("glBlendFunci", buf, src, dst);
     }
 
     // #10
     void glBlendFuncSeparatei(GLuint buf, BlendFactor srcRGB, BlendFactor dstRGB, BlendFactor srcAlpha, BlendFactor dstAlpha)
     {
         detail::g_gl.BlendFuncSeparatei(buf, detail::to_gl_enum(srcRGB), detail::to_gl_enum(dstRGB), detail::to_gl_enum(srcAlpha), detail::to_gl_enum(dstAlpha));
+        METAGL_DEBUG_LOG_VOID("glBlendFuncSeparatei", buf, srcRGB, dstRGB, srcAlpha, dstAlpha);
     }
 
     // #11
     void glBlendEquation(BlendEquation mode)
     {
         detail::g_gl.BlendEquation(detail::to_gl_enum(mode));
+        METAGL_DEBUG_LOG_VOID("glBlendEquation", mode);
     }
 
     // #12
     void glBlendEquationSeparate(BlendEquation modeRGB, BlendEquation modeAlpha)
     {
         detail::g_gl.BlendEquationSeparate(detail::to_gl_enum(modeRGB), detail::to_gl_enum(modeAlpha));
+        METAGL_DEBUG_LOG_VOID("glBlendEquationSeparate", modeRGB, modeAlpha);
     }
 
     // #13
     void glBlendEquationi(GLuint buf, BlendEquation mode)
     {
         detail::g_gl.BlendEquationi(buf, detail::to_gl_enum(mode));
+        METAGL_DEBUG_LOG_VOID("glBlendEquationi", buf, mode);
     }
 
     // #14
     void glBlendEquationSeparatei(GLuint buf, BlendEquation modeRGB, BlendEquation modeAlpha)
     {
         detail::g_gl.BlendEquationSeparatei(buf, detail::to_gl_enum(modeRGB), detail::to_gl_enum(modeAlpha));
+        METAGL_DEBUG_LOG_VOID("glBlendEquationSeparatei", buf, modeRGB, modeAlpha);
     }
 
     // #15
     void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
     {
         detail::g_gl.BlendColor(red, green, blue, alpha);
+        METAGL_DEBUG_LOG_VOID("glBlendColor", red, green, blue, alpha);
     }
 
     // #16
     void glBlendBarrier(void)
     {
         detail::g_gl.BlendBarrier();
+        METAGL_DEBUG_LOG_VOID("glBlendBarrier");
     }
 
     // #17
     void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
     {
         detail::g_gl.ColorMask(red, green, blue, alpha);
+        METAGL_DEBUG_LOG_VOID("glColorMask", red, green, blue, alpha);
     }
 
     // #18
     void glColorMaski(GLuint index, GLboolean r, GLboolean g, GLboolean b, GLboolean a)
     {
         detail::g_gl.ColorMaski(index, r, g, b, a);
+        METAGL_DEBUG_LOG_VOID("glColorMaski", index, r, g, b, a);
     }
 
     // #19
     void glDepthFunc(CompareFunc func)
     {
         detail::g_gl.DepthFunc(detail::to_gl_enum(func));
+        METAGL_DEBUG_LOG_VOID("glDepthFunc", func);
     }
 
     // #20
     void glDepthMask(GLboolean flag)
     {
         detail::g_gl.DepthMask(flag);
+        METAGL_DEBUG_LOG_VOID("glDepthMask", flag);
     }
 
     // #21
     void glDepthRangef(GLfloat n, GLfloat f)
     {
         detail::g_gl.DepthRangef(n, f);
+        METAGL_DEBUG_LOG_VOID("glDepthRangef", n, f);
     }
 
     // #22
     void glStencilFunc(CompareFunc func, GLint ref, GLuint mask)
     {
         detail::g_gl.StencilFunc(detail::to_gl_enum(func), ref, mask);
+        METAGL_DEBUG_LOG_VOID("glStencilFunc", func, ref, mask);
     }
 
     // #23
     void glStencilFuncSeparate(CullFace face, CompareFunc func, GLint ref, GLuint mask)
     {
         detail::g_gl.StencilFuncSeparate(detail::to_gl_enum(face), detail::to_gl_enum(func), ref, mask);
+        METAGL_DEBUG_LOG_VOID("glStencilFuncSeparate", face, func, ref, mask);
     }
 
     // #24
     void glStencilOp(StencilOp fail, StencilOp zfail, StencilOp zpass)
     {
         detail::g_gl.StencilOp(detail::to_gl_enum(fail), detail::to_gl_enum(zfail), detail::to_gl_enum(zpass));
+        METAGL_DEBUG_LOG_VOID("glStencilOp", fail, zfail, zpass);
     }
 
     // #25
     void glStencilOpSeparate(CullFace face, StencilOp sfail, StencilOp dpfail, StencilOp dppass)
     {
         detail::g_gl.StencilOpSeparate(detail::to_gl_enum(face), detail::to_gl_enum(sfail), detail::to_gl_enum(dpfail), detail::to_gl_enum(dppass));
+        METAGL_DEBUG_LOG_VOID("glStencilOpSeparate", face, sfail, dpfail, dppass);
     }
 
     // #26
     void glStencilMask(GLuint mask)
     {
         detail::g_gl.StencilMask(mask);
+        METAGL_DEBUG_LOG_VOID("glStencilMask", mask);
     }
 
     // #27
     void glStencilMaskSeparate(CullFace face, GLuint mask)
     {
         detail::g_gl.StencilMaskSeparate(detail::to_gl_enum(face), mask);
+        METAGL_DEBUG_LOG_VOID("glStencilMaskSeparate", face, mask);
     }
 
     // #28
     void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
     {
         detail::g_gl.Scissor(x, y, width, height);
+        METAGL_DEBUG_LOG_VOID("glScissor", x, y, width, height);
     }
 
     // #29
     void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
     {
         detail::g_gl.Viewport(x, y, width, height);
+        METAGL_DEBUG_LOG_VOID("glViewport", x, y, width, height);
     }
 
     // #30
     void glCullFace(CullFace mode)
     {
         detail::g_gl.CullFace(detail::to_gl_enum(mode));
+        METAGL_DEBUG_LOG_VOID("glCullFace", mode);
     }
 
     // #31
     void glFrontFace(FrontFace mode)
     {
         detail::g_gl.FrontFace(detail::to_gl_enum(mode));
+        METAGL_DEBUG_LOG_VOID("glFrontFace", mode);
     }
 
     // #32
     void glLineWidth(GLfloat width)
     {
         detail::g_gl.LineWidth(width);
+        METAGL_DEBUG_LOG_VOID("glLineWidth", width);
     }
 
     // #33
     void glPolygonOffset(GLfloat factor, GLfloat units)
     {
         detail::g_gl.PolygonOffset(factor, units);
+        METAGL_DEBUG_LOG_VOID("glPolygonOffset", factor, units);
     }
 
     // #34
     void glSampleCoverage(GLfloat value, GLboolean invert)
     {
         detail::g_gl.SampleCoverage(value, invert);
+        METAGL_DEBUG_LOG_VOID("glSampleCoverage", value, invert);
     }
 
     // #35
     void glSampleMaski(GLuint maskNumber, GLbitfield mask)
     {
         detail::g_gl.SampleMaski(maskNumber, mask);
+        METAGL_DEBUG_LOG_VOID("glSampleMaski", maskNumber, mask);
     }
 
     // #36
     void glMinSampleShading(GLfloat value)
     {
         detail::g_gl.MinSampleShading(value);
+        METAGL_DEBUG_LOG_VOID("glMinSampleShading", value);
     }
 
     // #37
     void glHint(HintTarget target, HintMode mode)
     {
         detail::g_gl.Hint(detail::to_gl_enum(target), detail::to_gl_enum(mode));
+        METAGL_DEBUG_LOG_VOID("glHint", target, mode);
     }
 
     // #38
     void glPixelStorei(PixelStoreParam pname, GLint param)
     {
         detail::g_gl.PixelStorei(detail::to_gl_enum(pname), param);
+        METAGL_DEBUG_LOG_VOID("glPixelStorei", pname, param);
     }
 
     // #39
     void glFinish(void)
     {
         detail::g_gl.Finish();
+        METAGL_DEBUG_LOG_VOID("glFinish");
     }
 
     // #40
     void glFlush(void)
     {
         detail::g_gl.Flush();
+        METAGL_DEBUG_LOG_VOID("glFlush");
     }
 
     // #41
@@ -1576,108 +1619,128 @@ namespace metagl
     void glGetBooleanv(GetParameter pname, GLboolean * data)
     {
         detail::g_gl.GetBooleanv(detail::to_gl_enum(pname), data);
+        METAGL_DEBUG_LOG_VOID("glGetBooleanv", pname, data);
     }
 
     // #43
     void glGetIntegerv(GetParameter pname, GLint * data)
     {
         detail::g_gl.GetIntegerv(detail::to_gl_enum(pname), data);
+        METAGL_DEBUG_LOG_VOID("glGetIntegerv", pname, data);
     }
 
     // #44
     void glGetFloatv(GetParameter pname, GLfloat * data)
     {
         detail::g_gl.GetFloatv(detail::to_gl_enum(pname), data);
+        METAGL_DEBUG_LOG_VOID("glGetFloatv", pname, data);
     }
 
     // #45
     void glGetInteger64v(GetParameter pname, GLint64 * data)
     {
         detail::g_gl.GetInteger64v(detail::to_gl_enum(pname), data);
+        METAGL_DEBUG_LOG_VOID("glGetInteger64v", pname, data);
     }
 
     // #46
     void glGetIntegeri_v(GetParameter target, GLuint index, GLint * data)
     {
         detail::g_gl.GetIntegeri_v(detail::to_gl_enum(target), index, data);
+        METAGL_DEBUG_LOG_VOID("glGetIntegeri_v", target, index, data);
     }
 
     // #47
     void glGetInteger64i_v(GetParameter target, GLuint index, GLint64 * data)
     {
         detail::g_gl.GetInteger64i_v(detail::to_gl_enum(target), index, data);
+        METAGL_DEBUG_LOG_VOID("glGetInteger64i_v", target, index, data);
     }
 
     // #48
     void glGetBooleani_v(GetParameter target, GLuint index, GLboolean * data)
     {
         detail::g_gl.GetBooleani_v(detail::to_gl_enum(target), index, data);
+        METAGL_DEBUG_LOG_VOID("glGetBooleani_v", target, index, data);
     }
 
     // #49
     const GLubyte* glGetString(StringName name)
     {
-        return detail::g_gl.GetString(detail::to_gl_enum(name));
+        const auto _r = detail::g_gl.GetString(detail::to_gl_enum(name));
+        METAGL_DEBUG_LOG("glGetString", _r, name);
+        return _r;
     }
 
     // #50
     const GLubyte* glGetStringi(StringName name, GLuint index)
     {
-        return detail::g_gl.GetStringi(detail::to_gl_enum(name), index);
+        const auto _r = detail::g_gl.GetStringi(detail::to_gl_enum(name), index);
+        METAGL_DEBUG_LOG("glGetStringi", _r, name, index);
+        return _r;
     }
 
     // #51
     void glGetPointerv(GetPointerParameter pname, void ** params)
     {
         detail::g_gl.GetPointerv(detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetPointerv", pname, params);
     }
 
     // #52
     void glGenBuffers(GLsizei n, GLuint * buffers)
     {
         detail::g_gl.GenBuffers(n, buffers);
+        METAGL_DEBUG_LOG_VOID("glGenBuffers", n, buffers);
     }
 
     // #53
     void glDeleteBuffers(GLsizei n, const GLuint * buffers)
     {
         detail::g_gl.DeleteBuffers(n, buffers);
+        METAGL_DEBUG_LOG_VOID("glDeleteBuffers", n, buffers);
     }
 
     // #54
     void glBindBuffer(BufferTarget target, GLuint buffer)
     {
         detail::g_gl.BindBuffer(detail::to_gl_enum(target), buffer);
+        METAGL_DEBUG_LOG_VOID("glBindBuffer", target, buffer);
     }
 
     // #55
     void glBindBufferBase(BufferTarget target, GLuint index, GLuint buffer)
     {
         detail::g_gl.BindBufferBase(detail::to_gl_enum(target), index, buffer);
+        METAGL_DEBUG_LOG_VOID("glBindBufferBase", target, index, buffer);
     }
 
     // #56
     void glBindBufferRange(BufferTarget target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size)
     {
         detail::g_gl.BindBufferRange(detail::to_gl_enum(target), index, buffer, offset, size);
+        METAGL_DEBUG_LOG_VOID("glBindBufferRange", target, index, buffer, offset, size);
     }
 
     // #57
     void glBufferData(BufferTarget target, GLsizeiptr size, const void * data, BufferUsage usage)
     {
         detail::g_gl.BufferData(detail::to_gl_enum(target), size, data, detail::to_gl_enum(usage));
+        METAGL_DEBUG_LOG_VOID("glBufferData", target, size, data, usage);
     }
 
     // #58
     void glBufferSubData(BufferTarget target, GLintptr offset, GLsizeiptr size, const void * data)
     {
         detail::g_gl.BufferSubData(detail::to_gl_enum(target), offset, size, data);
+        METAGL_DEBUG_LOG_VOID("glBufferSubData", target, offset, size, data);
     }
 
     // #59
     void glCopyBufferSubData(BufferTarget readTarget, BufferTarget writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size)
     {
         detail::g_gl.CopyBufferSubData(detail::to_gl_enum(readTarget), detail::to_gl_enum(writeTarget), readOffset, writeOffset, size);
+        METAGL_DEBUG_LOG_VOID("glCopyBufferSubData", readTarget, writeTarget, readOffset, writeOffset, size);
     }
 
     // #60
@@ -1690,1380 +1753,1626 @@ namespace metagl
     void glFlushMappedBufferRange(BufferTarget target, GLintptr offset, GLsizeiptr length)
     {
         detail::g_gl.FlushMappedBufferRange(detail::to_gl_enum(target), offset, length);
+        METAGL_DEBUG_LOG_VOID("glFlushMappedBufferRange", target, offset, length);
     }
 
     // #62
     GLboolean glUnmapBuffer(BufferTarget target)
     {
-        return detail::g_gl.UnmapBuffer(detail::to_gl_enum(target));
+        const auto _r = detail::g_gl.UnmapBuffer(detail::to_gl_enum(target));
+        METAGL_DEBUG_LOG("glUnmapBuffer", _r, target);
+        return _r;
     }
 
     // #63
     GLboolean glIsBuffer(GLuint buffer)
     {
-        return detail::g_gl.IsBuffer(buffer);
+        const auto _r = detail::g_gl.IsBuffer(buffer);
+        METAGL_DEBUG_LOG("glIsBuffer", _r, buffer);
+        return _r;
     }
 
     // #64
     void glGetBufferParameteriv(BufferTarget target, BufferParameter pname, GLint * params)
     {
         detail::g_gl.GetBufferParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetBufferParameteriv", target, pname, params);
     }
 
     // #65
     void glGetBufferParameteri64v(BufferTarget target, BufferParameter pname, GLint64 * params)
     {
         detail::g_gl.GetBufferParameteri64v(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetBufferParameteri64v", target, pname, params);
     }
 
     // #66
     void glGetBufferPointerv(BufferTarget target, BufferParameter pname, void ** params)
     {
         detail::g_gl.GetBufferPointerv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetBufferPointerv", target, pname, params);
     }
 
     // #67
     void glGenVertexArrays(GLsizei n, GLuint * arrays)
     {
         detail::g_gl.GenVertexArrays(n, arrays);
+        METAGL_DEBUG_LOG_VOID("glGenVertexArrays", n, arrays);
     }
 
     // #68
     void glDeleteVertexArrays(GLsizei n, const GLuint * arrays)
     {
         detail::g_gl.DeleteVertexArrays(n, arrays);
+        METAGL_DEBUG_LOG_VOID("glDeleteVertexArrays", n, arrays);
     }
 
     // #69
     void glBindVertexArray(GLuint array)
     {
         detail::g_gl.BindVertexArray(array);
+        METAGL_DEBUG_LOG_VOID("glBindVertexArray", array);
     }
 
     // #70
     GLboolean glIsVertexArray(GLuint array)
     {
-        return detail::g_gl.IsVertexArray(array);
+        const auto _r = detail::g_gl.IsVertexArray(array);
+        METAGL_DEBUG_LOG("glIsVertexArray", _r, array);
+        return _r;
     }
 
     // #71
     void glEnableVertexAttribArray(GLuint index)
     {
         detail::g_gl.EnableVertexAttribArray(index);
+        METAGL_DEBUG_LOG_VOID("glEnableVertexAttribArray", index);
     }
 
     // #72
     void glDisableVertexAttribArray(GLuint index)
     {
         detail::g_gl.DisableVertexAttribArray(index);
+        METAGL_DEBUG_LOG_VOID("glDisableVertexAttribArray", index);
     }
 
     // #73
     void glVertexAttribPointer(GLuint index, GLint size, DataType type, GLboolean normalized, GLsizei stride, const void * pointer)
     {
         detail::g_gl.VertexAttribPointer(index, size, detail::to_gl_enum(type), normalized, stride, pointer);
+        METAGL_DEBUG_LOG_VOID("glVertexAttribPointer", index, size, type, normalized, stride, pointer);
     }
 
     // #74
     void glVertexAttribIPointer(GLuint index, GLint size, DataType type, GLsizei stride, const void * pointer)
     {
         detail::g_gl.VertexAttribIPointer(index, size, detail::to_gl_enum(type), stride, pointer);
+        METAGL_DEBUG_LOG_VOID("glVertexAttribIPointer", index, size, type, stride, pointer);
     }
 
     // #75
     void glVertexAttribDivisor(GLuint index, GLuint divisor)
     {
         detail::g_gl.VertexAttribDivisor(index, divisor);
+        METAGL_DEBUG_LOG_VOID("glVertexAttribDivisor", index, divisor);
     }
 
     // #76
     void glVertexAttrib1f(GLuint index, GLfloat x)
     {
         detail::g_gl.VertexAttrib1f(index, x);
+        METAGL_DEBUG_LOG_VOID("glVertexAttrib1f", index, x);
     }
 
     // #77
     void glVertexAttrib2f(GLuint index, GLfloat x, GLfloat y)
     {
         detail::g_gl.VertexAttrib2f(index, x, y);
+        METAGL_DEBUG_LOG_VOID("glVertexAttrib2f", index, x, y);
     }
 
     // #78
     void glVertexAttrib3f(GLuint index, GLfloat x, GLfloat y, GLfloat z)
     {
         detail::g_gl.VertexAttrib3f(index, x, y, z);
+        METAGL_DEBUG_LOG_VOID("glVertexAttrib3f", index, x, y, z);
     }
 
     // #79
     void glVertexAttrib4f(GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
     {
         detail::g_gl.VertexAttrib4f(index, x, y, z, w);
+        METAGL_DEBUG_LOG_VOID("glVertexAttrib4f", index, x, y, z, w);
     }
 
     // #80
     void glVertexAttrib1fv(GLuint index, const GLfloat * v)
     {
         detail::g_gl.VertexAttrib1fv(index, v);
+        METAGL_DEBUG_LOG_VOID("glVertexAttrib1fv", index, v);
     }
 
     // #81
     void glVertexAttrib2fv(GLuint index, const GLfloat * v)
     {
         detail::g_gl.VertexAttrib2fv(index, v);
+        METAGL_DEBUG_LOG_VOID("glVertexAttrib2fv", index, v);
     }
 
     // #82
     void glVertexAttrib3fv(GLuint index, const GLfloat * v)
     {
         detail::g_gl.VertexAttrib3fv(index, v);
+        METAGL_DEBUG_LOG_VOID("glVertexAttrib3fv", index, v);
     }
 
     // #83
     void glVertexAttrib4fv(GLuint index, const GLfloat * v)
     {
         detail::g_gl.VertexAttrib4fv(index, v);
+        METAGL_DEBUG_LOG_VOID("glVertexAttrib4fv", index, v);
     }
 
     // #84
     void glVertexAttribI4i(GLuint index, GLint x, GLint y, GLint z, GLint w)
     {
         detail::g_gl.VertexAttribI4i(index, x, y, z, w);
+        METAGL_DEBUG_LOG_VOID("glVertexAttribI4i", index, x, y, z, w);
     }
 
     // #85
     void glVertexAttribI4ui(GLuint index, GLuint x, GLuint y, GLuint z, GLuint w)
     {
         detail::g_gl.VertexAttribI4ui(index, x, y, z, w);
+        METAGL_DEBUG_LOG_VOID("glVertexAttribI4ui", index, x, y, z, w);
     }
 
     // #86
     void glVertexAttribI4iv(GLuint index, const GLint * v)
     {
         detail::g_gl.VertexAttribI4iv(index, v);
+        METAGL_DEBUG_LOG_VOID("glVertexAttribI4iv", index, v);
     }
 
     // #87
     void glVertexAttribI4uiv(GLuint index, const GLuint * v)
     {
         detail::g_gl.VertexAttribI4uiv(index, v);
+        METAGL_DEBUG_LOG_VOID("glVertexAttribI4uiv", index, v);
     }
 
     // #88
     void glGetVertexAttribfv(GLuint index, VertexAttribParameter pname, GLfloat * params)
     {
         detail::g_gl.GetVertexAttribfv(index, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetVertexAttribfv", index, pname, params);
     }
 
     // #89
     void glGetVertexAttribiv(GLuint index, VertexAttribParameter pname, GLint * params)
     {
         detail::g_gl.GetVertexAttribiv(index, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetVertexAttribiv", index, pname, params);
     }
 
     // #90
     void glGetVertexAttribIiv(GLuint index, VertexAttribParameter pname, GLint * params)
     {
         detail::g_gl.GetVertexAttribIiv(index, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetVertexAttribIiv", index, pname, params);
     }
 
     // #91
     void glGetVertexAttribIuiv(GLuint index, VertexAttribParameter pname, GLuint * params)
     {
         detail::g_gl.GetVertexAttribIuiv(index, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetVertexAttribIuiv", index, pname, params);
     }
 
     // #92
     void glGetVertexAttribPointerv(GLuint index, VertexAttribParameter pname, void ** pointer)
     {
         detail::g_gl.GetVertexAttribPointerv(index, detail::to_gl_enum(pname), pointer);
+        METAGL_DEBUG_LOG_VOID("glGetVertexAttribPointerv", index, pname, pointer);
     }
 
     // #93
     void glVertexAttribFormat(GLuint attribindex, GLint size, DataType type, GLboolean normalized, GLuint relativeoffset)
     {
         detail::g_gl.VertexAttribFormat(attribindex, size, detail::to_gl_enum(type), normalized, relativeoffset);
+        METAGL_DEBUG_LOG_VOID("glVertexAttribFormat", attribindex, size, type, normalized, relativeoffset);
     }
 
     // #94
     void glVertexAttribIFormat(GLuint attribindex, GLint size, DataType type, GLuint relativeoffset)
     {
         detail::g_gl.VertexAttribIFormat(attribindex, size, detail::to_gl_enum(type), relativeoffset);
+        METAGL_DEBUG_LOG_VOID("glVertexAttribIFormat", attribindex, size, type, relativeoffset);
     }
 
     // #95
     void glVertexAttribBinding(GLuint attribindex, GLuint bindingindex)
     {
         detail::g_gl.VertexAttribBinding(attribindex, bindingindex);
+        METAGL_DEBUG_LOG_VOID("glVertexAttribBinding", attribindex, bindingindex);
     }
 
     // #96
     void glBindVertexBuffer(GLuint bindingindex, GLuint buffer, GLintptr offset, GLsizei stride)
     {
         detail::g_gl.BindVertexBuffer(bindingindex, buffer, offset, stride);
+        METAGL_DEBUG_LOG_VOID("glBindVertexBuffer", bindingindex, buffer, offset, stride);
     }
 
     // #97
     void glVertexBindingDivisor(GLuint bindingindex, GLuint divisor)
     {
         detail::g_gl.VertexBindingDivisor(bindingindex, divisor);
+        METAGL_DEBUG_LOG_VOID("glVertexBindingDivisor", bindingindex, divisor);
     }
 
     // #98
     void glDrawArrays(PrimitiveType mode, GLint first, GLsizei count)
     {
         detail::g_gl.DrawArrays(detail::to_gl_enum(mode), first, count);
+        METAGL_DEBUG_LOG_VOID("glDrawArrays", mode, first, count);
     }
 
     // #99
     void glDrawArraysInstanced(PrimitiveType mode, GLint first, GLsizei count, GLsizei instancecount)
     {
         detail::g_gl.DrawArraysInstanced(detail::to_gl_enum(mode), first, count, instancecount);
+        METAGL_DEBUG_LOG_VOID("glDrawArraysInstanced", mode, first, count, instancecount);
     }
 
     // #100
     void glDrawArraysIndirect(PrimitiveType mode, const void * indirect)
     {
         detail::g_gl.DrawArraysIndirect(detail::to_gl_enum(mode), indirect);
+        METAGL_DEBUG_LOG_VOID("glDrawArraysIndirect", mode, indirect);
     }
 
     // #101
     void glDrawElements(PrimitiveType mode, GLsizei count, DataType type, const void * indices)
     {
         detail::g_gl.DrawElements(detail::to_gl_enum(mode), count, detail::to_gl_enum(type), indices);
+        METAGL_DEBUG_LOG_VOID("glDrawElements", mode, count, type, indices);
     }
 
     // #102
     void glDrawElementsInstanced(PrimitiveType mode, GLsizei count, DataType type, const void * indices, GLsizei instancecount)
     {
         detail::g_gl.DrawElementsInstanced(detail::to_gl_enum(mode), count, detail::to_gl_enum(type), indices, instancecount);
+        METAGL_DEBUG_LOG_VOID("glDrawElementsInstanced", mode, count, type, indices, instancecount);
     }
 
     // #103
     void glDrawRangeElements(PrimitiveType mode, GLuint start, GLuint end, GLsizei count, DataType type, const void * indices)
     {
         detail::g_gl.DrawRangeElements(detail::to_gl_enum(mode), start, end, count, detail::to_gl_enum(type), indices);
+        METAGL_DEBUG_LOG_VOID("glDrawRangeElements", mode, start, end, count, type, indices);
     }
 
     // #104
     void glDrawElementsBaseVertex(PrimitiveType mode, GLsizei count, DataType type, const void * indices, GLint basevertex)
     {
         detail::g_gl.DrawElementsBaseVertex(detail::to_gl_enum(mode), count, detail::to_gl_enum(type), indices, basevertex);
+        METAGL_DEBUG_LOG_VOID("glDrawElementsBaseVertex", mode, count, type, indices, basevertex);
     }
 
     // #105
     void glDrawElementsInstancedBaseVertex(PrimitiveType mode, GLsizei count, DataType type, const void * indices, GLsizei instancecount, GLint basevertex)
     {
         detail::g_gl.DrawElementsInstancedBaseVertex(detail::to_gl_enum(mode), count, detail::to_gl_enum(type), indices, instancecount, basevertex);
+        METAGL_DEBUG_LOG_VOID("glDrawElementsInstancedBaseVertex", mode, count, type, indices, instancecount, basevertex);
     }
 
     // #106
     void glDrawRangeElementsBaseVertex(PrimitiveType mode, GLuint start, GLuint end, GLsizei count, DataType type, const void * indices, GLint basevertex)
     {
         detail::g_gl.DrawRangeElementsBaseVertex(detail::to_gl_enum(mode), start, end, count, detail::to_gl_enum(type), indices, basevertex);
+        METAGL_DEBUG_LOG_VOID("glDrawRangeElementsBaseVertex", mode, start, end, count, type, indices, basevertex);
     }
 
     // #107
     void glDrawElementsIndirect(PrimitiveType mode, DataType type, const void * indirect)
     {
         detail::g_gl.DrawElementsIndirect(detail::to_gl_enum(mode), detail::to_gl_enum(type), indirect);
+        METAGL_DEBUG_LOG_VOID("glDrawElementsIndirect", mode, type, indirect);
     }
 
     // #108
     void glDrawBuffers(GLsizei n, const DrawBuffer * bufs)
     {
         detail::g_gl.DrawBuffers(n, reinterpret_cast<const GLenum *>(bufs));
+        METAGL_DEBUG_LOG_VOID("glDrawBuffers", n, bufs);
     }
 
     // #109
     void glReadBuffer(ReadBuffer src)
     {
         detail::g_gl.ReadBuffer(detail::to_gl_enum(src));
+        METAGL_DEBUG_LOG_VOID("glReadBuffer", src);
     }
 
     // #110
     void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, PixelFormat format, PixelType type, void * pixels)
     {
         detail::g_gl.ReadPixels(x, y, width, height, detail::to_gl_enum(format), detail::to_gl_enum(type), pixels);
+        METAGL_DEBUG_LOG_VOID("glReadPixels", x, y, width, height, format, type, pixels);
     }
 
     // #111
     void glReadnPixels(GLint x, GLint y, GLsizei width, GLsizei height, PixelFormat format, PixelType type, GLsizei bufSize, void * data)
     {
         detail::g_gl.ReadnPixels(x, y, width, height, detail::to_gl_enum(format), detail::to_gl_enum(type), bufSize, data);
+        METAGL_DEBUG_LOG_VOID("glReadnPixels", x, y, width, height, format, type, bufSize, data);
     }
 
     // #112
     void glClear(ClearBufferBit mask)
     {
         detail::g_gl.Clear(detail::to_gl_bitfield(mask));
+        METAGL_DEBUG_LOG_VOID("glClear", mask);
     }
 
     // #113
     void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
     {
         detail::g_gl.ClearColor(red, green, blue, alpha);
+        METAGL_DEBUG_LOG_VOID("glClearColor", red, green, blue, alpha);
     }
 
     // #114
     void glClearDepthf(GLfloat d)
     {
         detail::g_gl.ClearDepthf(d);
+        METAGL_DEBUG_LOG_VOID("glClearDepthf", d);
     }
 
     // #115
     void glClearStencil(GLint s)
     {
         detail::g_gl.ClearStencil(s);
+        METAGL_DEBUG_LOG_VOID("glClearStencil", s);
     }
 
     // #116
     void glClearBufferfv(ClearBuffer buffer, GLint drawbuffer, const GLfloat * value)
     {
         detail::g_gl.ClearBufferfv(detail::to_gl_enum(buffer), drawbuffer, value);
+        METAGL_DEBUG_LOG_VOID("glClearBufferfv", buffer, drawbuffer, value);
     }
 
     // #117
     void glClearBufferiv(ClearBuffer buffer, GLint drawbuffer, const GLint * value)
     {
         detail::g_gl.ClearBufferiv(detail::to_gl_enum(buffer), drawbuffer, value);
+        METAGL_DEBUG_LOG_VOID("glClearBufferiv", buffer, drawbuffer, value);
     }
 
     // #118
     void glClearBufferuiv(ClearBuffer buffer, GLint drawbuffer, const GLuint * value)
     {
         detail::g_gl.ClearBufferuiv(detail::to_gl_enum(buffer), drawbuffer, value);
+        METAGL_DEBUG_LOG_VOID("glClearBufferuiv", buffer, drawbuffer, value);
     }
 
     // #119
     void glClearBufferfi(ClearBuffer buffer, GLint drawbuffer, GLfloat depth, GLint stencil)
     {
         detail::g_gl.ClearBufferfi(detail::to_gl_enum(buffer), drawbuffer, depth, stencil);
+        METAGL_DEBUG_LOG_VOID("glClearBufferfi", buffer, drawbuffer, depth, stencil);
     }
 
     // #120
     GLuint glCreateShader(ShaderType type)
     {
-        return detail::g_gl.CreateShader(detail::to_gl_enum(type));
+        const auto _r = detail::g_gl.CreateShader(detail::to_gl_enum(type));
+        METAGL_DEBUG_LOG("glCreateShader", _r, type);
+        return _r;
     }
 
     // #121
     void glDeleteShader(GLuint shader)
     {
         detail::g_gl.DeleteShader(shader);
+        METAGL_DEBUG_LOG_VOID("glDeleteShader", shader);
     }
 
     // #122
     void glShaderSource(GLuint shader, GLsizei count, const GLchar *const* string, const GLint * length)
     {
         detail::g_gl.ShaderSource(shader, count, string, length);
+        METAGL_DEBUG_LOG_VOID("glShaderSource", shader, count, string, length);
     }
 
     // #123
     void glCompileShader(GLuint shader)
     {
         detail::g_gl.CompileShader(shader);
+        METAGL_DEBUG_LOG_VOID("glCompileShader", shader);
     }
 
     // #124
     void glShaderBinary(GLsizei count, const GLuint * shaders, ShaderBinaryFormat binaryFormat, const void * binary, GLsizei length)
     {
         detail::g_gl.ShaderBinary(count, shaders, detail::to_gl_enum(binaryFormat), binary, length);
+        METAGL_DEBUG_LOG_VOID("glShaderBinary", count, shaders, binaryFormat, binary, length);
     }
 
     // #125
     void glReleaseShaderCompiler(void)
     {
         detail::g_gl.ReleaseShaderCompiler();
+        METAGL_DEBUG_LOG_VOID("glReleaseShaderCompiler");
     }
 
     // #126
     void glGetShaderiv(GLuint shader, ShaderParameter pname, GLint * params)
     {
         detail::g_gl.GetShaderiv(shader, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetShaderiv", shader, pname, params);
     }
 
     // #127
     void glGetShaderInfoLog(GLuint shader, GLsizei bufSize, GLsizei * length, GLchar * infoLog)
     {
         detail::g_gl.GetShaderInfoLog(shader, bufSize, length, infoLog);
+        METAGL_DEBUG_LOG_VOID("glGetShaderInfoLog", shader, bufSize, length, infoLog);
     }
 
     // #128
     void glGetShaderSource(GLuint shader, GLsizei bufSize, GLsizei * length, GLchar * source)
     {
         detail::g_gl.GetShaderSource(shader, bufSize, length, source);
+        METAGL_DEBUG_LOG_VOID("glGetShaderSource", shader, bufSize, length, source);
     }
 
     // #129
     void glGetShaderPrecisionFormat(ShaderType shadertype, PrecisionType precisiontype, GLint * range, GLint * precision)
     {
         detail::g_gl.GetShaderPrecisionFormat(detail::to_gl_enum(shadertype), detail::to_gl_enum(precisiontype), range, precision);
+        METAGL_DEBUG_LOG_VOID("glGetShaderPrecisionFormat", shadertype, precisiontype, range, precision);
     }
 
     // #130
     GLboolean glIsShader(GLuint shader)
     {
-        return detail::g_gl.IsShader(shader);
+        const auto _r = detail::g_gl.IsShader(shader);
+        METAGL_DEBUG_LOG("glIsShader", _r, shader);
+        return _r;
     }
 
     // #131
     GLuint glCreateProgram(void)
     {
-        return detail::g_gl.CreateProgram();
+        const auto _r = detail::g_gl.CreateProgram();
+        METAGL_DEBUG_LOG("glCreateProgram", _r);
+        return _r;
     }
 
     // #132
     void glDeleteProgram(GLuint program)
     {
         detail::g_gl.DeleteProgram(program);
+        METAGL_DEBUG_LOG_VOID("glDeleteProgram", program);
     }
 
     // #133
     void glAttachShader(GLuint program, GLuint shader)
     {
         detail::g_gl.AttachShader(program, shader);
+        METAGL_DEBUG_LOG_VOID("glAttachShader", program, shader);
     }
 
     // #134
     void glDetachShader(GLuint program, GLuint shader)
     {
         detail::g_gl.DetachShader(program, shader);
+        METAGL_DEBUG_LOG_VOID("glDetachShader", program, shader);
     }
 
     // #135
     void glLinkProgram(GLuint program)
     {
         detail::g_gl.LinkProgram(program);
+        METAGL_DEBUG_LOG_VOID("glLinkProgram", program);
     }
 
     // #136
     void glUseProgram(GLuint program)
     {
         detail::g_gl.UseProgram(program);
+        METAGL_DEBUG_LOG_VOID("glUseProgram", program);
     }
 
     // #137
     void glValidateProgram(GLuint program)
     {
         detail::g_gl.ValidateProgram(program);
+        METAGL_DEBUG_LOG_VOID("glValidateProgram", program);
     }
 
     // #138
     void glGetProgramiv(GLuint program, ProgramParameter pname, GLint * params)
     {
         detail::g_gl.GetProgramiv(program, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetProgramiv", program, pname, params);
     }
 
     // #139
     void glGetProgramInfoLog(GLuint program, GLsizei bufSize, GLsizei * length, GLchar * infoLog)
     {
         detail::g_gl.GetProgramInfoLog(program, bufSize, length, infoLog);
+        METAGL_DEBUG_LOG_VOID("glGetProgramInfoLog", program, bufSize, length, infoLog);
     }
 
     // #140
     GLboolean glIsProgram(GLuint program)
     {
-        return detail::g_gl.IsProgram(program);
+        const auto _r = detail::g_gl.IsProgram(program);
+        METAGL_DEBUG_LOG("glIsProgram", _r, program);
+        return _r;
     }
 
     // #141
     void glGetAttachedShaders(GLuint program, GLsizei maxCount, GLsizei * count, GLuint * shaders)
     {
         detail::g_gl.GetAttachedShaders(program, maxCount, count, shaders);
+        METAGL_DEBUG_LOG_VOID("glGetAttachedShaders", program, maxCount, count, shaders);
     }
 
     // #142
     void glBindAttribLocation(GLuint program, GLuint index, const GLchar * name)
     {
         detail::g_gl.BindAttribLocation(program, index, name);
+        METAGL_DEBUG_LOG_VOID("glBindAttribLocation", program, index, name);
     }
 
     // #143
     GLint glGetAttribLocation(GLuint program, const GLchar * name)
     {
-        return detail::g_gl.GetAttribLocation(program, name);
+        const auto _r = detail::g_gl.GetAttribLocation(program, name);
+        METAGL_DEBUG_LOG("glGetAttribLocation", _r, program, name);
+        return _r;
     }
 
     // #144
     void glGetActiveAttrib(GLuint program, GLuint index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name)
     {
         detail::g_gl.GetActiveAttrib(program, index, bufSize, length, size, reinterpret_cast<GLenum *>(type), name);
+        METAGL_DEBUG_LOG_VOID("glGetActiveAttrib", program, index, bufSize, length, size, type, name);
     }
 
     // #145
     void glGetProgramBinary(GLuint program, GLsizei bufSize, GLsizei * length, ProgramBinaryFormat * binaryFormat, void * binary)
     {
         detail::g_gl.GetProgramBinary(program, bufSize, length, reinterpret_cast<GLenum *>(binaryFormat), binary);
+        METAGL_DEBUG_LOG_VOID("glGetProgramBinary", program, bufSize, length, binaryFormat, binary);
     }
 
     // #146
     void glProgramBinary(GLuint program, ProgramBinaryFormat binaryFormat, const void * binary, GLsizei length)
     {
         detail::g_gl.ProgramBinary(program, detail::to_gl_enum(binaryFormat), binary, length);
+        METAGL_DEBUG_LOG_VOID("glProgramBinary", program, binaryFormat, binary, length);
     }
 
     // #147
     void glProgramParameteri(GLuint program, ProgramParameter pname, GLint value)
     {
         detail::g_gl.ProgramParameteri(program, detail::to_gl_enum(pname), value);
+        METAGL_DEBUG_LOG_VOID("glProgramParameteri", program, pname, value);
     }
 
     // #148
     GLint glGetFragDataLocation(GLuint program, const GLchar * name)
     {
-        return detail::g_gl.GetFragDataLocation(program, name);
+        const auto _r = detail::g_gl.GetFragDataLocation(program, name);
+        METAGL_DEBUG_LOG("glGetFragDataLocation", _r, program, name);
+        return _r;
     }
 
     // #149
     void glGetProgramInterfaceiv(GLuint program, ProgramInterface programInterface, ProgramInterfaceParameter pname, GLint * params)
     {
         detail::g_gl.GetProgramInterfaceiv(program, detail::to_gl_enum(programInterface), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetProgramInterfaceiv", program, programInterface, pname, params);
     }
 
     // #150
     GLuint glGetProgramResourceIndex(GLuint program, ProgramInterface programInterface, const GLchar * name)
     {
-        return detail::g_gl.GetProgramResourceIndex(program, detail::to_gl_enum(programInterface), name);
+        const auto _r = detail::g_gl.GetProgramResourceIndex(program, detail::to_gl_enum(programInterface), name);
+        METAGL_DEBUG_LOG("glGetProgramResourceIndex", _r, program, programInterface, name);
+        return _r;
     }
 
     // #151
     void glGetProgramResourceName(GLuint program, ProgramInterface programInterface, GLuint index, GLsizei bufSize, GLsizei * length, GLchar * name)
     {
         detail::g_gl.GetProgramResourceName(program, detail::to_gl_enum(programInterface), index, bufSize, length, name);
+        METAGL_DEBUG_LOG_VOID("glGetProgramResourceName", program, programInterface, index, bufSize, length, name);
     }
 
     // #152
     void glGetProgramResourceiv(GLuint program, ProgramInterface programInterface, GLuint index, GLsizei propCount, const ProgramResourceProperty * props, GLsizei count, GLsizei * length, GLint * params)
     {
         detail::g_gl.GetProgramResourceiv(program, detail::to_gl_enum(programInterface), index, propCount, reinterpret_cast<const GLenum *>(props), count, length, params);
+        METAGL_DEBUG_LOG_VOID("glGetProgramResourceiv", program, programInterface, index, propCount, props, count, length, params);
     }
 
     // #153
     GLint glGetProgramResourceLocation(GLuint program, ProgramInterface programInterface, const GLchar * name)
     {
-        return detail::g_gl.GetProgramResourceLocation(program, detail::to_gl_enum(programInterface), name);
+        const auto _r = detail::g_gl.GetProgramResourceLocation(program, detail::to_gl_enum(programInterface), name);
+        METAGL_DEBUG_LOG("glGetProgramResourceLocation", _r, program, programInterface, name);
+        return _r;
     }
 
     // #154
     GLint glGetUniformLocation(GLuint program, const GLchar * name)
     {
-        return detail::g_gl.GetUniformLocation(program, name);
+        const auto _r = detail::g_gl.GetUniformLocation(program, name);
+        METAGL_DEBUG_LOG("glGetUniformLocation", _r, program, name);
+        return _r;
     }
 
     // #155
     void glGetActiveUniform(GLuint program, GLuint index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name)
     {
         detail::g_gl.GetActiveUniform(program, index, bufSize, length, size, reinterpret_cast<GLenum *>(type), name);
+        METAGL_DEBUG_LOG_VOID("glGetActiveUniform", program, index, bufSize, length, size, type, name);
     }
 
     // #156
     void glGetActiveUniformsiv(GLuint program, GLsizei uniformCount, const GLuint * uniformIndices, UniformParameter pname, GLint * params)
     {
         detail::g_gl.GetActiveUniformsiv(program, uniformCount, uniformIndices, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetActiveUniformsiv", program, uniformCount, uniformIndices, pname, params);
     }
 
     // #157
     void glGetUniformIndices(GLuint program, GLsizei uniformCount, const GLchar *const* uniformNames, GLuint * uniformIndices)
     {
         detail::g_gl.GetUniformIndices(program, uniformCount, uniformNames, uniformIndices);
+        METAGL_DEBUG_LOG_VOID("glGetUniformIndices", program, uniformCount, uniformNames, uniformIndices);
     }
 
     // #158
     GLuint glGetUniformBlockIndex(GLuint program, const GLchar * uniformBlockName)
     {
-        return detail::g_gl.GetUniformBlockIndex(program, uniformBlockName);
+        const auto _r = detail::g_gl.GetUniformBlockIndex(program, uniformBlockName);
+        METAGL_DEBUG_LOG("glGetUniformBlockIndex", _r, program, uniformBlockName);
+        return _r;
     }
 
     // #159
     void glGetActiveUniformBlockiv(GLuint program, GLuint uniformBlockIndex, UniformBlockParameter pname, GLint * params)
     {
         detail::g_gl.GetActiveUniformBlockiv(program, uniformBlockIndex, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetActiveUniformBlockiv", program, uniformBlockIndex, pname, params);
     }
 
     // #160
     void glGetActiveUniformBlockName(GLuint program, GLuint uniformBlockIndex, GLsizei bufSize, GLsizei * length, GLchar * uniformBlockName)
     {
         detail::g_gl.GetActiveUniformBlockName(program, uniformBlockIndex, bufSize, length, uniformBlockName);
+        METAGL_DEBUG_LOG_VOID("glGetActiveUniformBlockName", program, uniformBlockIndex, bufSize, length, uniformBlockName);
     }
 
     // #161
     void glUniformBlockBinding(GLuint program, GLuint uniformBlockIndex, GLuint uniformBlockBinding)
     {
         detail::g_gl.UniformBlockBinding(program, uniformBlockIndex, uniformBlockBinding);
+        METAGL_DEBUG_LOG_VOID("glUniformBlockBinding", program, uniformBlockIndex, uniformBlockBinding);
     }
 
     // #162
     void glUniform1f(GLint location, GLfloat v0)
     {
         detail::g_gl.Uniform1f(location, v0);
+        METAGL_DEBUG_LOG_VOID("glUniform1f", location, v0);
     }
 
     // #163
     void glUniform2f(GLint location, GLfloat v0, GLfloat v1)
     {
         detail::g_gl.Uniform2f(location, v0, v1);
+        METAGL_DEBUG_LOG_VOID("glUniform2f", location, v0, v1);
     }
 
     // #164
     void glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2)
     {
         detail::g_gl.Uniform3f(location, v0, v1, v2);
+        METAGL_DEBUG_LOG_VOID("glUniform3f", location, v0, v1, v2);
     }
 
     // #165
     void glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
     {
         detail::g_gl.Uniform4f(location, v0, v1, v2, v3);
+        METAGL_DEBUG_LOG_VOID("glUniform4f", location, v0, v1, v2, v3);
     }
 
     // #166
     void glUniform1fv(GLint location, GLsizei count, const GLfloat * value)
     {
         detail::g_gl.Uniform1fv(location, count, value);
+        METAGL_DEBUG_LOG_VOID("glUniform1fv", location, count, value);
     }
 
     // #167
     void glUniform2fv(GLint location, GLsizei count, const GLfloat * value)
     {
         detail::g_gl.Uniform2fv(location, count, value);
+        METAGL_DEBUG_LOG_VOID("glUniform2fv", location, count, value);
     }
 
     // #168
     void glUniform3fv(GLint location, GLsizei count, const GLfloat * value)
     {
         detail::g_gl.Uniform3fv(location, count, value);
+        METAGL_DEBUG_LOG_VOID("glUniform3fv", location, count, value);
     }
 
     // #169
     void glUniform4fv(GLint location, GLsizei count, const GLfloat * value)
     {
         detail::g_gl.Uniform4fv(location, count, value);
+        METAGL_DEBUG_LOG_VOID("glUniform4fv", location, count, value);
     }
 
     // #170
     void glUniform1i(GLint location, GLint v0)
     {
         detail::g_gl.Uniform1i(location, v0);
+        METAGL_DEBUG_LOG_VOID("glUniform1i", location, v0);
     }
 
     // #171
     void glUniform2i(GLint location, GLint v0, GLint v1)
     {
         detail::g_gl.Uniform2i(location, v0, v1);
+        METAGL_DEBUG_LOG_VOID("glUniform2i", location, v0, v1);
     }
 
     // #172
     void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2)
     {
         detail::g_gl.Uniform3i(location, v0, v1, v2);
+        METAGL_DEBUG_LOG_VOID("glUniform3i", location, v0, v1, v2);
     }
 
     // #173
     void glUniform4i(GLint location, GLint v0, GLint v1, GLint v2, GLint v3)
     {
         detail::g_gl.Uniform4i(location, v0, v1, v2, v3);
+        METAGL_DEBUG_LOG_VOID("glUniform4i", location, v0, v1, v2, v3);
     }
 
     // #174
     void glUniform1iv(GLint location, GLsizei count, const GLint * value)
     {
         detail::g_gl.Uniform1iv(location, count, value);
+        METAGL_DEBUG_LOG_VOID("glUniform1iv", location, count, value);
     }
 
     // #175
     void glUniform2iv(GLint location, GLsizei count, const GLint * value)
     {
         detail::g_gl.Uniform2iv(location, count, value);
+        METAGL_DEBUG_LOG_VOID("glUniform2iv", location, count, value);
     }
 
     // #176
     void glUniform3iv(GLint location, GLsizei count, const GLint * value)
     {
         detail::g_gl.Uniform3iv(location, count, value);
+        METAGL_DEBUG_LOG_VOID("glUniform3iv", location, count, value);
     }
 
     // #177
     void glUniform4iv(GLint location, GLsizei count, const GLint * value)
     {
         detail::g_gl.Uniform4iv(location, count, value);
+        METAGL_DEBUG_LOG_VOID("glUniform4iv", location, count, value);
     }
 
     // #178
     void glUniform1ui(GLint location, GLuint v0)
     {
         detail::g_gl.Uniform1ui(location, v0);
+        METAGL_DEBUG_LOG_VOID("glUniform1ui", location, v0);
     }
 
     // #179
     void glUniform2ui(GLint location, GLuint v0, GLuint v1)
     {
         detail::g_gl.Uniform2ui(location, v0, v1);
+        METAGL_DEBUG_LOG_VOID("glUniform2ui", location, v0, v1);
     }
 
     // #180
     void glUniform3ui(GLint location, GLuint v0, GLuint v1, GLuint v2)
     {
         detail::g_gl.Uniform3ui(location, v0, v1, v2);
+        METAGL_DEBUG_LOG_VOID("glUniform3ui", location, v0, v1, v2);
     }
 
     // #181
     void glUniform4ui(GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3)
     {
         detail::g_gl.Uniform4ui(location, v0, v1, v2, v3);
+        METAGL_DEBUG_LOG_VOID("glUniform4ui", location, v0, v1, v2, v3);
     }
 
     // #182
     void glUniform1uiv(GLint location, GLsizei count, const GLuint * value)
     {
         detail::g_gl.Uniform1uiv(location, count, value);
+        METAGL_DEBUG_LOG_VOID("glUniform1uiv", location, count, value);
     }
 
     // #183
     void glUniform2uiv(GLint location, GLsizei count, const GLuint * value)
     {
         detail::g_gl.Uniform2uiv(location, count, value);
+        METAGL_DEBUG_LOG_VOID("glUniform2uiv", location, count, value);
     }
 
     // #184
     void glUniform3uiv(GLint location, GLsizei count, const GLuint * value)
     {
         detail::g_gl.Uniform3uiv(location, count, value);
+        METAGL_DEBUG_LOG_VOID("glUniform3uiv", location, count, value);
     }
 
     // #185
     void glUniform4uiv(GLint location, GLsizei count, const GLuint * value)
     {
         detail::g_gl.Uniform4uiv(location, count, value);
+        METAGL_DEBUG_LOG_VOID("glUniform4uiv", location, count, value);
     }
 
     // #186
     void glUniformMatrix2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.UniformMatrix2fv(location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glUniformMatrix2fv", location, count, transpose, value);
     }
 
     // #187
     void glUniformMatrix3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.UniformMatrix3fv(location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glUniformMatrix3fv", location, count, transpose, value);
     }
 
     // #188
     void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.UniformMatrix4fv(location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glUniformMatrix4fv", location, count, transpose, value);
     }
 
     // #189
     void glUniformMatrix2x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.UniformMatrix2x3fv(location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glUniformMatrix2x3fv", location, count, transpose, value);
     }
 
     // #190
     void glUniformMatrix2x4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.UniformMatrix2x4fv(location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glUniformMatrix2x4fv", location, count, transpose, value);
     }
 
     // #191
     void glUniformMatrix3x2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.UniformMatrix3x2fv(location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glUniformMatrix3x2fv", location, count, transpose, value);
     }
 
     // #192
     void glUniformMatrix3x4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.UniformMatrix3x4fv(location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glUniformMatrix3x4fv", location, count, transpose, value);
     }
 
     // #193
     void glUniformMatrix4x2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.UniformMatrix4x2fv(location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glUniformMatrix4x2fv", location, count, transpose, value);
     }
 
     // #194
     void glUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.UniformMatrix4x3fv(location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glUniformMatrix4x3fv", location, count, transpose, value);
     }
 
     // #195
     void glGetUniformfv(GLuint program, GLint location, GLfloat * params)
     {
         detail::g_gl.GetUniformfv(program, location, params);
+        METAGL_DEBUG_LOG_VOID("glGetUniformfv", program, location, params);
     }
 
     // #196
     void glGetUniformiv(GLuint program, GLint location, GLint * params)
     {
         detail::g_gl.GetUniformiv(program, location, params);
+        METAGL_DEBUG_LOG_VOID("glGetUniformiv", program, location, params);
     }
 
     // #197
     void glGetUniformuiv(GLuint program, GLint location, GLuint * params)
     {
         detail::g_gl.GetUniformuiv(program, location, params);
+        METAGL_DEBUG_LOG_VOID("glGetUniformuiv", program, location, params);
     }
 
     // #198
     void glGetnUniformfv(GLuint program, GLint location, GLsizei bufSize, GLfloat * params)
     {
         detail::g_gl.GetnUniformfv(program, location, bufSize, params);
+        METAGL_DEBUG_LOG_VOID("glGetnUniformfv", program, location, bufSize, params);
     }
 
     // #199
     void glGetnUniformiv(GLuint program, GLint location, GLsizei bufSize, GLint * params)
     {
         detail::g_gl.GetnUniformiv(program, location, bufSize, params);
+        METAGL_DEBUG_LOG_VOID("glGetnUniformiv", program, location, bufSize, params);
     }
 
     // #200
     void glGetnUniformuiv(GLuint program, GLint location, GLsizei bufSize, GLuint * params)
     {
         detail::g_gl.GetnUniformuiv(program, location, bufSize, params);
+        METAGL_DEBUG_LOG_VOID("glGetnUniformuiv", program, location, bufSize, params);
     }
 
     // #201
     void glProgramUniform1f(GLuint program, GLint location, GLfloat v0)
     {
         detail::g_gl.ProgramUniform1f(program, location, v0);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform1f", program, location, v0);
     }
 
     // #202
     void glProgramUniform2f(GLuint program, GLint location, GLfloat v0, GLfloat v1)
     {
         detail::g_gl.ProgramUniform2f(program, location, v0, v1);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform2f", program, location, v0, v1);
     }
 
     // #203
     void glProgramUniform3f(GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2)
     {
         detail::g_gl.ProgramUniform3f(program, location, v0, v1, v2);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform3f", program, location, v0, v1, v2);
     }
 
     // #204
     void glProgramUniform4f(GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
     {
         detail::g_gl.ProgramUniform4f(program, location, v0, v1, v2, v3);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform4f", program, location, v0, v1, v2, v3);
     }
 
     // #205
     void glProgramUniform1fv(GLuint program, GLint location, GLsizei count, const GLfloat * value)
     {
         detail::g_gl.ProgramUniform1fv(program, location, count, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform1fv", program, location, count, value);
     }
 
     // #206
     void glProgramUniform2fv(GLuint program, GLint location, GLsizei count, const GLfloat * value)
     {
         detail::g_gl.ProgramUniform2fv(program, location, count, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform2fv", program, location, count, value);
     }
 
     // #207
     void glProgramUniform3fv(GLuint program, GLint location, GLsizei count, const GLfloat * value)
     {
         detail::g_gl.ProgramUniform3fv(program, location, count, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform3fv", program, location, count, value);
     }
 
     // #208
     void glProgramUniform4fv(GLuint program, GLint location, GLsizei count, const GLfloat * value)
     {
         detail::g_gl.ProgramUniform4fv(program, location, count, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform4fv", program, location, count, value);
     }
 
     // #209
     void glProgramUniform1i(GLuint program, GLint location, GLint v0)
     {
         detail::g_gl.ProgramUniform1i(program, location, v0);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform1i", program, location, v0);
     }
 
     // #210
     void glProgramUniform2i(GLuint program, GLint location, GLint v0, GLint v1)
     {
         detail::g_gl.ProgramUniform2i(program, location, v0, v1);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform2i", program, location, v0, v1);
     }
 
     // #211
     void glProgramUniform3i(GLuint program, GLint location, GLint v0, GLint v1, GLint v2)
     {
         detail::g_gl.ProgramUniform3i(program, location, v0, v1, v2);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform3i", program, location, v0, v1, v2);
     }
 
     // #212
     void glProgramUniform4i(GLuint program, GLint location, GLint v0, GLint v1, GLint v2, GLint v3)
     {
         detail::g_gl.ProgramUniform4i(program, location, v0, v1, v2, v3);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform4i", program, location, v0, v1, v2, v3);
     }
 
     // #213
     void glProgramUniform1iv(GLuint program, GLint location, GLsizei count, const GLint * value)
     {
         detail::g_gl.ProgramUniform1iv(program, location, count, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform1iv", program, location, count, value);
     }
 
     // #214
     void glProgramUniform2iv(GLuint program, GLint location, GLsizei count, const GLint * value)
     {
         detail::g_gl.ProgramUniform2iv(program, location, count, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform2iv", program, location, count, value);
     }
 
     // #215
     void glProgramUniform3iv(GLuint program, GLint location, GLsizei count, const GLint * value)
     {
         detail::g_gl.ProgramUniform3iv(program, location, count, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform3iv", program, location, count, value);
     }
 
     // #216
     void glProgramUniform4iv(GLuint program, GLint location, GLsizei count, const GLint * value)
     {
         detail::g_gl.ProgramUniform4iv(program, location, count, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform4iv", program, location, count, value);
     }
 
     // #217
     void glProgramUniform1ui(GLuint program, GLint location, GLuint v0)
     {
         detail::g_gl.ProgramUniform1ui(program, location, v0);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform1ui", program, location, v0);
     }
 
     // #218
     void glProgramUniform2ui(GLuint program, GLint location, GLuint v0, GLuint v1)
     {
         detail::g_gl.ProgramUniform2ui(program, location, v0, v1);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform2ui", program, location, v0, v1);
     }
 
     // #219
     void glProgramUniform3ui(GLuint program, GLint location, GLuint v0, GLuint v1, GLuint v2)
     {
         detail::g_gl.ProgramUniform3ui(program, location, v0, v1, v2);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform3ui", program, location, v0, v1, v2);
     }
 
     // #220
     void glProgramUniform4ui(GLuint program, GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3)
     {
         detail::g_gl.ProgramUniform4ui(program, location, v0, v1, v2, v3);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform4ui", program, location, v0, v1, v2, v3);
     }
 
     // #221
     void glProgramUniform1uiv(GLuint program, GLint location, GLsizei count, const GLuint * value)
     {
         detail::g_gl.ProgramUniform1uiv(program, location, count, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform1uiv", program, location, count, value);
     }
 
     // #222
     void glProgramUniform2uiv(GLuint program, GLint location, GLsizei count, const GLuint * value)
     {
         detail::g_gl.ProgramUniform2uiv(program, location, count, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform2uiv", program, location, count, value);
     }
 
     // #223
     void glProgramUniform3uiv(GLuint program, GLint location, GLsizei count, const GLuint * value)
     {
         detail::g_gl.ProgramUniform3uiv(program, location, count, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform3uiv", program, location, count, value);
     }
 
     // #224
     void glProgramUniform4uiv(GLuint program, GLint location, GLsizei count, const GLuint * value)
     {
         detail::g_gl.ProgramUniform4uiv(program, location, count, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniform4uiv", program, location, count, value);
     }
 
     // #225
     void glProgramUniformMatrix2fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.ProgramUniformMatrix2fv(program, location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix2fv", program, location, count, transpose, value);
     }
 
     // #226
     void glProgramUniformMatrix3fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.ProgramUniformMatrix3fv(program, location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix3fv", program, location, count, transpose, value);
     }
 
     // #227
     void glProgramUniformMatrix4fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.ProgramUniformMatrix4fv(program, location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix4fv", program, location, count, transpose, value);
     }
 
     // #228
     void glProgramUniformMatrix2x3fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.ProgramUniformMatrix2x3fv(program, location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix2x3fv", program, location, count, transpose, value);
     }
 
     // #229
     void glProgramUniformMatrix2x4fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.ProgramUniformMatrix2x4fv(program, location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix2x4fv", program, location, count, transpose, value);
     }
 
     // #230
     void glProgramUniformMatrix3x2fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.ProgramUniformMatrix3x2fv(program, location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix3x2fv", program, location, count, transpose, value);
     }
 
     // #231
     void glProgramUniformMatrix3x4fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.ProgramUniformMatrix3x4fv(program, location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix3x4fv", program, location, count, transpose, value);
     }
 
     // #232
     void glProgramUniformMatrix4x2fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.ProgramUniformMatrix4x2fv(program, location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix4x2fv", program, location, count, transpose, value);
     }
 
     // #233
     void glProgramUniformMatrix4x3fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
         detail::g_gl.ProgramUniformMatrix4x3fv(program, location, count, transpose, value);
+        METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix4x3fv", program, location, count, transpose, value);
     }
 
     // #234
     void glGenTextures(GLsizei n, GLuint * textures)
     {
         detail::g_gl.GenTextures(n, textures);
+        METAGL_DEBUG_LOG_VOID("glGenTextures", n, textures);
     }
 
     // #235
     void glDeleteTextures(GLsizei n, const GLuint * textures)
     {
         detail::g_gl.DeleteTextures(n, textures);
+        METAGL_DEBUG_LOG_VOID("glDeleteTextures", n, textures);
     }
 
     // #236
     void glBindTexture(TextureTarget target, GLuint texture)
     {
         detail::g_gl.BindTexture(detail::to_gl_enum(target), texture);
+        METAGL_DEBUG_LOG_VOID("glBindTexture", target, texture);
     }
 
     // #237
     void glActiveTexture(TextureUnit texture)
     {
         detail::g_gl.ActiveTexture(detail::to_gl_enum(texture));
+        METAGL_DEBUG_LOG_VOID("glActiveTexture", texture);
     }
 
     // #238
     GLboolean glIsTexture(GLuint texture)
     {
-        return detail::g_gl.IsTexture(texture);
+        const auto _r = detail::g_gl.IsTexture(texture);
+        METAGL_DEBUG_LOG("glIsTexture", _r, texture);
+        return _r;
     }
 
     // #239
     void glTexImage2D(TextureTarget target, GLint level, InternalFormat internalformat, GLsizei width, GLsizei height, GLint border, PixelFormat format, PixelType type, const void * pixels)
     {
         detail::g_gl.TexImage2D(detail::to_gl_enum(target), level, static_cast<GLint>(detail::to_gl_enum(internalformat)), width, height, border, detail::to_gl_enum(format), detail::to_gl_enum(type), pixels);
+        METAGL_DEBUG_LOG_VOID("glTexImage2D", target, level, internalformat, width, height, border, format, type, pixels);
     }
 
     // #240
     void glTexImage3D(TextureTarget target, GLint level, InternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, PixelFormat format, PixelType type, const void * pixels)
     {
         detail::g_gl.TexImage3D(detail::to_gl_enum(target), level, static_cast<GLint>(detail::to_gl_enum(internalformat)), width, height, depth, border, detail::to_gl_enum(format), detail::to_gl_enum(type), pixels);
+        METAGL_DEBUG_LOG_VOID("glTexImage3D", target, level, internalformat, width, height, depth, border, format, type, pixels);
     }
 
     // #241
     void glTexSubImage2D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, PixelFormat format, PixelType type, const void * pixels)
     {
         detail::g_gl.TexSubImage2D(detail::to_gl_enum(target), level, xoffset, yoffset, width, height, detail::to_gl_enum(format), detail::to_gl_enum(type), pixels);
+        METAGL_DEBUG_LOG_VOID("glTexSubImage2D", target, level, xoffset, yoffset, width, height, format, type, pixels);
     }
 
     // #242
     void glTexSubImage3D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, PixelFormat format, PixelType type, const void * pixels)
     {
         detail::g_gl.TexSubImage3D(detail::to_gl_enum(target), level, xoffset, yoffset, zoffset, width, height, depth, detail::to_gl_enum(format), detail::to_gl_enum(type), pixels);
+        METAGL_DEBUG_LOG_VOID("glTexSubImage3D", target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels);
     }
 
     // #243
     void glTexStorage2D(TextureTarget target, GLsizei levels, InternalFormat internalformat, GLsizei width, GLsizei height)
     {
         detail::g_gl.TexStorage2D(detail::to_gl_enum(target), levels, detail::to_gl_enum(internalformat), width, height);
+        METAGL_DEBUG_LOG_VOID("glTexStorage2D", target, levels, internalformat, width, height);
     }
 
     // #244
     void glTexStorage3D(TextureTarget target, GLsizei levels, InternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth)
     {
         detail::g_gl.TexStorage3D(detail::to_gl_enum(target), levels, detail::to_gl_enum(internalformat), width, height, depth);
+        METAGL_DEBUG_LOG_VOID("glTexStorage3D", target, levels, internalformat, width, height, depth);
     }
 
     // #245
     void glTexStorage2DMultisample(TextureTarget target, GLsizei samples, InternalFormat internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations)
     {
         detail::g_gl.TexStorage2DMultisample(detail::to_gl_enum(target), samples, detail::to_gl_enum(internalformat), width, height, fixedsamplelocations);
+        METAGL_DEBUG_LOG_VOID("glTexStorage2DMultisample", target, samples, internalformat, width, height, fixedsamplelocations);
     }
 
     // #246
     void glTexStorage3DMultisample(TextureTarget target, GLsizei samples, InternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLboolean fixedsamplelocations)
     {
         detail::g_gl.TexStorage3DMultisample(detail::to_gl_enum(target), samples, detail::to_gl_enum(internalformat), width, height, depth, fixedsamplelocations);
+        METAGL_DEBUG_LOG_VOID("glTexStorage3DMultisample", target, samples, internalformat, width, height, depth, fixedsamplelocations);
     }
 
     // #247
     void glCompressedTexImage2D(TextureTarget target, GLint level, CompressedInternalFormat internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void * data)
     {
         detail::g_gl.CompressedTexImage2D(detail::to_gl_enum(target), level, detail::to_gl_enum(internalformat), width, height, border, imageSize, data);
+        METAGL_DEBUG_LOG_VOID("glCompressedTexImage2D", target, level, internalformat, width, height, border, imageSize, data);
     }
 
     // #248
     void glCompressedTexImage3D(TextureTarget target, GLint level, CompressedInternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const void * data)
     {
         detail::g_gl.CompressedTexImage3D(detail::to_gl_enum(target), level, detail::to_gl_enum(internalformat), width, height, depth, border, imageSize, data);
+        METAGL_DEBUG_LOG_VOID("glCompressedTexImage3D", target, level, internalformat, width, height, depth, border, imageSize, data);
     }
 
     // #249
     void glCompressedTexSubImage2D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, CompressedInternalFormat format, GLsizei imageSize, const void * data)
     {
         detail::g_gl.CompressedTexSubImage2D(detail::to_gl_enum(target), level, xoffset, yoffset, width, height, detail::to_gl_enum(format), imageSize, data);
+        METAGL_DEBUG_LOG_VOID("glCompressedTexSubImage2D", target, level, xoffset, yoffset, width, height, format, imageSize, data);
     }
 
     // #250
     void glCompressedTexSubImage3D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, CompressedInternalFormat format, GLsizei imageSize, const void * data)
     {
         detail::g_gl.CompressedTexSubImage3D(detail::to_gl_enum(target), level, xoffset, yoffset, zoffset, width, height, depth, detail::to_gl_enum(format), imageSize, data);
+        METAGL_DEBUG_LOG_VOID("glCompressedTexSubImage3D", target, level, xoffset, yoffset, zoffset, width, height, depth, format, imageSize, data);
     }
 
     // #251
     void glCopyTexImage2D(TextureTarget target, GLint level, InternalFormat internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
     {
         detail::g_gl.CopyTexImage2D(detail::to_gl_enum(target), level, detail::to_gl_enum(internalformat), x, y, width, height, border);
+        METAGL_DEBUG_LOG_VOID("glCopyTexImage2D", target, level, internalformat, x, y, width, height, border);
     }
 
     // #252
     void glCopyTexSubImage2D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
     {
         detail::g_gl.CopyTexSubImage2D(detail::to_gl_enum(target), level, xoffset, yoffset, x, y, width, height);
+        METAGL_DEBUG_LOG_VOID("glCopyTexSubImage2D", target, level, xoffset, yoffset, x, y, width, height);
     }
 
     // #253
     void glCopyTexSubImage3D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height)
     {
         detail::g_gl.CopyTexSubImage3D(detail::to_gl_enum(target), level, xoffset, yoffset, zoffset, x, y, width, height);
+        METAGL_DEBUG_LOG_VOID("glCopyTexSubImage3D", target, level, xoffset, yoffset, zoffset, x, y, width, height);
     }
 
     // #254
     void glCopyImageSubData(GLuint srcName, TextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, GLuint dstName, TextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth)
     {
         detail::g_gl.CopyImageSubData(srcName, detail::to_gl_enum(srcTarget), srcLevel, srcX, srcY, srcZ, dstName, detail::to_gl_enum(dstTarget), dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth);
+        METAGL_DEBUG_LOG_VOID("glCopyImageSubData", srcName, srcTarget, srcLevel, srcX, srcY, srcZ, dstName, dstTarget, dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth);
     }
 
     // #255
     void glGenerateMipmap(TextureTarget target)
     {
         detail::g_gl.GenerateMipmap(detail::to_gl_enum(target));
+        METAGL_DEBUG_LOG_VOID("glGenerateMipmap", target);
     }
 
     // #256
     void glTexParameterf(TextureTarget target, TextureParameter pname, GLfloat param)
     {
         detail::g_gl.TexParameterf(detail::to_gl_enum(target), detail::to_gl_enum(pname), param);
+        METAGL_DEBUG_LOG_VOID("glTexParameterf", target, pname, param);
     }
 
     // #257
     void glTexParameteri(TextureTarget target, TextureParameter pname, GLint param)
     {
         detail::g_gl.TexParameteri(detail::to_gl_enum(target), detail::to_gl_enum(pname), param);
+        METAGL_DEBUG_LOG_VOID("glTexParameteri", target, pname, param);
     }
 
     // #258
     void glTexParameterfv(TextureTarget target, TextureParameter pname, const GLfloat * params)
     {
         detail::g_gl.TexParameterfv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glTexParameterfv", target, pname, params);
     }
 
     // #259
     void glTexParameteriv(TextureTarget target, TextureParameter pname, const GLint * params)
     {
         detail::g_gl.TexParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glTexParameteriv", target, pname, params);
     }
 
     // #260
     void glTexParameterIiv(TextureTarget target, TextureParameter pname, const GLint * params)
     {
         detail::g_gl.TexParameterIiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glTexParameterIiv", target, pname, params);
     }
 
     // #261
     void glTexParameterIuiv(TextureTarget target, TextureParameter pname, const GLuint * params)
     {
         detail::g_gl.TexParameterIuiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glTexParameterIuiv", target, pname, params);
     }
 
     // #262
     void glGetTexParameterfv(TextureTarget target, TextureParameter pname, GLfloat * params)
     {
         detail::g_gl.GetTexParameterfv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetTexParameterfv", target, pname, params);
     }
 
     // #263
     void glGetTexParameteriv(TextureTarget target, TextureParameter pname, GLint * params)
     {
         detail::g_gl.GetTexParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetTexParameteriv", target, pname, params);
     }
 
     // #264
     void glGetTexParameterIiv(TextureTarget target, TextureParameter pname, GLint * params)
     {
         detail::g_gl.GetTexParameterIiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetTexParameterIiv", target, pname, params);
     }
 
     // #265
     void glGetTexParameterIuiv(TextureTarget target, TextureParameter pname, GLuint * params)
     {
         detail::g_gl.GetTexParameterIuiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetTexParameterIuiv", target, pname, params);
     }
 
     // #266
     void glGetTexLevelParameteriv(TextureTarget target, GLint level, TextureLevelParameter pname, GLint * params)
     {
         detail::g_gl.GetTexLevelParameteriv(detail::to_gl_enum(target), level, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetTexLevelParameteriv", target, level, pname, params);
     }
 
     // #267
     void glGetTexLevelParameterfv(TextureTarget target, GLint level, TextureLevelParameter pname, GLfloat * params)
     {
         detail::g_gl.GetTexLevelParameterfv(detail::to_gl_enum(target), level, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetTexLevelParameterfv", target, level, pname, params);
     }
 
     // #268
     void glTexBuffer(TextureTarget target, InternalFormat internalformat, GLuint buffer)
     {
         detail::g_gl.TexBuffer(detail::to_gl_enum(target), detail::to_gl_enum(internalformat), buffer);
+        METAGL_DEBUG_LOG_VOID("glTexBuffer", target, internalformat, buffer);
     }
 
     // #269
     void glTexBufferRange(TextureTarget target, InternalFormat internalformat, GLuint buffer, GLintptr offset, GLsizeiptr size)
     {
         detail::g_gl.TexBufferRange(detail::to_gl_enum(target), detail::to_gl_enum(internalformat), buffer, offset, size);
+        METAGL_DEBUG_LOG_VOID("glTexBufferRange", target, internalformat, buffer, offset, size);
     }
 
     // #270
     void glGetMultisamplefv(MultisampleParameter pname, GLuint index, GLfloat * val)
     {
         detail::g_gl.GetMultisamplefv(detail::to_gl_enum(pname), index, val);
+        METAGL_DEBUG_LOG_VOID("glGetMultisamplefv", pname, index, val);
     }
 
     // #271
     void glGetInternalformativ(InternalFormatTarget target, InternalFormat internalformat, InternalFormatParameter pname, GLsizei count, GLint * params)
     {
         detail::g_gl.GetInternalformativ(detail::to_gl_enum(target), detail::to_gl_enum(internalformat), detail::to_gl_enum(pname), count, params);
+        METAGL_DEBUG_LOG_VOID("glGetInternalformativ", target, internalformat, pname, count, params);
     }
 
     // #272
     void glBindImageTexture(GLuint unit, GLuint texture, GLint level, GLboolean layered, GLint layer, ImageAccess access, InternalFormat format)
     {
         detail::g_gl.BindImageTexture(unit, texture, level, layered, layer, detail::to_gl_enum(access), detail::to_gl_enum(format));
+        METAGL_DEBUG_LOG_VOID("glBindImageTexture", unit, texture, level, layered, layer, access, format);
     }
 
     // #273
     void glGenSamplers(GLsizei count, GLuint * samplers)
     {
         detail::g_gl.GenSamplers(count, samplers);
+        METAGL_DEBUG_LOG_VOID("glGenSamplers", count, samplers);
     }
 
     // #274
     void glDeleteSamplers(GLsizei count, const GLuint * samplers)
     {
         detail::g_gl.DeleteSamplers(count, samplers);
+        METAGL_DEBUG_LOG_VOID("glDeleteSamplers", count, samplers);
     }
 
     // #275
     void glBindSampler(GLuint unit, GLuint sampler)
     {
         detail::g_gl.BindSampler(unit, sampler);
+        METAGL_DEBUG_LOG_VOID("glBindSampler", unit, sampler);
     }
 
     // #276
     GLboolean glIsSampler(GLuint sampler)
     {
-        return detail::g_gl.IsSampler(sampler);
+        const auto _r = detail::g_gl.IsSampler(sampler);
+        METAGL_DEBUG_LOG("glIsSampler", _r, sampler);
+        return _r;
     }
 
     // #277
     void glSamplerParameterf(GLuint sampler, TextureParameter pname, GLfloat param)
     {
         detail::g_gl.SamplerParameterf(sampler, detail::to_gl_enum(pname), param);
+        METAGL_DEBUG_LOG_VOID("glSamplerParameterf", sampler, pname, param);
     }
 
     // #278
     void glSamplerParameteri(GLuint sampler, TextureParameter pname, GLint param)
     {
         detail::g_gl.SamplerParameteri(sampler, detail::to_gl_enum(pname), param);
+        METAGL_DEBUG_LOG_VOID("glSamplerParameteri", sampler, pname, param);
     }
 
     // #279
     void glSamplerParameterfv(GLuint sampler, TextureParameter pname, const GLfloat * param)
     {
         detail::g_gl.SamplerParameterfv(sampler, detail::to_gl_enum(pname), param);
+        METAGL_DEBUG_LOG_VOID("glSamplerParameterfv", sampler, pname, param);
     }
 
     // #280
     void glSamplerParameteriv(GLuint sampler, TextureParameter pname, const GLint * param)
     {
         detail::g_gl.SamplerParameteriv(sampler, detail::to_gl_enum(pname), param);
+        METAGL_DEBUG_LOG_VOID("glSamplerParameteriv", sampler, pname, param);
     }
 
     // #281
     void glSamplerParameterIiv(GLuint sampler, TextureParameter pname, const GLint * param)
     {
         detail::g_gl.SamplerParameterIiv(sampler, detail::to_gl_enum(pname), param);
+        METAGL_DEBUG_LOG_VOID("glSamplerParameterIiv", sampler, pname, param);
     }
 
     // #282
     void glSamplerParameterIuiv(GLuint sampler, TextureParameter pname, const GLuint * param)
     {
         detail::g_gl.SamplerParameterIuiv(sampler, detail::to_gl_enum(pname), param);
+        METAGL_DEBUG_LOG_VOID("glSamplerParameterIuiv", sampler, pname, param);
     }
 
     // #283
     void glGetSamplerParameterfv(GLuint sampler, TextureParameter pname, GLfloat * params)
     {
         detail::g_gl.GetSamplerParameterfv(sampler, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetSamplerParameterfv", sampler, pname, params);
     }
 
     // #284
     void glGetSamplerParameteriv(GLuint sampler, TextureParameter pname, GLint * params)
     {
         detail::g_gl.GetSamplerParameteriv(sampler, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetSamplerParameteriv", sampler, pname, params);
     }
 
     // #285
     void glGetSamplerParameterIiv(GLuint sampler, TextureParameter pname, GLint * params)
     {
         detail::g_gl.GetSamplerParameterIiv(sampler, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetSamplerParameterIiv", sampler, pname, params);
     }
 
     // #286
     void glGetSamplerParameterIuiv(GLuint sampler, TextureParameter pname, GLuint * params)
     {
         detail::g_gl.GetSamplerParameterIuiv(sampler, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetSamplerParameterIuiv", sampler, pname, params);
     }
 
     // #287
     void glGenFramebuffers(GLsizei n, GLuint * framebuffers)
     {
         detail::g_gl.GenFramebuffers(n, framebuffers);
+        METAGL_DEBUG_LOG_VOID("glGenFramebuffers", n, framebuffers);
     }
 
     // #288
     void glDeleteFramebuffers(GLsizei n, const GLuint * framebuffers)
     {
         detail::g_gl.DeleteFramebuffers(n, framebuffers);
+        METAGL_DEBUG_LOG_VOID("glDeleteFramebuffers", n, framebuffers);
     }
 
     // #289
     void glBindFramebuffer(FramebufferTarget target, GLuint framebuffer)
     {
         detail::g_gl.BindFramebuffer(detail::to_gl_enum(target), framebuffer);
+        METAGL_DEBUG_LOG_VOID("glBindFramebuffer", target, framebuffer);
     }
 
     // #290
     GLboolean glIsFramebuffer(GLuint framebuffer)
     {
-        return detail::g_gl.IsFramebuffer(framebuffer);
+        const auto _r = detail::g_gl.IsFramebuffer(framebuffer);
+        METAGL_DEBUG_LOG("glIsFramebuffer", _r, framebuffer);
+        return _r;
     }
 
     // #291
@@ -3076,222 +3385,264 @@ namespace metagl
     void glFramebufferTexture2D(FramebufferTarget target, FramebufferAttachment attachment, TextureTarget textarget, GLuint texture, GLint level)
     {
         detail::g_gl.FramebufferTexture2D(detail::to_gl_enum(target), detail::to_gl_enum(attachment), detail::to_gl_enum(textarget), texture, level);
+        METAGL_DEBUG_LOG_VOID("glFramebufferTexture2D", target, attachment, textarget, texture, level);
     }
 
     // #293
     void glFramebufferTextureLayer(FramebufferTarget target, FramebufferAttachment attachment, GLuint texture, GLint level, GLint layer)
     {
         detail::g_gl.FramebufferTextureLayer(detail::to_gl_enum(target), detail::to_gl_enum(attachment), texture, level, layer);
+        METAGL_DEBUG_LOG_VOID("glFramebufferTextureLayer", target, attachment, texture, level, layer);
     }
 
     // #294
     void glFramebufferTexture(FramebufferTarget target, FramebufferAttachment attachment, GLuint texture, GLint level)
     {
         detail::g_gl.FramebufferTexture(detail::to_gl_enum(target), detail::to_gl_enum(attachment), texture, level);
+        METAGL_DEBUG_LOG_VOID("glFramebufferTexture", target, attachment, texture, level);
     }
 
     // #295
     void glFramebufferRenderbuffer(FramebufferTarget target, FramebufferAttachment attachment, RenderbufferTarget renderbuffertarget, GLuint renderbuffer)
     {
         detail::g_gl.FramebufferRenderbuffer(detail::to_gl_enum(target), detail::to_gl_enum(attachment), detail::to_gl_enum(renderbuffertarget), renderbuffer);
+        METAGL_DEBUG_LOG_VOID("glFramebufferRenderbuffer", target, attachment, renderbuffertarget, renderbuffer);
     }
 
     // #296
     void glFramebufferParameteri(FramebufferTarget target, FramebufferDefaultParameter pname, GLint param)
     {
         detail::g_gl.FramebufferParameteri(detail::to_gl_enum(target), detail::to_gl_enum(pname), param);
+        METAGL_DEBUG_LOG_VOID("glFramebufferParameteri", target, pname, param);
     }
 
     // #297
     void glGetFramebufferParameteriv(FramebufferTarget target, FramebufferDefaultParameter pname, GLint * params)
     {
         detail::g_gl.GetFramebufferParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetFramebufferParameteriv", target, pname, params);
     }
 
     // #298
     void glGetFramebufferAttachmentParameteriv(FramebufferTarget target, FramebufferAttachment attachment, FramebufferAttachmentParameter pname, GLint * params)
     {
         detail::g_gl.GetFramebufferAttachmentParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(attachment), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetFramebufferAttachmentParameteriv", target, attachment, pname, params);
     }
 
     // #299
     void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, ClearBufferBit mask, TextureFilter filter)
     {
         detail::g_gl.BlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, detail::to_gl_bitfield(mask), detail::to_gl_enum(filter));
+        METAGL_DEBUG_LOG_VOID("glBlitFramebuffer", srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
     }
 
     // #300
     void glInvalidateFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments)
     {
         detail::g_gl.InvalidateFramebuffer(detail::to_gl_enum(target), numAttachments, reinterpret_cast<const GLenum *>(attachments));
+        METAGL_DEBUG_LOG_VOID("glInvalidateFramebuffer", target, numAttachments, attachments);
     }
 
     // #301
     void glInvalidateSubFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments, GLint x, GLint y, GLsizei width, GLsizei height)
     {
         detail::g_gl.InvalidateSubFramebuffer(detail::to_gl_enum(target), numAttachments, reinterpret_cast<const GLenum *>(attachments), x, y, width, height);
+        METAGL_DEBUG_LOG_VOID("glInvalidateSubFramebuffer", target, numAttachments, attachments, x, y, width, height);
     }
 
     // #302
     void glGenRenderbuffers(GLsizei n, GLuint * renderbuffers)
     {
         detail::g_gl.GenRenderbuffers(n, renderbuffers);
+        METAGL_DEBUG_LOG_VOID("glGenRenderbuffers", n, renderbuffers);
     }
 
     // #303
     void glDeleteRenderbuffers(GLsizei n, const GLuint * renderbuffers)
     {
         detail::g_gl.DeleteRenderbuffers(n, renderbuffers);
+        METAGL_DEBUG_LOG_VOID("glDeleteRenderbuffers", n, renderbuffers);
     }
 
     // #304
     void glBindRenderbuffer(RenderbufferTarget target, GLuint renderbuffer)
     {
         detail::g_gl.BindRenderbuffer(detail::to_gl_enum(target), renderbuffer);
+        METAGL_DEBUG_LOG_VOID("glBindRenderbuffer", target, renderbuffer);
     }
 
     // #305
     GLboolean glIsRenderbuffer(GLuint renderbuffer)
     {
-        return detail::g_gl.IsRenderbuffer(renderbuffer);
+        const auto _r = detail::g_gl.IsRenderbuffer(renderbuffer);
+        METAGL_DEBUG_LOG("glIsRenderbuffer", _r, renderbuffer);
+        return _r;
     }
 
     // #306
     void glRenderbufferStorage(RenderbufferTarget target, InternalFormat internalformat, GLsizei width, GLsizei height)
     {
         detail::g_gl.RenderbufferStorage(detail::to_gl_enum(target), detail::to_gl_enum(internalformat), width, height);
+        METAGL_DEBUG_LOG_VOID("glRenderbufferStorage", target, internalformat, width, height);
     }
 
     // #307
     void glRenderbufferStorageMultisample(RenderbufferTarget target, GLsizei samples, InternalFormat internalformat, GLsizei width, GLsizei height)
     {
         detail::g_gl.RenderbufferStorageMultisample(detail::to_gl_enum(target), samples, detail::to_gl_enum(internalformat), width, height);
+        METAGL_DEBUG_LOG_VOID("glRenderbufferStorageMultisample", target, samples, internalformat, width, height);
     }
 
     // #308
     void glGetRenderbufferParameteriv(RenderbufferTarget target, RenderbufferParameter pname, GLint * params)
     {
         detail::g_gl.GetRenderbufferParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetRenderbufferParameteriv", target, pname, params);
     }
 
     // #309
     void glGenTransformFeedbacks(GLsizei n, GLuint * ids)
     {
         detail::g_gl.GenTransformFeedbacks(n, ids);
+        METAGL_DEBUG_LOG_VOID("glGenTransformFeedbacks", n, ids);
     }
 
     // #310
     void glDeleteTransformFeedbacks(GLsizei n, const GLuint * ids)
     {
         detail::g_gl.DeleteTransformFeedbacks(n, ids);
+        METAGL_DEBUG_LOG_VOID("glDeleteTransformFeedbacks", n, ids);
     }
 
     // #311
     void glBindTransformFeedback(TransformFeedbackTarget target, GLuint id)
     {
         detail::g_gl.BindTransformFeedback(detail::to_gl_enum(target), id);
+        METAGL_DEBUG_LOG_VOID("glBindTransformFeedback", target, id);
     }
 
     // #312
     GLboolean glIsTransformFeedback(GLuint id)
     {
-        return detail::g_gl.IsTransformFeedback(id);
+        const auto _r = detail::g_gl.IsTransformFeedback(id);
+        METAGL_DEBUG_LOG("glIsTransformFeedback", _r, id);
+        return _r;
     }
 
     // #313
     void glBeginTransformFeedback(PrimitiveType primitiveMode)
     {
         detail::g_gl.BeginTransformFeedback(detail::to_gl_enum(primitiveMode));
+        METAGL_DEBUG_LOG_VOID("glBeginTransformFeedback", primitiveMode);
     }
 
     // #314
     void glEndTransformFeedback(void)
     {
         detail::g_gl.EndTransformFeedback();
+        METAGL_DEBUG_LOG_VOID("glEndTransformFeedback");
     }
 
     // #315
     void glPauseTransformFeedback(void)
     {
         detail::g_gl.PauseTransformFeedback();
+        METAGL_DEBUG_LOG_VOID("glPauseTransformFeedback");
     }
 
     // #316
     void glResumeTransformFeedback(void)
     {
         detail::g_gl.ResumeTransformFeedback();
+        METAGL_DEBUG_LOG_VOID("glResumeTransformFeedback");
     }
 
     // #317
     void glTransformFeedbackVaryings(GLuint program, GLsizei count, const GLchar *const* varyings, TransformFeedbackBufferMode bufferMode)
     {
         detail::g_gl.TransformFeedbackVaryings(program, count, varyings, detail::to_gl_enum(bufferMode));
+        METAGL_DEBUG_LOG_VOID("glTransformFeedbackVaryings", program, count, varyings, bufferMode);
     }
 
     // #318
     void glGetTransformFeedbackVarying(GLuint program, GLuint index, GLsizei bufSize, GLsizei * length, GLsizei * size, UniformType * type, GLchar * name)
     {
         detail::g_gl.GetTransformFeedbackVarying(program, index, bufSize, length, size, reinterpret_cast<GLenum *>(type), name);
+        METAGL_DEBUG_LOG_VOID("glGetTransformFeedbackVarying", program, index, bufSize, length, size, type, name);
     }
 
     // #319
     void glGenQueries(GLsizei n, GLuint * ids)
     {
         detail::g_gl.GenQueries(n, ids);
+        METAGL_DEBUG_LOG_VOID("glGenQueries", n, ids);
     }
 
     // #320
     void glDeleteQueries(GLsizei n, const GLuint * ids)
     {
         detail::g_gl.DeleteQueries(n, ids);
+        METAGL_DEBUG_LOG_VOID("glDeleteQueries", n, ids);
     }
 
     // #321
     GLboolean glIsQuery(GLuint id)
     {
-        return detail::g_gl.IsQuery(id);
+        const auto _r = detail::g_gl.IsQuery(id);
+        METAGL_DEBUG_LOG("glIsQuery", _r, id);
+        return _r;
     }
 
     // #322
     void glBeginQuery(QueryTarget target, GLuint id)
     {
         detail::g_gl.BeginQuery(detail::to_gl_enum(target), id);
+        METAGL_DEBUG_LOG_VOID("glBeginQuery", target, id);
     }
 
     // #323
     void glEndQuery(QueryTarget target)
     {
         detail::g_gl.EndQuery(detail::to_gl_enum(target));
+        METAGL_DEBUG_LOG_VOID("glEndQuery", target);
     }
 
     // #324
     void glGetQueryiv(QueryTarget target, QueryParameter pname, GLint * params)
     {
         detail::g_gl.GetQueryiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetQueryiv", target, pname, params);
     }
 
     // #325
     void glGetQueryObjectuiv(GLuint id, QueryObjectParameter pname, GLuint * params)
     {
         detail::g_gl.GetQueryObjectuiv(id, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetQueryObjectuiv", id, pname, params);
     }
 
     // #326
     GLsync glFenceSync(SyncCondition condition, SyncFlag flags)
     {
-        return detail::g_gl.FenceSync(detail::to_gl_enum(condition), detail::to_gl_bitfield(flags));
+        const auto _r = detail::g_gl.FenceSync(detail::to_gl_enum(condition), detail::to_gl_bitfield(flags));
+        METAGL_DEBUG_LOG("glFenceSync", _r, condition, flags);
+        return _r;
     }
 
     // #327
     void glDeleteSync(GLsync sync)
     {
         detail::g_gl.DeleteSync(sync);
+        METAGL_DEBUG_LOG_VOID("glDeleteSync", sync);
     }
 
     // #328
     GLboolean glIsSync(GLsync sync)
     {
-        return detail::g_gl.IsSync(sync);
+        const auto _r = detail::g_gl.IsSync(sync);
+        METAGL_DEBUG_LOG("glIsSync", _r, sync);
+        return _r;
     }
 
     // #329
@@ -3304,168 +3655,199 @@ namespace metagl
     void glWaitSync(GLsync sync, SyncFlag flags, GLuint64 timeout)
     {
         detail::g_gl.WaitSync(sync, detail::to_gl_bitfield(flags), timeout);
+        METAGL_DEBUG_LOG_VOID("glWaitSync", sync, flags, timeout);
     }
 
     // #331
     void glGetSynciv(GLsync sync, SyncParameter pname, GLsizei count, GLsizei * length, GLint * values)
     {
         detail::g_gl.GetSynciv(sync, detail::to_gl_enum(pname), count, length, values);
+        METAGL_DEBUG_LOG_VOID("glGetSynciv", sync, pname, count, length, values);
     }
 
     // #332
     void glDispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z)
     {
         detail::g_gl.DispatchCompute(num_groups_x, num_groups_y, num_groups_z);
+        METAGL_DEBUG_LOG_VOID("glDispatchCompute", num_groups_x, num_groups_y, num_groups_z);
     }
 
     // #333
     void glDispatchComputeIndirect(GLintptr indirect)
     {
         detail::g_gl.DispatchComputeIndirect(indirect);
+        METAGL_DEBUG_LOG_VOID("glDispatchComputeIndirect", indirect);
     }
 
     // #334
     void glMemoryBarrier(MemoryBarrierMask barriers)
     {
         detail::g_gl.MemoryBarrier(detail::to_gl_bitfield(barriers));
+        METAGL_DEBUG_LOG_VOID("glMemoryBarrier", barriers);
     }
 
     // #335
     void glMemoryBarrierByRegion(MemoryBarrierMask barriers)
     {
         detail::g_gl.MemoryBarrierByRegion(detail::to_gl_bitfield(barriers));
+        METAGL_DEBUG_LOG_VOID("glMemoryBarrierByRegion", barriers);
     }
 
     // #336
     void glGenProgramPipelines(GLsizei n, GLuint * pipelines)
     {
         detail::g_gl.GenProgramPipelines(n, pipelines);
+        METAGL_DEBUG_LOG_VOID("glGenProgramPipelines", n, pipelines);
     }
 
     // #337
     void glDeleteProgramPipelines(GLsizei n, const GLuint * pipelines)
     {
         detail::g_gl.DeleteProgramPipelines(n, pipelines);
+        METAGL_DEBUG_LOG_VOID("glDeleteProgramPipelines", n, pipelines);
     }
 
     // #338
     void glBindProgramPipeline(GLuint pipeline)
     {
         detail::g_gl.BindProgramPipeline(pipeline);
+        METAGL_DEBUG_LOG_VOID("glBindProgramPipeline", pipeline);
     }
 
     // #339
     GLboolean glIsProgramPipeline(GLuint pipeline)
     {
-        return detail::g_gl.IsProgramPipeline(pipeline);
+        const auto _r = detail::g_gl.IsProgramPipeline(pipeline);
+        METAGL_DEBUG_LOG("glIsProgramPipeline", _r, pipeline);
+        return _r;
     }
 
     // #340
     void glUseProgramStages(GLuint pipeline, ShaderStageMask stages, GLuint program)
     {
         detail::g_gl.UseProgramStages(pipeline, detail::to_gl_bitfield(stages), program);
+        METAGL_DEBUG_LOG_VOID("glUseProgramStages", pipeline, stages, program);
     }
 
     // #341
     void glActiveShaderProgram(GLuint pipeline, GLuint program)
     {
         detail::g_gl.ActiveShaderProgram(pipeline, program);
+        METAGL_DEBUG_LOG_VOID("glActiveShaderProgram", pipeline, program);
     }
 
     // #342
     GLuint glCreateShaderProgramv(ShaderType type, GLsizei count, const GLchar *const* strings)
     {
-        return detail::g_gl.CreateShaderProgramv(detail::to_gl_enum(type), count, strings);
+        const auto _r = detail::g_gl.CreateShaderProgramv(detail::to_gl_enum(type), count, strings);
+        METAGL_DEBUG_LOG("glCreateShaderProgramv", _r, type, count, strings);
+        return _r;
     }
 
     // #343
     void glValidateProgramPipeline(GLuint pipeline)
     {
         detail::g_gl.ValidateProgramPipeline(pipeline);
+        METAGL_DEBUG_LOG_VOID("glValidateProgramPipeline", pipeline);
     }
 
     // #344
     void glGetProgramPipelineiv(GLuint pipeline, ProgramPipelineParameter pname, GLint * params)
     {
         detail::g_gl.GetProgramPipelineiv(pipeline, detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetProgramPipelineiv", pipeline, pname, params);
     }
 
     // #345
     void glGetProgramPipelineInfoLog(GLuint pipeline, GLsizei bufSize, GLsizei * length, GLchar * infoLog)
     {
         detail::g_gl.GetProgramPipelineInfoLog(pipeline, bufSize, length, infoLog);
+        METAGL_DEBUG_LOG_VOID("glGetProgramPipelineInfoLog", pipeline, bufSize, length, infoLog);
     }
 
     // #346
     void glPatchParameteri(TessellationParameter pname, GLint value)
     {
         detail::g_gl.PatchParameteri(detail::to_gl_enum(pname), value);
+        METAGL_DEBUG_LOG_VOID("glPatchParameteri", pname, value);
     }
 
     // #347
     void glPrimitiveBoundingBox(GLfloat minX, GLfloat minY, GLfloat minZ, GLfloat minW, GLfloat maxX, GLfloat maxY, GLfloat maxZ, GLfloat maxW)
     {
         detail::g_gl.PrimitiveBoundingBox(minX, minY, minZ, minW, maxX, maxY, maxZ, maxW);
+        METAGL_DEBUG_LOG_VOID("glPrimitiveBoundingBox", minX, minY, minZ, minW, maxX, maxY, maxZ, maxW);
     }
 
     // #348
     void glDebugMessageCallback(GLDEBUGPROC callback, const void * userParam)
     {
         detail::g_gl.DebugMessageCallback(callback, userParam);
+        METAGL_DEBUG_LOG_VOID("glDebugMessageCallback", callback, userParam);
     }
 
     // #349
     void glDebugMessageControl(DebugSource source, DebugType type, DebugSeverity severity, GLsizei count, const GLuint * ids, GLboolean enabled)
     {
         detail::g_gl.DebugMessageControl(detail::to_gl_enum(source), detail::to_gl_enum(type), detail::to_gl_enum(severity), count, ids, enabled);
+        METAGL_DEBUG_LOG_VOID("glDebugMessageControl", source, type, severity, count, ids, enabled);
     }
 
     // #350
     void glDebugMessageInsert(DebugSource source, DebugType type, GLuint id, DebugSeverity severity, GLsizei length, const GLchar * buf)
     {
         detail::g_gl.DebugMessageInsert(detail::to_gl_enum(source), detail::to_gl_enum(type), id, detail::to_gl_enum(severity), length, buf);
+        METAGL_DEBUG_LOG_VOID("glDebugMessageInsert", source, type, id, severity, length, buf);
     }
 
     // #351
     GLuint glGetDebugMessageLog(GLuint count, GLsizei bufSize, DebugSource * sources, DebugType * types, GLuint * ids, DebugSeverity * severities, GLsizei * lengths, GLchar * messageLog)
     {
-        return detail::g_gl.GetDebugMessageLog(count, bufSize, reinterpret_cast<GLenum *>(sources), reinterpret_cast<GLenum *>(types), ids, reinterpret_cast<GLenum *>(severities), lengths, messageLog);
+        const auto _r = detail::g_gl.GetDebugMessageLog(count, bufSize, reinterpret_cast<GLenum *>(sources), reinterpret_cast<GLenum *>(types), ids, reinterpret_cast<GLenum *>(severities), lengths, messageLog);
+        METAGL_DEBUG_LOG("glGetDebugMessageLog", _r, count, bufSize, sources, types, ids, severities, lengths, messageLog);
+        return _r;
     }
 
     // #352
     void glPushDebugGroup(DebugSource source, GLuint id, GLsizei length, const GLchar * message)
     {
         detail::g_gl.PushDebugGroup(detail::to_gl_enum(source), id, length, message);
+        METAGL_DEBUG_LOG_VOID("glPushDebugGroup", source, id, length, message);
     }
 
     // #353
     void glPopDebugGroup(void)
     {
         detail::g_gl.PopDebugGroup();
+        METAGL_DEBUG_LOG_VOID("glPopDebugGroup");
     }
 
     // #354
     void glObjectLabel(DebugObjectLabel identifier, GLuint name, GLsizei length, const GLchar * label)
     {
         detail::g_gl.ObjectLabel(detail::to_gl_enum(identifier), name, length, label);
+        METAGL_DEBUG_LOG_VOID("glObjectLabel", identifier, name, length, label);
     }
 
     // #355
     void glObjectPtrLabel(const void * ptr, GLsizei length, const GLchar * label)
     {
         detail::g_gl.ObjectPtrLabel(ptr, length, label);
+        METAGL_DEBUG_LOG_VOID("glObjectPtrLabel", ptr, length, label);
     }
 
     // #356
     void glGetObjectLabel(DebugObjectLabel identifier, GLuint name, GLsizei bufSize, GLsizei * length, GLchar * label)
     {
         detail::g_gl.GetObjectLabel(detail::to_gl_enum(identifier), name, bufSize, length, label);
+        METAGL_DEBUG_LOG_VOID("glGetObjectLabel", identifier, name, bufSize, length, label);
     }
 
     // #357
     void glGetObjectPtrLabel(const void * ptr, GLsizei bufSize, GLsizei * length, GLchar * label)
     {
         detail::g_gl.GetObjectPtrLabel(ptr, bufSize, length, label);
+        METAGL_DEBUG_LOG_VOID("glGetObjectPtrLabel", ptr, bufSize, length, label);
     }
 
     // #358

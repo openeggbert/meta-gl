@@ -19,6 +19,7 @@ target_sources(meta-gl
     PRIVATE
         src/Functions.cpp
         src/Context.cpp
+        src/Debug.cpp
 )
 
 target_sources(meta-gl
@@ -35,6 +36,7 @@ target_sources(meta-gl
         include/metagl/Capabilities.hpp
         include/metagl/ContextEvents.hpp
         include/metagl/Emscripten.hpp
+        include/metagl/Debug.hpp
 )
 
 target_include_directories(meta-gl

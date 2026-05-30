@@ -4,7 +4,7 @@
 // Each call records the function name, formatted parameters, and return value.
 // The buffer is printed to stderr and cleared every 5 seconds.
 
-#define METAGLDEBUG
+//#define METAGLDEBUG
 
 #ifdef METAGLDEBUG
 

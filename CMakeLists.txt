@@ -37,6 +37,7 @@ target_sources(meta-gl
         include/metagl/ContextEvents.hpp
         include/metagl/Emscripten.hpp
         include/metagl/Debug.hpp
+        include/metagl/EnumNames.hpp
 )
 
 target_include_directories(meta-gl

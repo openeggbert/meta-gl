@@ -13,6 +13,7 @@
 #include <sstream>
 #include <type_traits>
 #include <cstdint>
+#include "metagl/EnumNames.hpp"
 
 namespace metagl::debug
 {
@@ -22,7 +23,16 @@ namespace metagl::debug
     std::string to_str(T val)
     {
         if constexpr (std::is_enum_v<T>)
+        {
+            // Use the generated to_string() overload when available (returns the
+            // enumerator name), falling back to the raw numeric value otherwise.
+            if constexpr (requires { metagl::to_string(val); })
+            {
+                auto sv = metagl::to_string(val);
+                if (sv != "?") return std::string(sv);
+            }
             return std::to_string(static_cast<std::underlying_type_t<T>>(val));
+        }
         else if constexpr (std::is_pointer_v<T>)
         {
             if (!val) return "null";

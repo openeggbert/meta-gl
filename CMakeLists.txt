@@ -5,6 +5,8 @@ project(meta-gl
     DESCRIPTION "Low-level type-safe C++ wrapper over OpenGL function pointers"
     LANGUAGES CXX)
 
+option(BUILD_SHARED_LIBS "Build meta-gl as a shared library (default: static)" OFF)
+
 add_library(meta-gl)
 add_library(meta-gl::meta-gl ALIAS meta-gl)
 

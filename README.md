@@ -43,6 +43,13 @@ cmake -S . -B build
 cmake --build build
 ```
 
+By default a **static** library is produced. Pass `-DBUILD_SHARED_LIBS=ON` to build a shared library instead:
+
+```bash
+cmake -S . -B build -DBUILD_SHARED_LIBS=ON
+cmake --build build
+```
+
 ## Initialization
 
 Before calling any `metagl::Gl*` function, initialize the function pointer table by passing a `GetProcAddress`-style callback:

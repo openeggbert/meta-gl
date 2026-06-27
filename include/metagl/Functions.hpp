@@ -1409,4 +1409,24 @@ namespace metagl
         else if constexpr (std::same_as<Value, GLuint>)  { glGetnUniformuiv(program, location, bufSize, params); }
     }
 
+    // #256-#257 - typed dispatch: glTexParameter<float/int>(target, pname, param)
+    template<typename T>
+        requires std::same_as<std::remove_cvref_t<T>, GLfloat> || std::same_as<std::remove_cvref_t<T>, GLint>
+    inline void glTexParameter(TextureTarget target, TextureParameter pname, T param)
+    {
+        using Value = std::remove_cvref_t<T>;
+        if constexpr (std::same_as<Value, GLfloat>) { glTexParameterf(target, pname, param); }
+        else                                         { glTexParameteri(target, pname, param); }
+    }
+
+    // #277-#278 - typed dispatch: glSamplerParameter<float/int>(sampler, pname, param)
+    template<typename T>
+        requires std::same_as<std::remove_cvref_t<T>, GLfloat> || std::same_as<std::remove_cvref_t<T>, GLint>
+    inline void glSamplerParameter(SamplerId sampler, SamplerParameter pname, T param)
+    {
+        using Value = std::remove_cvref_t<T>;
+        if constexpr (std::same_as<Value, GLfloat>) { glSamplerParameterf(sampler, pname, param); }
+        else                                         { glSamplerParameteri(sampler, pname, param); }
+    }
+
 }

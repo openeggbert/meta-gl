@@ -580,25 +580,25 @@ namespace metagl
     // #276 (3.0+) Returns GL_TRUE if the name is a valid sampler object
     GLboolean glIsSampler(SamplerId sampler);
     // #277 (3.0+) Sets a float sampling parameter on a sampler object
-    void glSamplerParameterf(SamplerId sampler, TextureParameter pname, GLfloat param);
+    void glSamplerParameterf(SamplerId sampler, SamplerParameter pname, GLfloat param);
     // #278 (3.0+) Sets an integer sampling parameter on a sampler object
-    void glSamplerParameteri(SamplerId sampler, TextureParameter pname, GLint param);
+    void glSamplerParameteri(SamplerId sampler, SamplerParameter pname, GLint param);
     // #279 (3.0+) Sets multiple float sampling parameters on a sampler from a pointer
-    void glSamplerParameterfv(SamplerId sampler, TextureParameter pname, const GLfloat * param);
+    void glSamplerParameterfv(SamplerId sampler, SamplerParameter pname, const GLfloat * param);
     // #280 (3.0+) Sets multiple integer sampling parameters on a sampler from a pointer
-    void glSamplerParameteriv(SamplerId sampler, TextureParameter pname, const GLint * param);
+    void glSamplerParameteriv(SamplerId sampler, SamplerParameter pname, const GLint * param);
     // #281 (3.2+) Sets signed integer sampler parameters without conversion
-    void glSamplerParameterIiv(SamplerId sampler, TextureParameter pname, const GLint * param);
+    void glSamplerParameterIiv(SamplerId sampler, SamplerParameter pname, const GLint * param);
     // #282 (3.2+) Sets unsigned integer sampler parameters without conversion
-    void glSamplerParameterIuiv(SamplerId sampler, TextureParameter pname, const GLuint * param);
+    void glSamplerParameterIuiv(SamplerId sampler, SamplerParameter pname, const GLuint * param);
     // #283 (3.0+) Returns float sampling parameters from a sampler object
-    void glGetSamplerParameterfv(SamplerId sampler, TextureParameter pname, GLfloat * params);
+    void glGetSamplerParameterfv(SamplerId sampler, SamplerParameter pname, GLfloat * params);
     // #284 (3.0+) Returns integer sampling parameters from a sampler object
-    void glGetSamplerParameteriv(SamplerId sampler, TextureParameter pname, GLint * params);
+    void glGetSamplerParameteriv(SamplerId sampler, SamplerParameter pname, GLint * params);
     // #285 (3.2+) Returns signed integer sampler parameters as raw integers
-    void glGetSamplerParameterIiv(SamplerId sampler, TextureParameter pname, GLint * params);
+    void glGetSamplerParameterIiv(SamplerId sampler, SamplerParameter pname, GLint * params);
     // #286 (3.2+) Returns unsigned integer sampler parameters as raw unsigned integers
-    void glGetSamplerParameterIuiv(SamplerId sampler, TextureParameter pname, GLuint * params);
+    void glGetSamplerParameterIuiv(SamplerId sampler, SamplerParameter pname, GLuint * params);
 
     // Framebuffers
     // #287 (2.0+) Generates one or more framebuffer object names

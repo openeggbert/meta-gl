@@ -3287,70 +3287,70 @@ namespace metagl
     }
 
     // #277
-    void glSamplerParameterf(SamplerId sampler, TextureParameter pname, GLfloat param)
+    void glSamplerParameterf(SamplerId sampler, SamplerParameter pname, GLfloat param)
     {
         detail::g_gl.SamplerParameterf(sampler.value, detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glSamplerParameterf", sampler.value, pname, param);
     }
 
     // #278
-    void glSamplerParameteri(SamplerId sampler, TextureParameter pname, GLint param)
+    void glSamplerParameteri(SamplerId sampler, SamplerParameter pname, GLint param)
     {
         detail::g_gl.SamplerParameteri(sampler.value, detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glSamplerParameteri", sampler.value, pname, param);
     }
 
     // #279
-    void glSamplerParameterfv(SamplerId sampler, TextureParameter pname, const GLfloat * param)
+    void glSamplerParameterfv(SamplerId sampler, SamplerParameter pname, const GLfloat * param)
     {
         detail::g_gl.SamplerParameterfv(sampler.value, detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glSamplerParameterfv", sampler.value, pname, param);
     }
 
     // #280
-    void glSamplerParameteriv(SamplerId sampler, TextureParameter pname, const GLint * param)
+    void glSamplerParameteriv(SamplerId sampler, SamplerParameter pname, const GLint * param)
     {
         detail::g_gl.SamplerParameteriv(sampler.value, detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glSamplerParameteriv", sampler.value, pname, param);
     }
 
     // #281
-    void glSamplerParameterIiv(SamplerId sampler, TextureParameter pname, const GLint * param)
+    void glSamplerParameterIiv(SamplerId sampler, SamplerParameter pname, const GLint * param)
     {
         detail::g_gl.SamplerParameterIiv(sampler.value, detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glSamplerParameterIiv", sampler.value, pname, param);
     }
 
     // #282
-    void glSamplerParameterIuiv(SamplerId sampler, TextureParameter pname, const GLuint * param)
+    void glSamplerParameterIuiv(SamplerId sampler, SamplerParameter pname, const GLuint * param)
     {
         detail::g_gl.SamplerParameterIuiv(sampler.value, detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glSamplerParameterIuiv", sampler.value, pname, param);
     }
 
     // #283
-    void glGetSamplerParameterfv(SamplerId sampler, TextureParameter pname, GLfloat * params)
+    void glGetSamplerParameterfv(SamplerId sampler, SamplerParameter pname, GLfloat * params)
     {
         detail::g_gl.GetSamplerParameterfv(sampler.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetSamplerParameterfv", sampler.value, pname, params);
     }
 
     // #284
-    void glGetSamplerParameteriv(SamplerId sampler, TextureParameter pname, GLint * params)
+    void glGetSamplerParameteriv(SamplerId sampler, SamplerParameter pname, GLint * params)
     {
         detail::g_gl.GetSamplerParameteriv(sampler.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetSamplerParameteriv", sampler.value, pname, params);
     }
 
     // #285
-    void glGetSamplerParameterIiv(SamplerId sampler, TextureParameter pname, GLint * params)
+    void glGetSamplerParameterIiv(SamplerId sampler, SamplerParameter pname, GLint * params)
     {
         detail::g_gl.GetSamplerParameterIiv(sampler.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetSamplerParameterIiv", sampler.value, pname, params);
     }
 
     // #286
-    void glGetSamplerParameterIuiv(SamplerId sampler, TextureParameter pname, GLuint * params)
+    void glGetSamplerParameterIuiv(SamplerId sampler, SamplerParameter pname, GLuint * params)
     {
         detail::g_gl.GetSamplerParameterIuiv(sampler.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetSamplerParameterIuiv", sampler.value, pname, params);

@@ -778,6 +778,26 @@ namespace metagl
     };
 
     // -------------------------------------------------------------------------
+    // Sampler parameter names for glSamplerParameter* / glGetSamplerParameter*.
+    // Only the subset of texture parameters valid for sampler objects is included.
+    // GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_MAX_LEVEL, swizzle, etc. are excluded
+    // because the GL ES spec does not allow them on sampler objects.
+    // -------------------------------------------------------------------------
+    enum class SamplerParameter : GLenum
+    {
+        MinFilter    = GL_TEXTURE_MIN_FILTER,    ///< Minification filter.
+        MagFilter    = GL_TEXTURE_MAG_FILTER,    ///< Magnification filter.
+        WrapS        = GL_TEXTURE_WRAP_S,        ///< Wrap mode for S coordinate.
+        WrapT        = GL_TEXTURE_WRAP_T,        ///< Wrap mode for T coordinate.
+        WrapR        = GL_TEXTURE_WRAP_R,        ///< Wrap mode for R coordinate. ES 3.0+
+        MinLod       = GL_TEXTURE_MIN_LOD,       ///< Minimum LOD level. ES 3.0+
+        MaxLod       = GL_TEXTURE_MAX_LOD,       ///< Maximum LOD level. ES 3.0+
+        CompareMode  = GL_TEXTURE_COMPARE_MODE,  ///< Shadow comparison mode. ES 3.0+
+        CompareFunc  = GL_TEXTURE_COMPARE_FUNC,  ///< Shadow comparison function. ES 3.0+
+        BorderColor  = GL_TEXTURE_BORDER_COLOR   ///< Border color for clamp-to-border. ES 3.2+
+    };
+
+    // -------------------------------------------------------------------------
     // Minification filter for TextureParameter::MinFilter (glTexParameter*).
     // Includes mipmap variants; use TextureMagFilter for magnification.
     // -------------------------------------------------------------------------

@@ -668,6 +668,21 @@ namespace metagl
         return "?";
     }
 
+    inline std::string_view to_string(SamplerParameter v)
+    {
+        if (v == SamplerParameter::MinFilter) return "MinFilter";
+        else if (v == SamplerParameter::MagFilter) return "MagFilter";
+        else if (v == SamplerParameter::WrapS) return "WrapS";
+        else if (v == SamplerParameter::WrapT) return "WrapT";
+        else if (v == SamplerParameter::WrapR) return "WrapR";
+        else if (v == SamplerParameter::MinLod) return "MinLod";
+        else if (v == SamplerParameter::MaxLod) return "MaxLod";
+        else if (v == SamplerParameter::CompareMode) return "CompareMode";
+        else if (v == SamplerParameter::CompareFunc) return "CompareFunc";
+        else if (v == SamplerParameter::BorderColor) return "BorderColor";
+        return "?";
+    }
+
     inline std::string_view to_string(TextureMinFilter v)
     {
         if (v == TextureMinFilter::Nearest) return "Nearest";

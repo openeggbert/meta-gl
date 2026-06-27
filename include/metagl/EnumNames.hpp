@@ -856,41 +856,46 @@ namespace metagl
         return "?";
     }
 
+    inline std::string_view to_string(ColorAttachment v)
+    {
+        if (v == ColorAttachment::Color0) return "Color0";
+        else if (v == ColorAttachment::Color1) return "Color1";
+        else if (v == ColorAttachment::Color2) return "Color2";
+        else if (v == ColorAttachment::Color3) return "Color3";
+        else if (v == ColorAttachment::Color4) return "Color4";
+        else if (v == ColorAttachment::Color5) return "Color5";
+        else if (v == ColorAttachment::Color6) return "Color6";
+        else if (v == ColorAttachment::Color7) return "Color7";
+        else if (v == ColorAttachment::Color8) return "Color8";
+        else if (v == ColorAttachment::Color9) return "Color9";
+        else if (v == ColorAttachment::Color10) return "Color10";
+        else if (v == ColorAttachment::Color11) return "Color11";
+        else if (v == ColorAttachment::Color12) return "Color12";
+        else if (v == ColorAttachment::Color13) return "Color13";
+        else if (v == ColorAttachment::Color14) return "Color14";
+        else if (v == ColorAttachment::Color15) return "Color15";
+        else if (v == ColorAttachment::Color16) return "Color16";
+        else if (v == ColorAttachment::Color17) return "Color17";
+        else if (v == ColorAttachment::Color18) return "Color18";
+        else if (v == ColorAttachment::Color19) return "Color19";
+        else if (v == ColorAttachment::Color20) return "Color20";
+        else if (v == ColorAttachment::Color21) return "Color21";
+        else if (v == ColorAttachment::Color22) return "Color22";
+        else if (v == ColorAttachment::Color23) return "Color23";
+        else if (v == ColorAttachment::Color24) return "Color24";
+        else if (v == ColorAttachment::Color25) return "Color25";
+        else if (v == ColorAttachment::Color26) return "Color26";
+        else if (v == ColorAttachment::Color27) return "Color27";
+        else if (v == ColorAttachment::Color28) return "Color28";
+        else if (v == ColorAttachment::Color29) return "Color29";
+        else if (v == ColorAttachment::Color30) return "Color30";
+        else if (v == ColorAttachment::Color31) return "Color31";
+        return "?";
+    }
+
     inline std::string_view to_string(FramebufferAttachment v)
     {
         if (v == FramebufferAttachment::None) return "None";
-        else if (v == FramebufferAttachment::Color0) return "Color0";
-        else if (v == FramebufferAttachment::Color1) return "Color1";
-        else if (v == FramebufferAttachment::Color2) return "Color2";
-        else if (v == FramebufferAttachment::Color3) return "Color3";
-        else if (v == FramebufferAttachment::Color4) return "Color4";
-        else if (v == FramebufferAttachment::Color5) return "Color5";
-        else if (v == FramebufferAttachment::Color6) return "Color6";
-        else if (v == FramebufferAttachment::Color7) return "Color7";
-        else if (v == FramebufferAttachment::Color8) return "Color8";
-        else if (v == FramebufferAttachment::Color9) return "Color9";
-        else if (v == FramebufferAttachment::Color10) return "Color10";
-        else if (v == FramebufferAttachment::Color11) return "Color11";
-        else if (v == FramebufferAttachment::Color12) return "Color12";
-        else if (v == FramebufferAttachment::Color13) return "Color13";
-        else if (v == FramebufferAttachment::Color14) return "Color14";
-        else if (v == FramebufferAttachment::Color15) return "Color15";
-        else if (v == FramebufferAttachment::Color16) return "Color16";
-        else if (v == FramebufferAttachment::Color17) return "Color17";
-        else if (v == FramebufferAttachment::Color18) return "Color18";
-        else if (v == FramebufferAttachment::Color19) return "Color19";
-        else if (v == FramebufferAttachment::Color20) return "Color20";
-        else if (v == FramebufferAttachment::Color21) return "Color21";
-        else if (v == FramebufferAttachment::Color22) return "Color22";
-        else if (v == FramebufferAttachment::Color23) return "Color23";
-        else if (v == FramebufferAttachment::Color24) return "Color24";
-        else if (v == FramebufferAttachment::Color25) return "Color25";
-        else if (v == FramebufferAttachment::Color26) return "Color26";
-        else if (v == FramebufferAttachment::Color27) return "Color27";
-        else if (v == FramebufferAttachment::Color28) return "Color28";
-        else if (v == FramebufferAttachment::Color29) return "Color29";
-        else if (v == FramebufferAttachment::Color30) return "Color30";
-        else if (v == FramebufferAttachment::Color31) return "Color31";
         else if (v == FramebufferAttachment::Depth) return "Depth";
         else if (v == FramebufferAttachment::Stencil) return "Stencil";
         else if (v == FramebufferAttachment::DepthStencil) return "DepthStencil";
@@ -1454,38 +1459,6 @@ namespace metagl
     {
         if (v == DrawBuffer::None) return "None";
         else if (v == DrawBuffer::Back) return "Back";
-        else if (v == DrawBuffer::ColorAttachment0) return "ColorAttachment0";
-        else if (v == DrawBuffer::ColorAttachment1) return "ColorAttachment1";
-        else if (v == DrawBuffer::ColorAttachment2) return "ColorAttachment2";
-        else if (v == DrawBuffer::ColorAttachment3) return "ColorAttachment3";
-        else if (v == DrawBuffer::ColorAttachment4) return "ColorAttachment4";
-        else if (v == DrawBuffer::ColorAttachment5) return "ColorAttachment5";
-        else if (v == DrawBuffer::ColorAttachment6) return "ColorAttachment6";
-        else if (v == DrawBuffer::ColorAttachment7) return "ColorAttachment7";
-        else if (v == DrawBuffer::ColorAttachment8) return "ColorAttachment8";
-        else if (v == DrawBuffer::ColorAttachment9) return "ColorAttachment9";
-        else if (v == DrawBuffer::ColorAttachment10) return "ColorAttachment10";
-        else if (v == DrawBuffer::ColorAttachment11) return "ColorAttachment11";
-        else if (v == DrawBuffer::ColorAttachment12) return "ColorAttachment12";
-        else if (v == DrawBuffer::ColorAttachment13) return "ColorAttachment13";
-        else if (v == DrawBuffer::ColorAttachment14) return "ColorAttachment14";
-        else if (v == DrawBuffer::ColorAttachment15) return "ColorAttachment15";
-        else if (v == DrawBuffer::ColorAttachment16) return "ColorAttachment16";
-        else if (v == DrawBuffer::ColorAttachment17) return "ColorAttachment17";
-        else if (v == DrawBuffer::ColorAttachment18) return "ColorAttachment18";
-        else if (v == DrawBuffer::ColorAttachment19) return "ColorAttachment19";
-        else if (v == DrawBuffer::ColorAttachment20) return "ColorAttachment20";
-        else if (v == DrawBuffer::ColorAttachment21) return "ColorAttachment21";
-        else if (v == DrawBuffer::ColorAttachment22) return "ColorAttachment22";
-        else if (v == DrawBuffer::ColorAttachment23) return "ColorAttachment23";
-        else if (v == DrawBuffer::ColorAttachment24) return "ColorAttachment24";
-        else if (v == DrawBuffer::ColorAttachment25) return "ColorAttachment25";
-        else if (v == DrawBuffer::ColorAttachment26) return "ColorAttachment26";
-        else if (v == DrawBuffer::ColorAttachment27) return "ColorAttachment27";
-        else if (v == DrawBuffer::ColorAttachment28) return "ColorAttachment28";
-        else if (v == DrawBuffer::ColorAttachment29) return "ColorAttachment29";
-        else if (v == DrawBuffer::ColorAttachment30) return "ColorAttachment30";
-        else if (v == DrawBuffer::ColorAttachment31) return "ColorAttachment31";
         return "?";
     }
 
@@ -1493,38 +1466,6 @@ namespace metagl
     {
         if (v == ReadBuffer::None) return "None";
         else if (v == ReadBuffer::Back) return "Back";
-        else if (v == ReadBuffer::ColorAttachment0) return "ColorAttachment0";
-        else if (v == ReadBuffer::ColorAttachment1) return "ColorAttachment1";
-        else if (v == ReadBuffer::ColorAttachment2) return "ColorAttachment2";
-        else if (v == ReadBuffer::ColorAttachment3) return "ColorAttachment3";
-        else if (v == ReadBuffer::ColorAttachment4) return "ColorAttachment4";
-        else if (v == ReadBuffer::ColorAttachment5) return "ColorAttachment5";
-        else if (v == ReadBuffer::ColorAttachment6) return "ColorAttachment6";
-        else if (v == ReadBuffer::ColorAttachment7) return "ColorAttachment7";
-        else if (v == ReadBuffer::ColorAttachment8) return "ColorAttachment8";
-        else if (v == ReadBuffer::ColorAttachment9) return "ColorAttachment9";
-        else if (v == ReadBuffer::ColorAttachment10) return "ColorAttachment10";
-        else if (v == ReadBuffer::ColorAttachment11) return "ColorAttachment11";
-        else if (v == ReadBuffer::ColorAttachment12) return "ColorAttachment12";
-        else if (v == ReadBuffer::ColorAttachment13) return "ColorAttachment13";
-        else if (v == ReadBuffer::ColorAttachment14) return "ColorAttachment14";
-        else if (v == ReadBuffer::ColorAttachment15) return "ColorAttachment15";
-        else if (v == ReadBuffer::ColorAttachment16) return "ColorAttachment16";
-        else if (v == ReadBuffer::ColorAttachment17) return "ColorAttachment17";
-        else if (v == ReadBuffer::ColorAttachment18) return "ColorAttachment18";
-        else if (v == ReadBuffer::ColorAttachment19) return "ColorAttachment19";
-        else if (v == ReadBuffer::ColorAttachment20) return "ColorAttachment20";
-        else if (v == ReadBuffer::ColorAttachment21) return "ColorAttachment21";
-        else if (v == ReadBuffer::ColorAttachment22) return "ColorAttachment22";
-        else if (v == ReadBuffer::ColorAttachment23) return "ColorAttachment23";
-        else if (v == ReadBuffer::ColorAttachment24) return "ColorAttachment24";
-        else if (v == ReadBuffer::ColorAttachment25) return "ColorAttachment25";
-        else if (v == ReadBuffer::ColorAttachment26) return "ColorAttachment26";
-        else if (v == ReadBuffer::ColorAttachment27) return "ColorAttachment27";
-        else if (v == ReadBuffer::ColorAttachment28) return "ColorAttachment28";
-        else if (v == ReadBuffer::ColorAttachment29) return "ColorAttachment29";
-        else if (v == ReadBuffer::ColorAttachment30) return "ColorAttachment30";
-        else if (v == ReadBuffer::ColorAttachment31) return "ColorAttachment31";
         return "?";
     }
 

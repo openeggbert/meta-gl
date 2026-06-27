@@ -156,7 +156,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | I5 | Add unit tests for `Context.cpp` lifecycle: `MarkContextLost`, `MarkContextRestored`, `LoadCurrentContext`, `GetContextStatus` transitions |
 | I6 | Add unit tests for `ContextEvents.cpp`: `AddContextListener`, `RemoveContextListener`, `NotifyContextLost`, `NotifyContextRestored` — use a mock listener |
 | I7 | Add unit tests for `HasExtension` and `GetCapabilities` with a fake extension string |
-| I8 | Add unit tests for all 89 `to_string()` overloads in `EnumNames.hpp` (just verify non-empty and no crash) |
+| I8 | ✅ Runtime tests for all 89+ `to_string()` overloads in `EnumNames.hpp` — verify non-empty, non-"?" for one representative value per enum and all 14 handle types; run via CTest |
 | I9 | Add a mock-loader integration test for `Initialize()`: provide a stub `GetProcAddress` that returns dummy function pointers and verify all wrappers dispatch through them without crashing |
 | I10 | Add a minimal example program under `examples/` (a no-op render loop using `eglCreateContext` or an SDL2 hidden window) to verify the library links and initializes correctly on the CI platform |
 

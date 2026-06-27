@@ -106,4 +106,137 @@ static_assert(!GlHandle<unsigned int>);
 static_assert(!GlEnum<TextureId>);
 static_assert(!GlBitfield<BufferId>);
 
-int main() { return 0; }
+// =============================================================================
+// I8 — Runtime: every to_string() overload returns a non-empty, non-"?" string
+// =============================================================================
+
+#include <iostream>
+#include <string>
+
+int main()
+{
+    int failed = 0;
+    // Lambda accepts std::string_view; std::string temporaries are valid for
+    // the duration of the call (destroyed after the full expression).
+    auto check = [&](const char* label, std::string_view sv)
+    {
+        if (sv.empty() || sv == "?") {
+            std::cerr << "FAIL: to_string(" << label << ") = '"
+                      << sv << "'\n";
+            ++failed;
+        }
+    };
+
+    // Enum types
+    check("ClearBufferBit::Color",                       to_string(ClearBufferBit::Color));
+    check("PrimitiveType::Triangles",                    to_string(PrimitiveType::Triangles));
+    check("BlendFactor::Zero",                           to_string(BlendFactor::Zero));
+    check("BlendEquation::FuncAdd",                      to_string(BlendEquation::FuncAdd));
+    check("BufferTarget::Array",                         to_string(BufferTarget::Array));
+    check("BufferUsage::StaticDraw",                     to_string(BufferUsage::StaticDraw));
+    check("BufferParameter::Size",                       to_string(BufferParameter::Size));
+    check("BufferPointerParameter::MapPointer",          to_string(BufferPointerParameter::MapPointer));
+    check("MapBufferAccessMask::Read",                   to_string(MapBufferAccessMask::Read));
+    check("SampleMaskValue::None",                       to_string(SampleMaskValue::None));
+    check("Capability::Blend",                           to_string(Capability::Blend));
+    check("ErrorCode::NoError",                          to_string(ErrorCode::NoError));
+    check("FrontFace::CW",                               to_string(FrontFace::CW));
+    check("CullFace::Front",                             to_string(CullFace::Front));
+    check("HintTarget::GenerateMipmap",                  to_string(HintTarget::GenerateMipmap));
+    check("HintMode::DontCare",                          to_string(HintMode::DontCare));
+    check("DataType::Float",                             to_string(DataType::Float));
+    check("PixelFormat::Rgba",                           to_string(PixelFormat::Rgba));
+    check("PixelType::UnsignedByte",                     to_string(PixelType::UnsignedByte));
+    check("InternalFormat::Rgba8",                       to_string(InternalFormat::Rgba8));
+    check("CompressedInternalFormat::R11Eac",            to_string(CompressedInternalFormat::R11Eac));
+    check("StringName::Vendor",                          to_string(StringName::Vendor));
+    check("IntegerName::MajorVersion",                   to_string(IntegerName::MajorVersion));
+    check("ShaderType::Vertex",                          to_string(ShaderType::Vertex));
+    check("ShaderStageMask::Vertex",                     to_string(ShaderStageMask::Vertex));
+    check("ShaderParameter::ShaderType",                 to_string(ShaderParameter::ShaderType));
+    check("PrecisionType::LowFloat",                     to_string(PrecisionType::LowFloat));
+    check("ProgramParameter::DeleteStatus",              to_string(ProgramParameter::DeleteStatus));
+    check("ProgramInterface::Uniform",                   to_string(ProgramInterface::Uniform));
+    check("ProgramInterfaceParameter::ActiveResources",  to_string(ProgramInterfaceParameter::ActiveResources));
+    check("ProgramResourceProperty::NameLength",         to_string(ProgramResourceProperty::NameLength));
+    check("UniformType::Float",                          to_string(UniformType::Float));
+    check("UniformBlockParameter::Binding",              to_string(UniformBlockParameter::Binding));
+    check("UniformParameter::Type",                      to_string(UniformParameter::Type));
+    check("TextureTarget::Texture2D",                    to_string(TextureTarget::Texture2D));
+    check("TextureParameter::MinFilter",                 to_string(TextureParameter::MinFilter));
+    check("SamplerParameter::MinFilter",                 to_string(SamplerParameter::MinFilter));
+    check("TextureMinFilter::Nearest",                   to_string(TextureMinFilter::Nearest));
+    check("TextureMagFilter::Nearest",                   to_string(TextureMagFilter::Nearest));
+    check("BlitFilter::Nearest",                         to_string(BlitFilter::Nearest));
+    check("TextureWrapMode::Repeat",                     to_string(TextureWrapMode::Repeat));
+    check("TextureCompareMode::None",                    to_string(TextureCompareMode::None));
+    check("TextureSwizzle::Red",                         to_string(TextureSwizzle::Red));
+    check("TextureLevelParameter::Width",                to_string(TextureLevelParameter::Width));
+    check("TextureUnit::Texture0",                       to_string(TextureUnit::Texture0));
+    check("PixelStoreParam::PackAlignment",              to_string(PixelStoreParam::PackAlignment));
+    check("CompareFunc::Never",                          to_string(CompareFunc::Never));
+    check("StencilOp::Keep",                             to_string(StencilOp::Keep));
+    check("FramebufferTarget::Framebuffer",              to_string(FramebufferTarget::Framebuffer));
+    check("RenderbufferTarget::Renderbuffer",            to_string(RenderbufferTarget::Renderbuffer));
+    check("ColorAttachment::Color0",                     to_string(ColorAttachment::Color0));
+    check("FramebufferAttachment::None",                 to_string(FramebufferAttachment::None));
+    check("FramebufferStatus::Complete",                 to_string(FramebufferStatus::Complete));
+    check("FramebufferAttachmentParameter::ObjectType",  to_string(FramebufferAttachmentParameter::ObjectType));
+    check("FramebufferDefaultParameter::Width",          to_string(FramebufferDefaultParameter::Width));
+    check("RenderbufferParameter::Width",                to_string(RenderbufferParameter::Width));
+    check("VertexAttribParameter::ArrayEnabled",         to_string(VertexAttribParameter::ArrayEnabled));
+    check("TransformFeedbackBufferMode::InterleavedAttribs", to_string(TransformFeedbackBufferMode::InterleavedAttribs));
+    check("TransformFeedbackTarget::TransformFeedback",  to_string(TransformFeedbackTarget::TransformFeedback));
+    check("QueryTarget::AnySamplesPassed",               to_string(QueryTarget::AnySamplesPassed));
+    check("QueryParameter::CurrentQuery",                to_string(QueryParameter::CurrentQuery));
+    check("QueryObjectParameter::Result",                to_string(QueryObjectParameter::Result));
+    check("SyncCondition::GpuCommandsComplete",          to_string(SyncCondition::GpuCommandsComplete));
+    check("SyncParameter::ObjectType",                   to_string(SyncParameter::ObjectType));
+    check("SyncWaitResult::AlreadySignaled",             to_string(SyncWaitResult::AlreadySignaled));
+    check("SyncFlushMask::None",                         to_string(SyncFlushMask::None));
+    check("ImageAccess::ReadOnly",                       to_string(ImageAccess::ReadOnly));
+    check("MemoryBarrierMask::VertexAttribArray",        to_string(MemoryBarrierMask::VertexAttribArray));
+    check("ContextFlagMask::Debug",                      to_string(ContextFlagMask::Debug));
+    check("GraphicsResetStatus::NoError",                to_string(GraphicsResetStatus::NoError));
+    check("ResetNotificationStrategy::NoResetNotification", to_string(ResetNotificationStrategy::NoResetNotification));
+    check("DebugSource::DontCare",                       to_string(DebugSource::DontCare));
+    check("DebugType::DontCare",                         to_string(DebugType::DontCare));
+    check("DebugSeverity::DontCare",                     to_string(DebugSeverity::DontCare));
+    check("DebugObjectLabel::Buffer",                    to_string(DebugObjectLabel::Buffer));
+    check("ProvokingVertex::FirstVertex",                to_string(ProvokingVertex::FirstVertex));
+    check("TessGenMode::Quads",                          to_string(TessGenMode::Quads));
+    check("TessGenSpacing::Equal",                       to_string(TessGenSpacing::Equal));
+    check("TessellationParameter::PatchVertices",        to_string(TessellationParameter::PatchVertices));
+    check("GetParameter::Viewport",                      to_string(GetParameter::Viewport));
+    check("ClearBuffer::Color",                          to_string(ClearBuffer::Color));
+    check("DrawBuffer::None",                            to_string(DrawBuffer::None));
+    check("ReadBuffer::None",                            to_string(ReadBuffer::None));
+    check("ShaderBinaryFormat(0)",                       to_string(static_cast<ShaderBinaryFormat>(0)));
+    check("ProgramBinaryFormat(0)",                      to_string(static_cast<ProgramBinaryFormat>(0)));
+    check("GetPointerParameter::DebugCallbackFunction",  to_string(GetPointerParameter::DebugCallbackFunction));
+    check("MultisampleParameter::SamplePosition",        to_string(MultisampleParameter::SamplePosition));
+    check("InternalFormatTarget::Renderbuffer",          to_string(InternalFormatTarget::Renderbuffer));
+    check("InternalFormatParameter::Samples",            to_string(InternalFormatParameter::Samples));
+    check("ProgramPipelineParameter::ActiveProgram",     to_string(ProgramPipelineParameter::ActiveProgram));
+    check("SyncFlag::None",                              to_string(SyncFlag::None));
+
+    // Handle types (to_string returns std::string, always non-empty)
+    check("ShaderId{42}",            to_string(ShaderId{42}));
+    check("ProgramId{1}",            to_string(ProgramId{1}));
+    check("TextureId{7}",            to_string(TextureId{7}));
+    check("BufferId{3}",             to_string(BufferId{3}));
+    check("FramebufferId{2}",        to_string(FramebufferId{2}));
+    check("RenderbufferId{5}",       to_string(RenderbufferId{5}));
+    check("SamplerId{4}",            to_string(SamplerId{4}));
+    check("VertexArrayId{6}",        to_string(VertexArrayId{6}));
+    check("QueryId{8}",              to_string(QueryId{8}));
+    check("TransformFeedbackId{9}",  to_string(TransformFeedbackId{9}));
+    check("ProgramPipelineId{10}",   to_string(ProgramPipelineId{10}));
+    check("UniformLocation{0}",      to_string(UniformLocation{0}));
+    check("AttribLocation{0}",       to_string(AttribLocation{0}));
+    check("ImageUnit{0}",            to_string(ImageUnit{0}));
+
+    if (failed > 0)
+        std::cerr << failed << " to_string test(s) failed.\n";
+    return failed;
+}

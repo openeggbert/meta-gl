@@ -52,7 +52,34 @@ target_compile_options(meta-gl PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
 install(TARGETS meta-gl
         EXPORT meta-gl-targets
         FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(EXPORT meta-gl-targets
+        FILE meta-glTargets.cmake
+        NAMESPACE meta-gl::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/meta-gl
+)
+
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/meta-glConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/meta-glConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/meta-gl
+)
+
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/meta-glConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/meta-glConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/meta-glConfigVersion.cmake"
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/meta-gl
 )

@@ -1,0 +1,4 @@
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/meta-glTargets.cmake")
+check_required_components(meta-gl)

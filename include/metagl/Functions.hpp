@@ -122,6 +122,7 @@ namespace metagl
     inline void glGenBuffers(std::span<BufferId> buffers) { glGenBuffers(static_cast<GLsizei>(buffers.size()), buffers.data()); }
     // #53 (2.0+) Deletes buffer objects and frees their GPU memory
     void glDeleteBuffers(GLsizei n, const BufferId * buffers);
+    inline void glDeleteBuffers(std::span<const BufferId> buffers) { glDeleteBuffers(static_cast<GLsizei>(buffers.size()), buffers.data()); }
     // #54 (2.0+) Binds a buffer to a target (ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER, etc.)
     void glBindBuffer(BufferTarget target, BufferId buffer);
     // #55 (3.0+) Binds a buffer to an indexed binding point (e.g. UBO slot N)
@@ -155,6 +156,7 @@ namespace metagl
     inline void glGenVertexArrays(std::span<VertexArrayId> arrays) { glGenVertexArrays(static_cast<GLsizei>(arrays.size()), arrays.data()); }
     // #68 (3.0+) Deletes VAOs
     void glDeleteVertexArrays(GLsizei n, const VertexArrayId * arrays);
+    inline void glDeleteVertexArrays(std::span<const VertexArrayId> arrays) { glDeleteVertexArrays(static_cast<GLsizei>(arrays.size()), arrays.data()); }
     // #69 (3.0+) Binds a VAO; all subsequent attribute state is recorded into it
     void glBindVertexArray(VertexArrayId array);
     // #70 (3.0+) Returns GL_TRUE if the name is a valid VAO
@@ -498,6 +500,7 @@ namespace metagl
     inline void glGenTextures(std::span<TextureId> textures) { glGenTextures(static_cast<GLsizei>(textures.size()), textures.data()); }
     // #235 (2.0+) Deletes texture objects and frees their GPU memory
     void glDeleteTextures(GLsizei n, const TextureId * textures);
+    inline void glDeleteTextures(std::span<const TextureId> textures) { glDeleteTextures(static_cast<GLsizei>(textures.size()), textures.data()); }
     // #236 (2.0+) Binds a texture to a target in the active texture unit
     void glBindTexture(TextureTarget target, TextureId texture);
     // #237 (2.0+) Selects the active texture unit for subsequent texture operations
@@ -579,6 +582,7 @@ namespace metagl
     inline void glGenSamplers(std::span<SamplerId> samplers) { glGenSamplers(static_cast<GLsizei>(samplers.size()), samplers.data()); }
     // #274 (3.0+) Deletes sampler objects
     void glDeleteSamplers(GLsizei count, const SamplerId * samplers);
+    inline void glDeleteSamplers(std::span<const SamplerId> samplers) { glDeleteSamplers(static_cast<GLsizei>(samplers.size()), samplers.data()); }
     // #275 (3.0+) Binds a sampler to a texture unit, overriding the texture's own sampling state
     void glBindSampler(GLuint unit, SamplerId sampler);
     // #276 (3.0+) Returns GL_TRUE if the name is a valid sampler object
@@ -610,6 +614,7 @@ namespace metagl
     inline void glGenFramebuffers(std::span<FramebufferId> framebuffers) { glGenFramebuffers(static_cast<GLsizei>(framebuffers.size()), framebuffers.data()); }
     // #288 (2.0+) Deletes framebuffer objects
     void glDeleteFramebuffers(GLsizei n, const FramebufferId * framebuffers);
+    inline void glDeleteFramebuffers(std::span<const FramebufferId> framebuffers) { glDeleteFramebuffers(static_cast<GLsizei>(framebuffers.size()), framebuffers.data()); }
     // #289 (2.0+) Binds a framebuffer to GL_FRAMEBUFFER, GL_READ_FRAMEBUFFER, or GL_DRAW_FRAMEBUFFER
     void glBindFramebuffer(FramebufferTarget target, FramebufferId framebuffer);
     // #290 (2.0+) Returns GL_TRUE if the name is a valid framebuffer object
@@ -643,6 +648,7 @@ namespace metagl
     inline void glGenRenderbuffers(std::span<RenderbufferId> renderbuffers) { glGenRenderbuffers(static_cast<GLsizei>(renderbuffers.size()), renderbuffers.data()); }
     // #303 (2.0+) Deletes renderbuffer objects and frees their GPU memory
     void glDeleteRenderbuffers(GLsizei n, const RenderbufferId * renderbuffers);
+    inline void glDeleteRenderbuffers(std::span<const RenderbufferId> renderbuffers) { glDeleteRenderbuffers(static_cast<GLsizei>(renderbuffers.size()), renderbuffers.data()); }
     // #304 (2.0+) Binds a renderbuffer to the GL_RENDERBUFFER target
     void glBindRenderbuffer(RenderbufferTarget target, RenderbufferId renderbuffer);
     // #305 (2.0+) Returns GL_TRUE if the name is a valid renderbuffer object
@@ -660,6 +666,7 @@ namespace metagl
     inline void glGenTransformFeedbacks(std::span<TransformFeedbackId> ids) { glGenTransformFeedbacks(static_cast<GLsizei>(ids.size()), ids.data()); }
     // #310 (3.0+) Deletes transform feedback objects
     void glDeleteTransformFeedbacks(GLsizei n, const TransformFeedbackId * ids);
+    inline void glDeleteTransformFeedbacks(std::span<const TransformFeedbackId> ids) { glDeleteTransformFeedbacks(static_cast<GLsizei>(ids.size()), ids.data()); }
     // #311 (3.0+) Binds a transform feedback object to capture its output buffer state
     void glBindTransformFeedback(TransformFeedbackTarget target, TransformFeedbackId id);
     // #312 (3.0+) Returns GL_TRUE if the name is a valid transform feedback object
@@ -683,6 +690,7 @@ namespace metagl
     inline void glGenQueries(std::span<QueryId> ids) { glGenQueries(static_cast<GLsizei>(ids.size()), ids.data()); }
     // #320 (3.0+) Deletes query objects
     void glDeleteQueries(GLsizei n, const QueryId * ids);
+    inline void glDeleteQueries(std::span<const QueryId> ids) { glDeleteQueries(static_cast<GLsizei>(ids.size()), ids.data()); }
     // #321 (3.0+) Returns GL_TRUE if the name is a valid query object
     bool glIsQuery(QueryId id);
     // #322 (3.0+) Begins recording a GPU query (occlusion, primitives written, etc.)
@@ -724,6 +732,7 @@ namespace metagl
     inline void glGenProgramPipelines(std::span<ProgramPipelineId> pipelines) { glGenProgramPipelines(static_cast<GLsizei>(pipelines.size()), pipelines.data()); }
     // #337 (3.1+) Deletes program pipeline objects
     void glDeleteProgramPipelines(GLsizei n, const ProgramPipelineId * pipelines);
+    inline void glDeleteProgramPipelines(std::span<const ProgramPipelineId> pipelines) { glDeleteProgramPipelines(static_cast<GLsizei>(pipelines.size()), pipelines.data()); }
     // #338 (3.1+) Binds a program pipeline for rendering
     void glBindProgramPipeline(ProgramPipelineId pipeline);
     // #339 (3.1+) Returns GL_TRUE if the name is a valid program pipeline object

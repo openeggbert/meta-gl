@@ -1,3 +1,30 @@
+/**
+ * @file Loader.hpp
+ * @brief GL function-pointer loader: Initialize, LoadCurrentContext, and query helpers.
+ *
+ * The loader fills the internal `detail::GlTable` with function pointers obtained
+ * from the platform's `GetProcAddress`-equivalent.  After a successful
+ * @ref Initialize call, all `metagl::gl*` wrapper functions are safe to call
+ * from the same thread that owns the GL context.
+ *
+ * Typical usage:
+ * @code
+ * // On context creation (SDL2 example):
+ * if (!metagl::Initialize(SDL_GL_GetProcAddress))
+ *     abort();
+ *
+ * // On context restore (Android / Emscripten):
+ * metagl::LoadCurrentContext(getProcAddress);
+ * metagl::NotifyContextRestored();
+ * @endcode
+ *
+ * Under Emscripten, use @ref InstallEmscriptenContextLossCallbacks (Emscripten.hpp)
+ * to automate context-loss / context-restore handling.
+ *
+ * @note On Emscripten/WebGL the correct loader is `emscripten_webgl_get_proc_address`,
+ *       not `eglGetProcAddress`.  The two differ in the extensions they expose under
+ *       the WebGL security model.
+ */
 #pragma once
 
 #include "Types.hpp"
@@ -6,49 +33,84 @@
 
 namespace metagl
 {
-    /// Convenient alias matching the issue description naming.
+    /// Convenient alias for @ref GlGetProcAddressFn matching common naming conventions.
     using GetProcAddress = GlGetProcAddressFn;
 
-    /// Initialize meta-gl by loading GL function pointers via the provided loader.
-    /// Compatible loaders: SDL_GL_GetProcAddress, glfwGetProcAddress, eglGetProcAddress, …
-    ///
-    /// On success:
-    ///   - All existing metagl::gl* wrappers work.
-    ///   - Context generation is incremented.
-    ///   - Context status is set to Current.
-    ///   - Capabilities are (re-)detected.
-    ///
-    /// Thread-safety:
-    ///   Initialize() must complete fully before any render thread calls metagl::gl*
-    ///   wrapper functions.  Concurrent calls to Initialize() from multiple threads
-    ///   are NOT supported and result in undefined behaviour.  Typical usage:
-    ///   call once on the GL thread during context creation (and again after context
-    ///   restore), then hand off rendering to any thread.
-    ///
-    /// Returns true when the core set of functions was loaded successfully.
+    /**
+     * @brief Loads all GL function pointers and initialises the library.
+     *
+     * Iterates over the list of 358 OpenGL ES 3.2 function names, calls @p loader for each,
+     * and stores the resulting function pointers.  After a successful call:
+     * - All `metagl::gl*` wrappers are ready to use.
+     * - @ref GetContextStatus returns `ContextStatus::Current`.
+     * - The context generation counter is incremented.
+     * - Capabilities (version, extensions, GLES flags) are (re-)detected.
+     * - Under `METAGLDEBUG`, `glGetError` is registered for per-call error checking.
+     *
+     * **Thread-safety:** `Initialize()` must complete fully before any render thread
+     * calls `metagl::gl*` wrappers.  Concurrent calls from multiple threads are
+     * **not** supported and result in undefined behaviour.  Typical usage: call once on
+     * the GL thread during context creation (and again after context restore), then
+     * hand off rendering to any thread.
+     *
+     * @param loader  Platform `GetProcAddress` function.  Must not be `nullptr`.
+     * @return `true` if the core ES 2.0 function set was loaded successfully.
+     *         `false` if the loader returned `nullptr` for one or more core functions.
+     */
     bool Initialize(GlGetProcAddressFn loader);
 
-    /// Explicit-loader variant with the new naming from the issue description.
-    /// Equivalent to Initialize(); provided for API consistency.
-    ///
-    /// Android usage:
-    ///   Call from GLSurfaceView.Renderer::onSurfaceCreated (via JNI) or from
-    ///   the SDL/EGL context-creation path after each context recreation.
-    ///   Old GL handles (textures, buffers, shaders, …) are invalid after
-    ///   context loss; do not attempt glDelete* on them.
+    /**
+     * @brief Convenience alias for @ref Initialize; provided for API consistency.
+     *
+     * Equivalent to `Initialize(getProcAddress)`.  Use this name in contexts where
+     * "loading" semantics are more natural than "initialising" (e.g. after context restore).
+     *
+     * **Android example:**
+     * @code
+     * // GLSurfaceView.Renderer::onSurfaceCreated (via JNI) or after EGL context recreation:
+     * metagl::LoadCurrentContext(eglGetProcAddress);
+     * metagl::NotifyContextRestored();
+     * // Note: old GL handles (textures, buffers, shaders, programs) are invalid after
+     * // context loss; do not attempt glDelete* on them.
+     * @endcode
+     *
+     * @param getProcAddress  Platform `GetProcAddress` function.
+     * @return `true` on success; same semantics as @ref Initialize.
+     */
     inline bool LoadCurrentContext(GlGetProcAddressFn getProcAddress)
     {
         return Initialize(getProcAddress);
     }
 
-    /// Returns true if Initialize() succeeded previously.
+    /**
+     * @brief Returns `true` if @ref Initialize has previously succeeded.
+     *
+     * Does not verify that function pointers are still valid (e.g. after context loss).
+     * Use @ref GetContextStatus to check the lifecycle state.
+     */
     bool IsInitialized();
 
-    /// Returns true if the named GL function was loaded successfully during the
-    /// last Initialize() / LoadCurrentContext() call.
+    /**
+     * @brief Returns `true` if the named GL function was loaded during the last
+     *        @ref Initialize call.
+     *
+     * Useful for checking whether an optional extension entry-point is available
+     * before calling it.
+     *
+     * @param name  Null-terminated GL function name (e.g. `"glBlendBarrier"`).
+     * @return `true` if the function pointer is non-null; `false` otherwise.
+     */
     [[nodiscard]] bool IsFunctionAvailable(std::string_view name) noexcept;
 
-    /// Returns true if every GL ES 3.2 function pointer was loaded successfully.
-    /// Useful for verifying a complete load on a full ES 3.2 driver.
+    /**
+     * @brief Returns `true` if every OpenGL ES 3.2 function pointer was loaded successfully.
+     *
+     * A `true` result indicates a complete ES 3.2 driver.  A `false` result means
+     * at least one ES 3.2 entry-point was absent (the driver may still be ES 2.0 or 3.x).
+     *
+     * @note A stub / mock loader that returns a non-null noop for every query will
+     *       satisfy this check even without a real GPU.  It is intended as a
+     *       completeness sanity-check, not a GPU presence check.
+     */
     [[nodiscard]] bool AllFunctionsLoaded() noexcept;
 }

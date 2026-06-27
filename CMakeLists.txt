@@ -52,6 +52,16 @@ target_compile_options(meta-gl PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
 
+option(SANITIZE "Enable AddressSanitizer and UndefinedBehaviorSanitizer (GCC/Clang only)" OFF)
+if(SANITIZE)
+    target_compile_options(meta-gl PUBLIC
+        $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-fsanitize=address,undefined -fno-omit-frame-pointer>
+    )
+    target_link_options(meta-gl PUBLIC
+        $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-fsanitize=address,undefined>
+    )
+endif()
+
 option(BUILD_TESTING "Build the test suite" OFF)
 if(BUILD_TESTING)
     enable_testing()

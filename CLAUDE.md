@@ -34,7 +34,7 @@ easy-gl
 
 ## C++ standard
 
-Target C++20 as the portable baseline.
+Target C++23 as the portable baseline.
 
 Allowed and encouraged:
 

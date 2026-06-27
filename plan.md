@@ -64,11 +64,11 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | C4 | Replace `(GLsizeiptr size, const void* data)` in `glBufferSubData` with `std::span<const T>` template overload |
 | C5 | Replace `const void* pixels` in `glTexImage2D` / `glTexImage3D` / `glTexSubImage2D` / `glTexSubImage3D` with `std::span<const std::byte>` overloads |
 | C6 | Replace `(GLsizei imageSize, const void* data)` in all `glCompressedTexImage*` and `glCompressedTexSubImage*` with `std::span<const std::byte>` |
-| C7 | Add `std::span<const DrawBuffer>` overload for `glDrawBuffers` |
-| C8 | Add `std::span<const FramebufferAttachment>` overload for `glInvalidateFramebuffer` and `glInvalidateSubFramebuffer` |
-| C9 | Add `std::span<const GLuint>` overload for `glDebugMessageControl` `ids` parameter |
-| C10 | Add `std::span<const ProgramResourceProperty>` overload for `glGetProgramResourceiv` `props` parameter |
-| C11 | Add a `std::span<std::string_view>` convenience overload for `glShaderSource` (in addition to the existing multi-pointer version) |
+| C7 | ✅ Add `std::span<const DrawBuffer>` overload for `glDrawBuffers` |
+| C8 | ✅ Add `std::span<const FramebufferAttachment>` overload for `glInvalidateFramebuffer` and `glInvalidateSubFramebuffer` |
+| C9 | ✅ Add `std::span<const GLuint>` overload for `glDebugMessageControl` `ids` parameter |
+| C10 | ✅ Add `std::span<const ProgramResourceProperty>` overload for `glGetProgramResourceiv` `props` parameter |
+| C11 | ✅ Add a `std::string_view` convenience overload for `glShaderSource` (single source string; raw multi-pointer version preserved) |
 
 ---
 
@@ -76,12 +76,12 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 
 | # | Task |
 |---|------|
-| D1 | Add `glGetUniform<T>(ProgramId program, UniformLocation location, T* params)` template dispatch for `glGetUniformfv` / `glGetUniformiv` / `glGetUniformuiv` |
-| D2 | Add `glGetnUniform<T>` template dispatch for `glGetnUniformfv` / `glGetnUniformiv` / `glGetnUniformuiv` |
-| D3 | Add `glTexParameter<T>(TextureTarget, TextureParameter, T)` template dispatch to unify `glTexParameterf` and `glTexParameteri` |
-| D4 | Add `glSamplerParameter<T>(SamplerId, SamplerParameter, T)` template dispatch for `glSamplerParameterf` and `glSamplerParameteri` |
-| D5 | Add `glClearBuffer<T>(ClearBuffer buffer, GLint drawbuffer, T* value)` template dispatch for `glClearBufferfv` / `glClearBufferiv` / `glClearBufferuiv` |
-| D6 | Add `glGetVertexAttrib<T>(AttribLocation, VertexAttribParameter, T* params)` template dispatch for `glGetVertexAttribfv` / `glGetVertexAttribiv` / `glGetVertexAttribIiv` / `glGetVertexAttribIuiv` |
+| D1 | ✅ Add `glGetUniform<T>(ProgramId program, UniformLocation location, T* params)` template dispatch for `glGetUniformfv` / `glGetUniformiv` / `glGetUniformuiv` |
+| D2 | ✅ Add `glGetnUniform<T>` template dispatch for `glGetnUniformfv` / `glGetnUniformiv` / `glGetnUniformuiv` |
+| D3 | ✅ Add `glTexParameter<T>(TextureTarget, TextureParameter, T)` template dispatch to unify `glTexParameterf` and `glTexParameteri` |
+| D4 | ✅ Add `glSamplerParameter<T>(SamplerId, SamplerParameter, T)` template dispatch for `glSamplerParameterf` and `glSamplerParameteri` |
+| D5 | ✅ Add `glClearBuffer<T>(ClearBuffer buffer, GLint drawbuffer, T* value)` template dispatch for `glClearBufferfv` / `glClearBufferiv` / `glClearBufferuiv` |
+| D6 | ✅ Add `glGetVertexAttrib<T>(AttribLocation, VertexAttribParameter, T* params)` template dispatch for `glGetVertexAttribfv` / `glGetVertexAttribiv` / `glGetVertexAttribIiv` / `glGetVertexAttribIuiv` |
 
 ---
 
@@ -89,11 +89,11 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 
 | # | Task |
 |---|------|
-| E1 | Add `GlHandle` concept (requires `.value` of type `GLuint`) to constrain future template helpers that accept any handle type |
-| E2 | Add `GlBitfield` concept (enum class whose underlying type is `GLbitfield`) to enable a generic `operator|` / `operator&` / `operator~` implementation via one template and eliminate per-enum repetition |
-| E3 | Add `GlEnum` concept (enum class whose underlying type is `GLenum`) for documentation and potential generic `to_gl_enum` constraint |
-| E4 | Add `SpanCompatible` concept (trivially copyable, standard layout) to constrain the buffer/texture `std::span<const T>` templates |
-| E5 | Promote `detail::IsUniformMatrixShape` (currently a bool trait) to a proper `UniformMatrix` concept for cleaner compiler diagnostics |
+| E1 | ✅ Add `GlHandle` concept (requires `.value` of type `GLuint`) to constrain future template helpers that accept any handle type |
+| E2 | ✅ Add `GlBitfield` concept (enum class whose underlying type is `GLbitfield`) to enable a generic `operator|` / `operator&` / `operator~` implementation via one template and eliminate per-enum repetition |
+| E3 | ✅ Add `GlEnum` concept (enum class whose underlying type is `GLenum`) for documentation and potential generic `to_gl_enum` constraint |
+| E4 | ✅ Add `SpanCompatible` concept (trivially copyable, standard layout) to constrain the buffer/texture `std::span<const T>` templates |
+| E5 | ✅ Promote `detail::IsUniformMatrixShape` (currently a bool trait) to a proper `UniformMatrixShape` concept for cleaner compiler diagnostics |
 
 ---
 
@@ -101,7 +101,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 
 | # | Task |
 |---|------|
-| F1 | Fix C++ standard: change `CXX_STANDARD 23` to `CXX_STANDARD 20` in `CMakeLists.txt` to match CLAUDE.md (authoritative source); also update README.md requirement from "C++23" to "C++20" |
+| F1 | ~~cancelled~~ C++23 je záměrný baseline (CLAUDE.md aktualizováno) |
 | F2 | Add compiler warning flags: `-Wall -Wextra -Wpedantic` for GCC/Clang, `/W4` for MSVC, using `target_compile_options` with a generator expression |
 | F3 | Add CMake package install support: add `CMakePackageConfigHelpers`, write `meta-glConfig.cmake.in`, call `install(EXPORT ...)`, generate a version file — enables `find_package(meta-gl CONFIG)` |
 | F4 | Add `enable_testing()` and a `BUILD_TESTING` option guard to `CMakeLists.txt` in preparation for a test executable |

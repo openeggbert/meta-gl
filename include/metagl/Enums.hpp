@@ -92,28 +92,6 @@ namespace metagl
     };
 
     // -------------------------------------------------------------------------
-    // Advanced blend mode (ES 3.2 KHR_blend_equation_advanced blend equations).
-    // -------------------------------------------------------------------------
-    enum class BlendMode : GLenum
-    {
-        Multiply     = GL_MULTIPLY,
-        Screen       = GL_SCREEN,
-        Overlay      = GL_OVERLAY,
-        Darken       = GL_DARKEN,
-        Lighten      = GL_LIGHTEN,
-        ColorDodge   = GL_COLORDODGE,
-        ColorBurn    = GL_COLORBURN,
-        HardLight    = GL_HARDLIGHT,
-        SoftLight    = GL_SOFTLIGHT,
-        Difference   = GL_DIFFERENCE,
-        Exclusion    = GL_EXCLUSION,
-        HslHue       = GL_HSL_HUE,
-        HslSaturation = GL_HSL_SATURATION,
-        HslColor     = GL_HSL_COLOR,
-        HslLuminosity = GL_HSL_LUMINOSITY
-    };
-
-    // -------------------------------------------------------------------------
     // Buffer binding targets for glBindBuffer / glBufferData, etc.
     // -------------------------------------------------------------------------
     enum class BufferTarget : GLenum
@@ -791,7 +769,8 @@ namespace metagl
     };
 
     // -------------------------------------------------------------------------
-    // Minification filter values for TextureParameter::MinFilter.
+    // Minification filter for TextureParameter::MinFilter (glTexParameter*).
+    // Includes mipmap variants; use TextureMagFilter for magnification.
     // -------------------------------------------------------------------------
     enum class TextureMinFilter : GLenum
     {
@@ -804,7 +783,8 @@ namespace metagl
     };
 
     // -------------------------------------------------------------------------
-    // Magnification filter values for TextureParameter::MagFilter.
+    // Magnification filter for TextureParameter::MagFilter (glTexParameter*).
+    // Only Nearest/Linear are valid; mipmap variants are not allowed here.
     // -------------------------------------------------------------------------
     enum class TextureMagFilter : GLenum
     {
@@ -813,10 +793,10 @@ namespace metagl
     };
 
     // -------------------------------------------------------------------------
-    // Two-value filter enum used by glTexParameteriFilter() for mag/min filter
-    // when only Nearest or Linear is needed without mipmap variants.
+    // Filter parameter for glBlitFramebuffer. Only Nearest/Linear are valid.
+    // Not related to texture sampling — kept separate to prevent misuse.
     // -------------------------------------------------------------------------
-    enum class TextureFilter : GLenum
+    enum class BlitFilter : GLenum
     {
         Nearest = GL_NEAREST,
         Linear  = GL_LINEAR
@@ -829,17 +809,6 @@ namespace metagl
     {
         Repeat         = GL_REPEAT,
         ClampToEdge    = GL_CLAMP_TO_EDGE,
-        MirroredRepeat = GL_MIRRORED_REPEAT,
-        ClampToBorder  = GL_CLAMP_TO_BORDER  ///< ES 3.2+
-    };
-
-    // -------------------------------------------------------------------------
-    // Wrap mode enum used by glTexParameteriWrap().
-    // -------------------------------------------------------------------------
-    enum class TextureWrap : GLenum
-    {
-        ClampToEdge    = GL_CLAMP_TO_EDGE,
-        Repeat         = GL_REPEAT,
         MirroredRepeat = GL_MIRRORED_REPEAT,
         ClampToBorder  = GL_CLAMP_TO_BORDER  ///< ES 3.2+
     };

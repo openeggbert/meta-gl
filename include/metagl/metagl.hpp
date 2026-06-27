@@ -8,6 +8,14 @@
 #include "Capabilities.hpp"
 #include "ContextEvents.hpp"
 
+#ifndef METAGL_NO_DEBUG
+#include "Debug.hpp"
+#endif
+
+#ifndef METAGL_NO_ENUM_NAMES
+#include "EnumNames.hpp"
+#endif
+
 #ifdef __EMSCRIPTEN__
 #include "Emscripten.hpp"
 #endif

@@ -132,14 +132,14 @@ namespace metagl
     void glBindBufferRange(BufferTarget target, GLuint index, BufferId buffer, GLintptr offset, GLsizeiptr size);
     // #57 (2.0+) Allocates and optionally initializes a buffer's GPU data store
     void glBufferData(BufferTarget target, GLsizeiptr size, const void * data, BufferUsage usage);
-    template<typename T>
+    template<SpanCompatible T>
     inline void glBufferData(BufferTarget target, std::span<const T> data, BufferUsage usage)
     {
         glBufferData(target, static_cast<GLsizeiptr>(data.size_bytes()), data.data(), usage);
     }
     // #58 (2.0+) Updates a sub-range of an existing buffer without reallocating
     void glBufferSubData(BufferTarget target, GLintptr offset, GLsizeiptr size, const void * data);
-    template<typename T>
+    template<SpanCompatible T>
     inline void glBufferSubData(BufferTarget target, GLintptr offset, std::span<const T> data)
     {
         glBufferSubData(target, offset, static_cast<GLsizeiptr>(data.size_bytes()), data.data());

@@ -39,6 +39,13 @@ namespace metagl
         std::is_enum_v<T> &&
         std::same_as<std::underlying_type_t<T>, GLenum>;
 
+    /// Satisfied by types that can be safely used in std::span<const T> for GL data uploads.
+    /// Requires trivial copyability and standard layout so the byte representation is well-defined.
+    template<typename T>
+    concept SpanCompatible =
+        std::is_trivially_copyable_v<T> &&
+        std::is_standard_layout_v<T>;
+
     using ::GLbitfield;
     using ::GLboolean;
     using ::GLbyte;

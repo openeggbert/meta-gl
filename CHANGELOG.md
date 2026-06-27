@@ -2,8 +2,6 @@
 
 All notable changes to meta-gl will be documented here.
 
-## [Unreleased]
-
 ## [0.2.0] — 2026-06-27
 
 ### Breaking changes
@@ -40,6 +38,10 @@ All notable changes to meta-gl will be documented here.
 - Template dispatch helpers: `glGetUniform<T>`, `glGetnUniform<T>`, `glTexParameter<T>`,
   `glSamplerParameter<T>`, `glClearBuffer<T>`, `glGetVertexAttrib<T>`.
 - `glIs*` functions now return `bool` instead of `GLboolean`.
+- **Doxygen documentation** for all 11 public headers: `@file`, `@brief`, `@param`, `@return`, `@note`
+  annotations on every enum class, concept, handle type, function, and macro.
+- **`#ifdef __EMSCRIPTEN__` loader selection example** in `Loader.hpp` clarifying
+  `emscripten_webgl_get_proc_address` vs. `eglGetProcAddress` for WebGL builds.
 - `AllFunctionsLoaded()` public API in `Loader.hpp`.
 - `IsFunctionAvailable(std::string_view)` public API in `Loader.hpp`.
 - `Debug.hpp` and `EnumNames.hpp` included by umbrella `metagl.hpp` (opt-out via

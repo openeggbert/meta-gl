@@ -137,11 +137,11 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | H5 | ✅ Add `Debug.hpp` and `EnumNames.hpp` to the `metagl.hpp` umbrella header (behind `METAGL_NO_DEBUG` / `METAGL_NO_ENUM_NAMES` opt-out defines) |
 | H6 | ✅ Resolve the `ContextInfo` vs `Capabilities` dual source-of-truth: removed duplicate fields (vendor, renderer, gles20-32, webgl flags) from `ContextInfo`; `Capabilities` is now the single source of truth for feature detection |
 | H7 | ✅ Verify the claim in `OpenGL_ES.md` that 358 functions are wrapped — confirmed correct, last declaration is #358 |
-| H8 | Update `CHANGELOG.md` with version-tagged entries covering the debug logging, `EnumNames.hpp`, context events, and Emscripten additions that are currently only in the `[Unreleased]` section |
-| H9 | Add documentation of `Debug.hpp`, `Capabilities.hpp`, `ContextEvents.hpp`, and `Emscripten.hpp` to the header table in README.md |
-| H10 | Add Emscripten/WASM build instructions to README.md (which `emcmake`/`emmake` invocation, how to link, when to call `InstallEmscriptenContextLossCallbacks`) |
-| H11 | Document in `glObjectLabel` / `glGetObjectLabel` (Functions.hpp:755, 758) that `name` is a raw `GLuint` because the API targets named objects of mixed types and typed overloads would be unwieldy — or add typed overloads per handle type |
-| H12 | Clarify `glCopyImageSubData` usage: add `TextureId` / `BufferId` typed overloads or at minimum a comment explaining that `srcName`/`dstName` can refer to textures or renderbuffers |
+| H8 | ✅ Update `CHANGELOG.md` with version-tagged entries covering the debug logging, `EnumNames.hpp`, context events, and Emscripten additions that are currently only in the `[Unreleased]` section |
+| H9 | ✅ Add documentation of `Debug.hpp`, `Capabilities.hpp`, `ContextEvents.hpp`, and `Emscripten.hpp` to the header table in README.md |
+| H10 | ✅ Add Emscripten/WASM build instructions to README.md (which `emcmake`/`emmake` invocation, how to link, when to call `InstallEmscriptenContextLossCallbacks`) |
+| H11 | ✅ Document in `glObjectLabel` / `glGetObjectLabel` that `name` is a raw `GLuint` because the API targets named objects of mixed types and typed overloads would be unwieldy |
+| H12 | ✅ Clarify `glCopyImageSubData` usage: changed `srcName`/`dstName` from `TextureId` to raw `GLuint` with an explanatory comment — they can refer to textures or renderbuffers depending on the target parameter |
 
 ---
 
@@ -149,7 +149,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 
 | # | Task |
 |---|------|
-| I1 | Add a `tests/` directory and a basic `CMakeLists.txt` under it, wired into the root via `add_subdirectory(tests)` guarded by `BUILD_TESTING` |
+| I1 | ✅ Add a `tests/` directory and a basic `CMakeLists.txt` under it, wired into the root via `add_subdirectory(tests)` guarded by `BUILD_TESTING` |
 | I2 | Add compile-time tests (`static_assert`) verifying that template dispatch (`glUniform<float>`, `glUniform<int>`, `glVertexAttribPointer<float>`, etc.) resolves without ambiguity |
 | I3 | Add compile-time tests verifying that bitfield `operator|` compiles and preserves the enum type |
 | I4 | Add compile-time tests verifying that mixing handle types (`ShaderId` vs `ProgramId`) does not compile (negative compile tests using `requires` or `static_assert(!std::is_convertible_v<...>)`) |

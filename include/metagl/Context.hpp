@@ -1,70 +1,146 @@
+/**
+ * @file Context.hpp
+ * @brief GL context lifecycle state: API kind, version, generation counter, and status.
+ *
+ * `ContextInfo` holds the minimal runtime facts about the active GL context.
+ * Feature detection (GLES version flags, extension strings, vendor/renderer strings)
+ * lives in @ref Capabilities.hpp to keep this header small.
+ *
+ * Typical usage:
+ * @code
+ * metagl::Initialize(getProcAddress);
+ * const auto& info = metagl::GetContextInfo();
+ * if (info.api == metagl::ApiKind::OpenGLES && info.major >= 3)
+ *     // ES 3.x path
+ * @endcode
+ */
 #pragma once
 
 #include <cstdint>
 
 namespace metagl
 {
-    /// Which API kind the current context represents.
+    /**
+     * @brief Identifies the GL API exposed by the current context.
+     */
     enum class ApiKind : std::uint8_t
     {
-        Unknown,
-        OpenGLES,
-        WebGL
+        Unknown,   ///< API not yet detected or unrecognised version string.
+        OpenGLES,  ///< Desktop or mobile OpenGL ES context.
+        WebGL      ///< Emscripten/WebGL context (detected via `__EMSCRIPTEN__` and version string).
     };
 
-    /// Lifecycle state of the current GL context.
+    /**
+     * @brief Lifecycle state of the current GL context.
+     *
+     * Transitions:
+     * - `NotCreated` → `Current`  after the first successful @ref Initialize call.
+     * - `Current`    → `Lost`     via @ref MarkContextLost or @ref NotifyContextLost.
+     * - `Lost`       → `Restored` via @ref MarkContextRestored or @ref NotifyContextRestored
+     *                              (always call @ref LoadCurrentContext first).
+     * - `Restored`   → `Current`  automatically at the end of @ref LoadCurrentContext.
+     */
     enum class ContextStatus : std::uint8_t
     {
         NotCreated,  ///< No context has been initialised yet.
         Current,     ///< Context is active and rendering is possible.
-        Lost,        ///< Context was lost; GL handles are invalid.
-        Restored     ///< Context was restored; resources must be recreated.
+        Lost,        ///< Context was lost; all GL handles are invalid.
+        Restored     ///< Context was restored; GPU resources must be recreated.
     };
 
-    /// Lifecycle state of the GL context: API kind, version, generation counter,
-    /// and status. Feature detection (GLES flags, extensions, strings) lives in
-    /// Capabilities (see Capabilities.hpp).
+    /**
+     * @brief Snapshot of the current GL context's identity and lifecycle state.
+     *
+     * Feature detection (GLES version flags, extension strings, vendor/renderer)
+     * is in @ref Capabilities, obtainable via @ref GetCapabilities.
+     */
     struct ContextInfo
     {
-        ApiKind api = ApiKind::Unknown;
+        ApiKind api = ApiKind::Unknown;  ///< API kind detected from the GL_VERSION string.
 
-        int major = 0;
-        int minor = 0;
+        int major = 0;  ///< Major version number (e.g. `3` for OpenGL ES 3.2).
+        int minor = 0;  ///< Minor version number (e.g. `2` for OpenGL ES 3.2).
 
-        /// Monotonically increasing counter. Incremented each time a context is
-        /// successfully initialised (or restored).  Resources created under a
-        /// generation != the current generation are stale.
+        /**
+         * @brief Monotonically increasing context generation counter.
+         *
+         * Incremented each time @ref Initialize (or @ref LoadCurrentContext) succeeds.
+         * GPU resources created under a previous generation are invalid and must not
+         * be used or deleted after context loss/restore.
+         */
         std::uint64_t generation = 0;
 
-        /// Current lifecycle status.
-        ContextStatus status = ContextStatus::NotCreated;
+        ContextStatus status = ContextStatus::NotCreated;  ///< Current lifecycle status.
     };
 
     // -------------------------------------------------------------------------
-    // Context state query / mutation API
+    // Context state query API
     // -------------------------------------------------------------------------
 
-    /// Returns a copy of the current ContextInfo.
+    /**
+     * @brief Returns a copy of the current @ref ContextInfo.
+     *
+     * The returned struct is a snapshot; it does not update automatically.
+     * Call @ref GetContextStatus for a cheap single-field check.
+     */
     [[nodiscard]] ContextInfo GetContextInfo() noexcept;
 
-    /// Returns the current context generation counter.
+    /**
+     * @brief Returns the current context generation counter.
+     *
+     * Equivalent to `GetContextInfo().generation` but avoids copying the full struct.
+     */
     [[nodiscard]] std::uint64_t GetContextGeneration() noexcept;
 
-    /// Returns the current ContextStatus.
+    /**
+     * @brief Returns the current @ref ContextStatus.
+     *
+     * Cheap single-field read; prefer over @ref GetContextInfo when only the status is needed.
+     */
     [[nodiscard]] ContextStatus GetContextStatus() noexcept;
 
-    /// Returns true when the context is lost; GL calls must be skipped.
+    /**
+     * @brief Returns `true` when the context is in the `Lost` state.
+     *
+     * Callers should guard all GL work with this check when the application
+     * supports context loss (e.g. on Android or WebGL):
+     * @code
+     * if (!metagl::IsContextLost())
+     *     metagl::glDrawArrays(...);
+     * @endcode
+     */
     [[nodiscard]] bool IsContextLost() noexcept;
 
-    /// Mark the context as lost.  Typically called by platform hooks
-    /// (Emscripten context-lost callback, Android onSurfaceDestroyed, …).
+    // -------------------------------------------------------------------------
+    // Context state mutation API
+    // -------------------------------------------------------------------------
+
+    /**
+     * @brief Marks the context as lost.
+     *
+     * Transitions the status from `Current` → `Lost`.
+     * Typically called by platform hooks (Emscripten context-lost callback,
+     * Android `onSurfaceDestroyed`, etc.).
+     *
+     * Prefer @ref NotifyContextLost, which also dispatches @ref ContextListener events.
+     */
     void MarkContextLost() noexcept;
 
-    /// Mark the context as restored.  Call LoadCurrentContext() first to reload
-    /// function pointers and redetect capabilities, then call this (or rely on
-    /// LoadCurrentContext() which calls this internally).
+    /**
+     * @brief Marks the context as restored.
+     *
+     * Transitions the status to `Restored`.
+     *
+     * @warning Always call @ref LoadCurrentContext first to reload function pointers
+     *          and redetect capabilities before calling this function.
+     *          Prefer @ref NotifyContextRestored, which enforces the correct order.
+     */
     void MarkContextRestored() noexcept;
 
-    /// Internal: set the full ContextInfo (used by LoadCurrentContext).
+    /**
+     * @brief Internal: writes the full @ref ContextInfo (used by @ref LoadCurrentContext).
+     *
+     * Not intended for direct use by application code.
+     */
     void SetContextInfo(ContextInfo info) noexcept;
 }

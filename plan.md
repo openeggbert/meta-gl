@@ -48,7 +48,7 @@ and is the single highest-impact safety improvement.
 | B11 | Add `operator|`, `operator&`, `operator~` to `ContextFlagMask` (`Enums.hpp:1232`) which currently has no operators |
 | B12 | Fix inconsistent naming between `ContextInfo` (`gles2`/`gles3`) and `Capabilities` (`gles20`/`gles30`) — standardize to `gles20`/`gles30`/`gles31`/`gles32` across both structs |
 | B13 | Replace raw `GLbitfield mask` in `glSampleMaski` with a typed `SampleMask` enum class |
-| B14 | Fix the `GetParameter` / `IntegerName` value duplication (`MajorVersion`, `MinorVersion`, `NumExtensions` appear in both enums with the same underlying values) |
+| B14 | ~~ignore~~ `IntegerName` je záměrná přehledná podmnožina `GetParameter`; duplicita je čistě konceptuální, žádný compile/runtime problém (stejný důvod jako B4) |
 
 ---
 

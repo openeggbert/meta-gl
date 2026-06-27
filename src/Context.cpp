@@ -83,8 +83,8 @@ namespace metagl::detail
 #endif
 
         // GLES version flags
-        if (info.major >= 2)                               { caps.gles20 = true; info.gles2  = true; }
-        if (info.major >= 3)                               { caps.gles30 = true; info.gles3  = true; }
+        if (info.major >= 2)                               { caps.gles20 = true; info.gles20 = true; }
+        if (info.major >= 3)                               { caps.gles30 = true; info.gles30 = true; }
         if (info.major == 3 && info.minor >= 1)            { caps.gles31 = true; info.gles31 = true; }
         if (info.major == 3 && info.minor >= 2)            { caps.gles32 = true; info.gles32 = true; }
 

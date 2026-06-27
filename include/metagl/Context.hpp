@@ -34,8 +34,8 @@ namespace metagl
         std::string renderer;
 
         // OpenGL ES version flags
-        bool gles2  = false;
-        bool gles3  = false;
+        bool gles20 = false;
+        bool gles30 = false;
         bool gles31 = false;
         bool gles32 = false;
 

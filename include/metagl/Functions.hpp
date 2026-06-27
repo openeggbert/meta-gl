@@ -568,7 +568,7 @@ namespace metagl
     // #271 (3.0+) Queries implementation properties for a given internal format and target
     void glGetInternalformativ(InternalFormatTarget target, InternalFormat internalformat, InternalFormatParameter pname, GLsizei count, GLint * params);
     // #272 (3.1+) Binds a texture level to an image unit for image load/store in shaders
-    void glBindImageTexture(GLuint unit, TextureId texture, GLint level, GLboolean layered, GLint layer, ImageAccess access, InternalFormat format);
+    void glBindImageTexture(ImageUnit unit, TextureId texture, GLint level, GLboolean layered, GLint layer, ImageAccess access, InternalFormat format);
 
     // Samplers
     // #273 (3.0+) Generates one or more sampler object names

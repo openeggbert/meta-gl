@@ -27,6 +27,7 @@ and is the single highest-impact safety improvement.
 | A12 | ✅ Add `struct UniformLocation { GLint value{-1}; };` and replace the bare `GLint location` parameter in all 66+ `glUniform*` and `glProgramUniform*` functions, and the return type of `glGetUniformLocation` |
 | A13 | ✅ Add `struct AttribLocation { GLuint value{}; };` and replace `GLuint index` in vertex-attrib functions (`glBindAttribLocation`, `glGetAttribLocation`, `glEnableVertexAttribArray`, `glDisableVertexAttribArray`, `glVertexAttribPointer`, `glGetActiveAttrib`, `glGetVertexAttrib*`) |
 | A14 | ✅ Update `EnumNames.hpp` `to_string()` overloads to accept the new handle types and print their `.value` fields with a type prefix (e.g., `"TextureId(3)"`) |
+| A15 | ✅ Add `struct ImageUnit { GLuint value{}; };` and replace `GLuint unit` in `glBindImageTexture` — `TextureUnit` enum cannot be reused because it holds `GL_TEXTURE0`-style enum values, not zero-based unit indices |
 
 ---
 
@@ -40,7 +41,7 @@ and is the single highest-impact safety improvement.
 | B4 | ~~ignore~~ `IntegerName` — duplicates `GetParameter` values but může být využit uživateli knihovny; ponechat |
 | B5 | Add a dedicated `BufferPointerParameter` enum with a single value `MapPointer` and use it in `glGetBufferPointerv` instead of the generic `BufferParameter` |
 | B6 | Add a dedicated `SamplerParameter` enum (currently callers must reuse `TextureParameter`) for all `glSamplerParameter*` and `glGetSamplerParameter*` functions |
-| B7 | Add `TextureUnit` typed parameter to `glBindImageTexture` `unit` argument (the enum already exists for `glActiveTexture` but is not used here) |
+| B7 | ~~ignore~~ `TextureUnit` nelze použít pro `glBindImageTexture` — `GL_TEXTURE0` ≠ index 0; místo toho implementováno jako A15 (`ImageUnit` handle) |
 | B8 | Deduplicate `DrawBuffer`, `ReadBuffer`, and `FramebufferAttachment` value sets — the 32 color attachment values are copy-pasted three times; consider shared `constexpr` helpers or a single base enum |
 | B9 | Make `glIs*` return types `bool` instead of `GLboolean` (`unsigned char`) throughout `Functions.hpp` — the raw type leaks into caller arithmetic |
 | B10 | Add `operator&` and `operator~` for all four existing bitfield enum classes: `ClearBufferBit`, `MapBufferAccessMask`, `ShaderStageMask`, `MemoryBarrierMask` |

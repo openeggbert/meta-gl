@@ -3249,9 +3249,9 @@ namespace metagl
     }
 
     // #272
-    void glBindImageTexture(GLuint unit, TextureId texture, GLint level, GLboolean layered, GLint layer, ImageAccess access, InternalFormat format)
+    void glBindImageTexture(ImageUnit unit, TextureId texture, GLint level, GLboolean layered, GLint layer, ImageAccess access, InternalFormat format)
     {
-        detail::g_gl.BindImageTexture(unit, texture.value, level, layered, layer, detail::to_gl_enum(access), detail::to_gl_enum(format));
+        detail::g_gl.BindImageTexture(unit.value, texture.value, level, layered, layer, detail::to_gl_enum(access), detail::to_gl_enum(format));
         METAGL_DEBUG_LOG_VOID("glBindImageTexture", unit, texture.value, level, layered, layer, access, format);
     }
 

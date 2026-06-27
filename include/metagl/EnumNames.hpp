@@ -1587,5 +1587,6 @@ namespace metagl
     inline std::string to_string(ProgramPipelineId v)     { return "ProgramPipelineId("    + std::to_string(v.value) + ")"; }
     inline std::string to_string(UniformLocation v)       { return "UniformLocation("      + std::to_string(v.value) + ")"; }
     inline std::string to_string(AttribLocation v)        { return "AttribLocation("       + std::to_string(v.value) + ")"; }
+    inline std::string to_string(ImageUnit v)             { return "ImageUnit("            + std::to_string(v.value) + ")"; }
 
 } // namespace metagl

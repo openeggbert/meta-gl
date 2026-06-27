@@ -22,6 +22,7 @@ namespace metagl
     struct ProgramPipelineId    { GLuint value{}; };
     struct UniformLocation      { GLint  value{-1}; };
     struct AttribLocation       { GLuint value{}; };
+    struct ImageUnit            { GLuint value{}; };
 
     using ::GLbitfield;
     using ::GLboolean;

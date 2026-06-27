@@ -115,7 +115,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 
 | # | Task |
 |---|------|
-| G1 | Add `assert(detail::g_gl.FunctionName != nullptr)` guards inside each wrapper function so a call to an unloaded ES 3.x function on an ES 2.0 device fails with a clear assertion rather than a segfault |
+| G1 | ✅ Add `assert(detail::g_gl.FunctionName != nullptr)` guards inside all 358 wrapper functions via sed; added `<cassert>` include; no-op in NDEBUG builds |
 | G2 | ✅ Add `check_gl_error()` called after each wrapper via `METAGL_DEBUG_LOG*` macros when `METAGLDEBUG` is defined; errors printed immediately to stderr with enum name; `set_get_error_fn()` registered in `Initialize()` |
 | G3 | ✅ Add `FlushOnExit` RAII guard (static destructor) in `Debug.cpp` so buffered GL calls are flushed to stderr on normal program exit |
 | G4 | ✅ Flush the debug buffer immediately on every call when `METAGLDEBUG_IMMEDIATE` is defined (alongside `METAGLDEBUG`); documented in `Debug.hpp` header comment |

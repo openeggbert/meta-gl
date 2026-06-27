@@ -5,6 +5,9 @@
 #endif
 #include <GLES3/gl32.h>
 
+#include <concepts>
+#include <type_traits>
+
 namespace metagl
 {
     using GlGetProcAddressFn = void* (*)(const char* name);
@@ -23,6 +26,12 @@ namespace metagl
     struct UniformLocation      { GLint  value{-1}; };
     struct AttribLocation       { GLuint value{}; };
     struct ImageUnit            { GLuint value{}; };
+
+    /// Satisfied by any lightweight handle struct that exposes a `GLuint value` member.
+    template<typename T>
+    concept GlHandle = requires(T h) {
+        { h.value } -> std::convertible_to<GLuint>;
+    };
 
     using ::GLbitfield;
     using ::GLboolean;

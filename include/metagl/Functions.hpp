@@ -340,6 +340,7 @@ namespace metagl
     void glGetProgramResourceName(ProgramId program, ProgramInterface programInterface, GLuint index, GLsizei bufSize, GLsizei * length, GLchar * name);
     // #152 (3.1+) Returns multiple properties of a program interface resource in one call
     void glGetProgramResourceiv(ProgramId program, ProgramInterface programInterface, GLuint index, GLsizei propCount, const ProgramResourceProperty * props, GLsizei count, GLsizei * length, GLint * params);
+    inline void glGetProgramResourceiv(ProgramId program, ProgramInterface programInterface, GLuint index, std::span<const ProgramResourceProperty> props, GLsizei count, GLsizei * length, GLint * params) { glGetProgramResourceiv(program, programInterface, index, static_cast<GLsizei>(props.size()), props.data(), count, length, params); }
     // #153 (3.1+) Returns the location of a named resource within a program interface
     GLint glGetProgramResourceLocation(ProgramId program, ProgramInterface programInterface, const GLchar * name);
 

@@ -22,9 +22,9 @@ namespace metagl
     // #4 (3.2+) Disables a capability for a specific indexed target
     void glDisablei(Capability target, GLuint index);
     // #5 (2.0+) Returns whether a capability is currently enabled
-    GLboolean glIsEnabled(Capability cap);
+    bool glIsEnabled(Capability cap);
     // #6 (3.2+) Returns whether an indexed capability is enabled
-    GLboolean glIsEnabledi(Capability target, GLuint index);
+    bool glIsEnabledi(Capability target, GLuint index);
     // #7 (2.0+) Sets blend source and destination factors for all draw buffers
     void glBlendFunc(BlendFactor sfactor, BlendFactor dfactor);
     // #8 (2.0+) Sets separate blend factors for RGB and alpha for all draw buffers
@@ -140,7 +140,7 @@ namespace metagl
     // #62 (3.0+) Releases a buffer mapping; returns GL_FALSE if data was corrupted
     GLboolean glUnmapBuffer(BufferTarget target);
     // #63 (2.0+) Returns GL_TRUE if the name is a valid buffer object
-    GLboolean glIsBuffer(BufferId buffer);
+    bool glIsBuffer(BufferId buffer);
     // #64 (2.0+) Queries buffer parameters (size, usage, map status) as 32-bit integer
     void glGetBufferParameteriv(BufferTarget target, BufferParameter pname, GLint * params);
     // #65 (3.0+) Queries buffer parameters (e.g. size on large buffers) as 64-bit integer
@@ -156,7 +156,7 @@ namespace metagl
     // #69 (3.0+) Binds a VAO; all subsequent attribute state is recorded into it
     void glBindVertexArray(VertexArrayId array);
     // #70 (3.0+) Returns GL_TRUE if the name is a valid VAO
-    GLboolean glIsVertexArray(VertexArrayId array);
+    bool glIsVertexArray(VertexArrayId array);
     // #71 (2.0+) Enables a generic vertex attribute array at a given index
     void glEnableVertexAttribArray(AttribLocation index);
     // #72 (2.0+) Disables a generic vertex attribute array; attribute uses constant value
@@ -280,7 +280,7 @@ namespace metagl
     // #129 (2.0+) Returns the precision range for lowp/mediump/highp in vertex/fragment shaders
     void glGetShaderPrecisionFormat(ShaderType shadertype, PrecisionType precisiontype, GLint * range, GLint * precision);
     // #130 (2.0+) Returns GL_TRUE if the name is a valid shader object
-    GLboolean glIsShader(ShaderId shader);
+    bool glIsShader(ShaderId shader);
     // #131 (2.0+) Creates a program object and returns its handle
     ProgramId glCreateProgram(void);
     // #132 (2.0+) Deletes a program object (deferred until no longer in use)
@@ -300,7 +300,7 @@ namespace metagl
     // #139 (2.0+) Returns the linker info log for a program (errors and warnings)
     void glGetProgramInfoLog(ProgramId program, GLsizei bufSize, GLsizei * length, GLchar * infoLog);
     // #140 (2.0+) Returns GL_TRUE if the name is a valid program object
-    GLboolean glIsProgram(ProgramId program);
+    bool glIsProgram(ProgramId program);
     // #141 (2.0+) Returns the shader objects currently attached to a program
     void glGetAttachedShaders(ProgramId program, GLsizei maxCount, GLsizei * count, ShaderId * shaders);
     // #142 (2.0+) Associates a vertex shader input variable with an attribute index before link
@@ -500,7 +500,7 @@ namespace metagl
     // #237 (2.0+) Selects the active texture unit for subsequent texture operations
     void glActiveTexture(TextureUnit texture);
     // #238 (2.0+) Returns GL_TRUE if the name is a valid texture object
-    GLboolean glIsTexture(TextureId texture);
+    bool glIsTexture(TextureId texture);
     // #239 (2.0+) Specifies a 2D texture image and allocates GPU storage
     void glTexImage2D(TextureTarget target, GLint level, InternalFormat internalformat, GLsizei width, GLsizei height, GLint border, PixelFormat format, PixelType type, const void * pixels);
     // #240 (3.0+) Specifies a 3D or 2D-array texture image and allocates GPU storage
@@ -578,7 +578,7 @@ namespace metagl
     // #275 (3.0+) Binds a sampler to a texture unit, overriding the texture's own sampling state
     void glBindSampler(GLuint unit, SamplerId sampler);
     // #276 (3.0+) Returns GL_TRUE if the name is a valid sampler object
-    GLboolean glIsSampler(SamplerId sampler);
+    bool glIsSampler(SamplerId sampler);
     // #277 (3.0+) Sets a float sampling parameter on a sampler object
     void glSamplerParameterf(SamplerId sampler, SamplerParameter pname, GLfloat param);
     // #278 (3.0+) Sets an integer sampling parameter on a sampler object
@@ -608,7 +608,7 @@ namespace metagl
     // #289 (2.0+) Binds a framebuffer to GL_FRAMEBUFFER, GL_READ_FRAMEBUFFER, or GL_DRAW_FRAMEBUFFER
     void glBindFramebuffer(FramebufferTarget target, FramebufferId framebuffer);
     // #290 (2.0+) Returns GL_TRUE if the name is a valid framebuffer object
-    GLboolean glIsFramebuffer(FramebufferId framebuffer);
+    bool glIsFramebuffer(FramebufferId framebuffer);
     // #291 (2.0+) Returns the completeness status of the bound framebuffer
     FramebufferStatus glCheckFramebufferStatus(FramebufferTarget target);
     // #292 (2.0+) Attaches a 2D texture level as a framebuffer color/depth/stencil attachment
@@ -640,7 +640,7 @@ namespace metagl
     // #304 (2.0+) Binds a renderbuffer to the GL_RENDERBUFFER target
     void glBindRenderbuffer(RenderbufferTarget target, RenderbufferId renderbuffer);
     // #305 (2.0+) Returns GL_TRUE if the name is a valid renderbuffer object
-    GLboolean glIsRenderbuffer(RenderbufferId renderbuffer);
+    bool glIsRenderbuffer(RenderbufferId renderbuffer);
     // #306 (2.0+) Allocates single-sample GPU storage for a renderbuffer
     void glRenderbufferStorage(RenderbufferTarget target, InternalFormat internalformat, GLsizei width, GLsizei height);
     // #307 (3.0+) Allocates multisample GPU storage for a renderbuffer (for MSAA)
@@ -656,7 +656,7 @@ namespace metagl
     // #311 (3.0+) Binds a transform feedback object to capture its output buffer state
     void glBindTransformFeedback(TransformFeedbackTarget target, TransformFeedbackId id);
     // #312 (3.0+) Returns GL_TRUE if the name is a valid transform feedback object
-    GLboolean glIsTransformFeedback(TransformFeedbackId id);
+    bool glIsTransformFeedback(TransformFeedbackId id);
     // #313 (3.0+) Starts capturing vertex shader outputs into transform feedback buffers
     void glBeginTransformFeedback(PrimitiveType primitiveMode);
     // #314 (3.0+) Ends the current transform feedback capture session
@@ -676,7 +676,7 @@ namespace metagl
     // #320 (3.0+) Deletes query objects
     void glDeleteQueries(GLsizei n, const QueryId * ids);
     // #321 (3.0+) Returns GL_TRUE if the name is a valid query object
-    GLboolean glIsQuery(QueryId id);
+    bool glIsQuery(QueryId id);
     // #322 (3.0+) Begins recording a GPU query (occlusion, primitives written, etc.)
     void glBeginQuery(QueryTarget target, QueryId id);
     // #323 (3.0+) Ends a query; result becomes available asynchronously
@@ -692,7 +692,7 @@ namespace metagl
     // #327 (3.0+) Deletes a sync object
     void glDeleteSync(GLsync sync);
     // #328 (3.0+) Returns GL_TRUE if the object is a valid sync
-    GLboolean glIsSync(GLsync sync);
+    bool glIsSync(GLsync sync);
     // #329 (3.0+) Blocks the CPU until a sync is signaled or the timeout expires
     SyncWaitResult glClientWaitSync(GLsync sync, SyncFlushMask flags, GLuint64 timeout);
     // #330 (3.0+) Blocks the GPU command processor until a sync is signaled (CPU not blocked)
@@ -718,7 +718,7 @@ namespace metagl
     // #338 (3.1+) Binds a program pipeline for rendering
     void glBindProgramPipeline(ProgramPipelineId pipeline);
     // #339 (3.1+) Returns GL_TRUE if the name is a valid program pipeline object
-    GLboolean glIsProgramPipeline(ProgramPipelineId pipeline);
+    bool glIsProgramPipeline(ProgramPipelineId pipeline);
     // #340 (3.1+) Installs shader stages from a separable program into a pipeline
     void glUseProgramStages(ProgramPipelineId pipeline, ShaderStageMask stages, ProgramId program);
     // #341 (3.1+) Sets the active program in a pipeline for direct uniform calls

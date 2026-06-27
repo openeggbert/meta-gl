@@ -1356,7 +1356,7 @@ namespace metagl
     }
 
     // #5
-    GLboolean glIsEnabled(Capability cap)
+    bool glIsEnabled(Capability cap)
     {
         const auto _r = detail::g_gl.IsEnabled(detail::to_gl_enum(cap));
         METAGL_DEBUG_LOG("glIsEnabled", _r, cap);
@@ -1364,7 +1364,7 @@ namespace metagl
     }
 
     // #6
-    GLboolean glIsEnabledi(Capability target, GLuint index)
+    bool glIsEnabledi(Capability target, GLuint index)
     {
         const auto _r = detail::g_gl.IsEnabledi(detail::to_gl_enum(target), index);
         METAGL_DEBUG_LOG("glIsEnabledi", _r, target, index);
@@ -1767,7 +1767,7 @@ namespace metagl
     }
 
     // #63
-    GLboolean glIsBuffer(BufferId buffer)
+    bool glIsBuffer(BufferId buffer)
     {
         const auto _r = detail::g_gl.IsBuffer(buffer.value);
         METAGL_DEBUG_LOG("glIsBuffer", _r, buffer.value);
@@ -1819,7 +1819,7 @@ namespace metagl
     }
 
     // #70
-    GLboolean glIsVertexArray(VertexArrayId array)
+    bool glIsVertexArray(VertexArrayId array)
     {
         const auto _r = detail::g_gl.IsVertexArray(array.value);
         METAGL_DEBUG_LOG("glIsVertexArray", _r, array.value);
@@ -2242,7 +2242,7 @@ namespace metagl
     }
 
     // #130
-    GLboolean glIsShader(ShaderId shader)
+    bool glIsShader(ShaderId shader)
     {
         const auto _r = detail::g_gl.IsShader(shader.value);
         METAGL_DEBUG_LOG("glIsShader", _r, shader.value);
@@ -2314,7 +2314,7 @@ namespace metagl
     }
 
     // #140
-    GLboolean glIsProgram(ProgramId program)
+    bool glIsProgram(ProgramId program)
     {
         const auto _r = detail::g_gl.IsProgram(program.value);
         METAGL_DEBUG_LOG("glIsProgram", _r, program.value);
@@ -3010,7 +3010,7 @@ namespace metagl
     }
 
     // #238
-    GLboolean glIsTexture(TextureId texture)
+    bool glIsTexture(TextureId texture)
     {
         const auto _r = detail::g_gl.IsTexture(texture.value);
         METAGL_DEBUG_LOG("glIsTexture", _r, texture.value);
@@ -3279,7 +3279,7 @@ namespace metagl
     }
 
     // #276
-    GLboolean glIsSampler(SamplerId sampler)
+    bool glIsSampler(SamplerId sampler)
     {
         const auto _r = detail::g_gl.IsSampler(sampler.value);
         METAGL_DEBUG_LOG("glIsSampler", _r, sampler.value);
@@ -3380,7 +3380,7 @@ namespace metagl
     }
 
     // #290
-    GLboolean glIsFramebuffer(FramebufferId framebuffer)
+    bool glIsFramebuffer(FramebufferId framebuffer)
     {
         const auto _r = detail::g_gl.IsFramebuffer(framebuffer.value);
         METAGL_DEBUG_LOG("glIsFramebuffer", _r, framebuffer.value);
@@ -3487,7 +3487,7 @@ namespace metagl
     }
 
     // #305
-    GLboolean glIsRenderbuffer(RenderbufferId renderbuffer)
+    bool glIsRenderbuffer(RenderbufferId renderbuffer)
     {
         const auto _r = detail::g_gl.IsRenderbuffer(renderbuffer.value);
         METAGL_DEBUG_LOG("glIsRenderbuffer", _r, renderbuffer.value);
@@ -3539,7 +3539,7 @@ namespace metagl
     }
 
     // #312
-    GLboolean glIsTransformFeedback(TransformFeedbackId id)
+    bool glIsTransformFeedback(TransformFeedbackId id)
     {
         const auto _r = detail::g_gl.IsTransformFeedback(id.value);
         METAGL_DEBUG_LOG("glIsTransformFeedback", _r, id.value);
@@ -3605,7 +3605,7 @@ namespace metagl
     }
 
     // #321
-    GLboolean glIsQuery(QueryId id)
+    bool glIsQuery(QueryId id)
     {
         const auto _r = detail::g_gl.IsQuery(id.value);
         METAGL_DEBUG_LOG("glIsQuery", _r, id.value);
@@ -3656,7 +3656,7 @@ namespace metagl
     }
 
     // #328
-    GLboolean glIsSync(GLsync sync)
+    bool glIsSync(GLsync sync)
     {
         const auto _r = detail::g_gl.IsSync(sync);
         METAGL_DEBUG_LOG("glIsSync", _r, sync);
@@ -3735,7 +3735,7 @@ namespace metagl
     }
 
     // #339
-    GLboolean glIsProgramPipeline(ProgramPipelineId pipeline)
+    bool glIsProgramPipeline(ProgramPipelineId pipeline)
     {
         const auto _r = detail::g_gl.IsProgramPipeline(pipeline.value);
         METAGL_DEBUG_LOG("glIsProgramPipeline", _r, pipeline.value);

@@ -152,7 +152,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | I1 | ✅ Add a `tests/` directory and a basic `CMakeLists.txt` under it, wired into the root via `add_subdirectory(tests)` guarded by `BUILD_TESTING` |
 | I2 | ✅ Add compile-time tests (`static_assert`) verifying that template dispatch (`glGetUniform<T>`, `glGetnUniform<T>`, `glTexParameter<T>`, `glSamplerParameter<T>`, `glClearBuffer<T>`, `glGetVertexAttrib<T>`) resolves without ambiguity for float/int/uint |
 | I3 | ✅ Add compile-time tests verifying that bitfield `operator|` / `&` / `~` compile and preserve the enum type for all bitfield enums |
-| I4 | Add compile-time tests verifying that mixing handle types (`ShaderId` vs `ProgramId`) does not compile (negative compile tests using `requires` or `static_assert(!std::is_convertible_v<...>)`) |
+| I4 | ✅ Add compile-time tests verifying that mixing handle types (`ShaderId` vs `ProgramId`) does not compile (`static_assert(!std::is_convertible_v<...>)` / `!std::is_constructible_v`) |
 | I5 | Add unit tests for `Context.cpp` lifecycle: `MarkContextLost`, `MarkContextRestored`, `LoadCurrentContext`, `GetContextStatus` transitions |
 | I6 | Add unit tests for `ContextEvents.cpp`: `AddContextListener`, `RemoveContextListener`, `NotifyContextLost`, `NotifyContextRestored` — use a mock listener |
 | I7 | Add unit tests for `HasExtension` and `GetCapabilities` with a fake extension string |

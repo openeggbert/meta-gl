@@ -76,4 +76,34 @@ static_assert(SpanCompatible<float>);
 static_assert(SpanCompatible<int>);
 static_assert(SpanCompatible<TextureId>);
 
+// =============================================================================
+// I4 — Handle type isolation: distinct handle types must not be interchangeable
+// =============================================================================
+
+// No implicit conversion between any two distinct handle types
+static_assert(!std::is_convertible_v<ShaderId,   ProgramId>);
+static_assert(!std::is_convertible_v<ProgramId,  ShaderId>);
+static_assert(!std::is_convertible_v<TextureId,  BufferId>);
+static_assert(!std::is_convertible_v<BufferId,   TextureId>);
+static_assert(!std::is_convertible_v<TextureId,  FramebufferId>);
+static_assert(!std::is_convertible_v<SamplerId,  VertexArrayId>);
+static_assert(!std::is_convertible_v<QueryId,    TransformFeedbackId>);
+
+// No implicit construction of one handle type from another
+static_assert(!std::is_constructible_v<ShaderId,   ProgramId>);
+static_assert(!std::is_constructible_v<TextureId,  BufferId>);
+static_assert(!std::is_constructible_v<FramebufferId, RenderbufferId>);
+
+// UniformLocation (GLint) and AttribLocation (GLuint) are distinct structs
+static_assert(!std::is_convertible_v<UniformLocation, AttribLocation>);
+static_assert(!std::is_convertible_v<AttribLocation,  UniformLocation>);
+
+// Plain GLuint does not satisfy GlHandle — it has no .value member
+static_assert(!GlHandle<GLuint>);
+static_assert(!GlHandle<unsigned int>);
+
+// Handle types do not satisfy GlEnum or GlBitfield
+static_assert(!GlEnum<TextureId>);
+static_assert(!GlBitfield<BufferId>);
+
 int main() { return 0; }

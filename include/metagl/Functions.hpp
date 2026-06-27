@@ -1439,4 +1439,16 @@ namespace metagl
         else if constexpr (std::same_as<Value, GLuint>) { glClearBufferuiv(buffer, drawbuffer, value); }
     }
 
+    // #88-#91 - typed dispatch: glGetVertexAttrib<float/int/unsigned int>(index, pname, params)
+    // GLfloat -> glGetVertexAttribfv; GLint -> glGetVertexAttribiv (normalized/int attrs);
+    // For pure integer attrs use glGetVertexAttribIiv (GLint) / glGetVertexAttribIuiv (GLuint).
+    template<UniformScalar T>
+    inline void glGetVertexAttrib(AttribLocation index, VertexAttribParameter pname, T* params)
+    {
+        using Value = std::remove_cvref_t<T>;
+        if constexpr (std::same_as<Value, GLfloat>)     { glGetVertexAttribfv(index, pname, params); }
+        else if constexpr (std::same_as<Value, GLint>)  { glGetVertexAttribiv(index, pname, params); }
+        else if constexpr (std::same_as<Value, GLuint>) { glGetVertexAttribIuiv(index, pname, params); }
+    }
+
 }

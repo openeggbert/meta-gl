@@ -39,15 +39,15 @@ and is the single highest-impact safety improvement.
 | B2 | ✅ Resolve the `TextureMinFilter` / `TextureMagFilter` / `TextureFilter` overlap — renamed `TextureFilter` → `BlitFilter`: keep the first two, document or remove `TextureFilter` (used only for `glBlitFramebuffer`), add a comment explaining the distinction |
 | B3 | ✅ Resolve the `TextureWrapMode` / `TextureWrap` duplicate — removed `TextureWrap` — pick one name, remove the other, update all usages |
 | B4 | ~~ignore~~ `IntegerName` — duplicates `GetParameter` values but může být využit uživateli knihovny; ponechat |
-| B5 | Add a dedicated `BufferPointerParameter` enum with a single value `MapPointer` and use it in `glGetBufferPointerv` instead of the generic `BufferParameter` |
-| B6 | Add a dedicated `SamplerParameter` enum (currently callers must reuse `TextureParameter`) for all `glSamplerParameter*` and `glGetSamplerParameter*` functions |
+| B5 | ✅ Add a dedicated `BufferPointerParameter` enum with a single value `MapPointer` and use it in `glGetBufferPointerv` instead of the generic `BufferParameter` |
+| B6 | ✅ Add a dedicated `SamplerParameter` enum (currently callers must reuse `TextureParameter`) for all `glSamplerParameter*` and `glGetSamplerParameter*` functions |
 | B7 | ~~ignore~~ `TextureUnit` nelze použít pro `glBindImageTexture` — `GL_TEXTURE0` ≠ index 0; místo toho implementováno jako A15 (`ImageUnit` handle) |
-| B8 | Deduplicate `DrawBuffer`, `ReadBuffer`, and `FramebufferAttachment` value sets — the 32 color attachment values are copy-pasted three times; consider shared `constexpr` helpers or a single base enum |
-| B9 | Make `glIs*` return types `bool` instead of `GLboolean` (`unsigned char`) throughout `Functions.hpp` — the raw type leaks into caller arithmetic |
-| B10 | Add `operator&` and `operator~` for all four existing bitfield enum classes: `ClearBufferBit`, `MapBufferAccessMask`, `ShaderStageMask`, `MemoryBarrierMask` |
-| B11 | Add `operator|`, `operator&`, `operator~` to `ContextFlagMask` (`Enums.hpp:1232`) which currently has no operators |
-| B12 | Fix inconsistent naming between `ContextInfo` (`gles2`/`gles3`) and `Capabilities` (`gles20`/`gles30`) — standardize to `gles20`/`gles30`/`gles31`/`gles32` across both structs |
-| B13 | Replace raw `GLbitfield mask` in `glSampleMaski` with a typed `SampleMask` enum class |
+| B8 | ~~ignore~~ ColorAttachment enum + to_draw_buffer()/to_read_buffer()/to_framebuffer_attachment() converters already address the duplication cleanly; full deduplication would require breaking API changes without meaningful benefit |
+| B9 | ✅ Make `glIs*` return types `bool` instead of `GLboolean` (`unsigned char`) throughout `Functions.hpp` |
+| B10 | ✅ Generic `GlBitfield` template operators replace all per-enum `operator&` / `operator~` (covered by E2) |
+| B11 | ✅ `ContextFlagMask` gets `operator|` / `&` / `~` via the generic `GlBitfield` template (covered by E2) |
+| B12 | ✅ ContextInfo gles* fields removed (H6); Capabilities is the single source of truth with `gles20`/`gles30`/`gles31`/`gles32` |
+| B13 | ✅ `glSampleMaski` uses `SampleMaskValue` bitfield enum instead of raw `GLbitfield` |
 | B14 | ~~ignore~~ `IntegerName` je záměrná přehledná podmnožina `GetParameter`; duplicita je čistě konceptuální, žádný compile/runtime problém (stejný důvod jako B4) |
 
 ---

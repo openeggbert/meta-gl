@@ -47,6 +47,11 @@ namespace metagl::debug
             std::cerr << "[METAGL DEBUG] ---\n";
             g_buf.clear();
         }
+
+        // Destructor runs at static-storage teardown, after g_buf is still alive,
+        // ensuring buffered calls are not lost on normal program exit.
+        struct FlushOnExit { ~FlushOnExit() { flush(); } };
+        FlushOnExit g_flush_on_exit;
     }
 
     void record(std::string_view func, std::string_view retval, std::string params)

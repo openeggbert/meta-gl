@@ -1789,7 +1789,7 @@ namespace metagl
     }
 
     // #66
-    void glGetBufferPointerv(BufferTarget target, BufferParameter pname, void ** params)
+    void glGetBufferPointerv(BufferTarget target, BufferPointerParameter pname, void ** params)
     {
         detail::g_gl.GetBufferPointerv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetBufferPointerv", target, pname, params);

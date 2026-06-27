@@ -37,7 +37,7 @@ and is the single highest-impact safety improvement.
 | B1 | ✅ Remove dead `BlendMode` enum (`Enums.hpp:97-114`) — it duplicates `BlendEquation` values and is never used in any function signature |
 | B2 | ✅ Resolve the `TextureMinFilter` / `TextureMagFilter` / `TextureFilter` overlap — renamed `TextureFilter` → `BlitFilter`: keep the first two, document or remove `TextureFilter` (used only for `glBlitFramebuffer`), add a comment explaining the distinction |
 | B3 | ✅ Resolve the `TextureWrapMode` / `TextureWrap` duplicate — removed `TextureWrap` — pick one name, remove the other, update all usages |
-| B4 | Remove or document `IntegerName` (`Enums.hpp:470`) — it duplicates values from `GetParameter` and is never used in a function signature; add a comment referencing `GetParameter` if kept for backward compat |
+| B4 | ~~ignore~~ `IntegerName` — duplicates `GetParameter` values but může být využit uživateli knihovny; ponechat |
 | B5 | Add a dedicated `BufferPointerParameter` enum with a single value `MapPointer` and use it in `glGetBufferPointerv` instead of the generic `BufferParameter` |
 | B6 | Add a dedicated `SamplerParameter` enum (currently callers must reuse `TextureParameter`) for all `glSamplerParameter*` and `glGetSamplerParameter*` functions |
 | B7 | Add `TextureUnit` typed parameter to `glBindImageTexture` `unit` argument (the enum already exists for `glActiveTexture` but is not used here) |

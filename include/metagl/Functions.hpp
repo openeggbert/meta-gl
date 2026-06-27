@@ -146,7 +146,7 @@ namespace metagl
     // #65 (3.0+) Queries buffer parameters (e.g. size on large buffers) as 64-bit integer
     void glGetBufferParameteri64v(BufferTarget target, BufferParameter pname, GLint64 * params);
     // #66 (3.0+) Returns the pointer to the currently mapped buffer data store
-    void glGetBufferPointerv(BufferTarget target, BufferParameter pname, void ** params);
+    void glGetBufferPointerv(BufferTarget target, BufferPointerParameter pname, void ** params);
 
     // Vertex Arrays
     // #67 (3.0+) Generates one or more Vertex Array Object (VAO) names

@@ -115,10 +115,15 @@ namespace metagl
         if (v == BufferParameter::Size) return "Size";
         else if (v == BufferParameter::Usage) return "Usage";
         else if (v == BufferParameter::Mapped) return "Mapped";
-        else if (v == BufferParameter::MapPointer) return "MapPointer";
         else if (v == BufferParameter::AccessFlags) return "AccessFlags";
         else if (v == BufferParameter::MapLength) return "MapLength";
         else if (v == BufferParameter::MapOffset) return "MapOffset";
+        return "?";
+    }
+
+    inline std::string_view to_string(BufferPointerParameter v)
+    {
+        if (v == BufferPointerParameter::MapPointer) return "MapPointer";
         return "?";
     }
 

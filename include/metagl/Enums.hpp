@@ -127,17 +127,26 @@ namespace metagl
     };
 
     // -------------------------------------------------------------------------
-    // Parameters queryable via glGetBufferParameteriv.
+    // Parameters queryable via glGetBufferParameteriv / glGetBufferParameteri64v.
+    // GL_BUFFER_MAP_POINTER is intentionally excluded — use BufferPointerParameter
+    // with glGetBufferPointerv instead.
     // -------------------------------------------------------------------------
     enum class BufferParameter : GLenum
     {
-        Size          = GL_BUFFER_SIZE,
-        Usage         = GL_BUFFER_USAGE,
-        Mapped        = GL_BUFFER_MAPPED,        ///< ES 3.0+
-        MapPointer    = GL_BUFFER_MAP_POINTER,   ///< ES 3.0+
-        AccessFlags   = GL_BUFFER_ACCESS_FLAGS,  ///< ES 3.0+
-        MapLength     = GL_BUFFER_MAP_LENGTH,    ///< ES 3.0+
-        MapOffset     = GL_BUFFER_MAP_OFFSET     ///< ES 3.0+
+        Size        = GL_BUFFER_SIZE,
+        Usage       = GL_BUFFER_USAGE,
+        Mapped      = GL_BUFFER_MAPPED,        ///< ES 3.0+
+        AccessFlags = GL_BUFFER_ACCESS_FLAGS,  ///< ES 3.0+
+        MapLength   = GL_BUFFER_MAP_LENGTH,    ///< ES 3.0+
+        MapOffset   = GL_BUFFER_MAP_OFFSET     ///< ES 3.0+
+    };
+
+    // -------------------------------------------------------------------------
+    // The single valid pname for glGetBufferPointerv.
+    // -------------------------------------------------------------------------
+    enum class BufferPointerParameter : GLenum
+    {
+        MapPointer = GL_BUFFER_MAP_POINTER   ///< ES 3.0+
     };
 
     // -------------------------------------------------------------------------

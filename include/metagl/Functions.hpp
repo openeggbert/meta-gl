@@ -551,8 +551,11 @@ namespace metagl
     void glCopyTexSubImage2D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
     // #253 (3.0+) Copies a framebuffer region into a slice of a 3D or array texture
     void glCopyTexSubImage3D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height);
-    // #254 (3.2+) Copies a region between two textures without format conversion
-    void glCopyImageSubData(TextureId srcName, TextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, TextureId dstName, TextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth);
+    // #254 (3.2+) Copies a region between two images without format conversion.
+    // srcName/dstName are raw GLuint: when srcTarget/dstTarget is GL_RENDERBUFFER the name
+    // refers to a RenderbufferId, otherwise to a TextureId. The object type is determined
+    // at runtime by the target, so a single typed handle cannot be used safely here.
+    void glCopyImageSubData(GLuint srcName, TextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, GLuint dstName, TextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth);
     // #255 (2.0+) Auto-generates all mipmap levels below the base level by downsampling
     void glGenerateMipmap(TextureTarget target);
     // #256 (2.0+) Sets a float texture sampling parameter (filter, LOD, wrap mode)

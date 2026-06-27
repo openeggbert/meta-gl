@@ -3130,10 +3130,10 @@ namespace metagl
     }
 
     // #254
-    void glCopyImageSubData(TextureId srcName, TextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, TextureId dstName, TextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth)
+    void glCopyImageSubData(GLuint srcName, TextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, GLuint dstName, TextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth)
     {
-        detail::g_gl.CopyImageSubData(srcName.value, detail::to_gl_enum(srcTarget), srcLevel, srcX, srcY, srcZ, dstName.value, detail::to_gl_enum(dstTarget), dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth);
-        METAGL_DEBUG_LOG_VOID("glCopyImageSubData", srcName, srcTarget, srcLevel, srcX, srcY, srcZ, dstName.value, dstTarget, dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth);
+        detail::g_gl.CopyImageSubData(srcName, detail::to_gl_enum(srcTarget), srcLevel, srcX, srcY, srcZ, dstName, detail::to_gl_enum(dstTarget), dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth);
+        METAGL_DEBUG_LOG_VOID("glCopyImageSubData", srcName, srcTarget, srcLevel, srcX, srcY, srcZ, dstName, dstTarget, dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth);
     }
 
     // #255

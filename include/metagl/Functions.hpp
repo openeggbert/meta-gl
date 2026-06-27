@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <ranges>
+#include <string_view>
 #include <type_traits>
 
 namespace metagl
@@ -280,6 +281,7 @@ namespace metagl
     void glDeleteShader(ShaderId shader);
     // #122 (2.0+) Loads GLSL source strings into a shader object
     void glShaderSource(ShaderId shader, GLsizei count, const GLchar *const* string, const GLint * length);
+    inline void glShaderSource(ShaderId shader, std::string_view source) { const GLchar* ptr = source.data(); const GLint len = static_cast<GLint>(source.size()); glShaderSource(shader, 1, &ptr, &len); }
     // #123 (2.0+) Compiles the GLSL source previously loaded into a shader object
     void glCompileShader(ShaderId shader);
     // #124 (2.0+) Loads pre-compiled binary shader code into one or more shader objects

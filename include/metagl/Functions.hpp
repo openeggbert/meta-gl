@@ -650,8 +650,10 @@ namespace metagl
     void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, ClearBufferBit mask, BlitFilter filter);
     // #300 (3.0+) Hints that attachment contents are no longer needed (bandwidth optimization)
     void glInvalidateFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments);
+    inline void glInvalidateFramebuffer(FramebufferTarget target, std::span<const FramebufferAttachment> attachments) { glInvalidateFramebuffer(target, static_cast<GLsizei>(attachments.size()), attachments.data()); }
     // #301 (3.0+) Invalidates a sub-rectangle of framebuffer attachments
     void glInvalidateSubFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments, GLint x, GLint y, GLsizei width, GLsizei height);
+    inline void glInvalidateSubFramebuffer(FramebufferTarget target, std::span<const FramebufferAttachment> attachments, GLint x, GLint y, GLsizei width, GLsizei height) { glInvalidateSubFramebuffer(target, static_cast<GLsizei>(attachments.size()), attachments.data(), x, y, width, height); }
 
     // Renderbuffers
     // #302 (2.0+) Generates one or more renderbuffer object names

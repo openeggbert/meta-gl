@@ -1389,5 +1389,24 @@ namespace metagl
         glVertexAttrib<N, T>(index, values);
     }
 
+    // #195-#197 - typed dispatch: glGetUniform<float/int/unsigned int>(program, location, params)
+    template<UniformScalar T>
+    inline void glGetUniform(ProgramId program, UniformLocation location, T* params)
+    {
+        using Value = std::remove_cvref_t<T>;
+        if constexpr (std::same_as<Value, GLfloat>)      { glGetUniformfv(program, location, params); }
+        else if constexpr (std::same_as<Value, GLint>)   { glGetUniformiv(program, location, params); }
+        else if constexpr (std::same_as<Value, GLuint>)  { glGetUniformuiv(program, location, params); }
+    }
+
+    // #198-#200 - typed dispatch: glGetnUniform<float/int/unsigned int>(program, location, bufSize, params)
+    template<UniformScalar T>
+    inline void glGetnUniform(ProgramId program, UniformLocation location, GLsizei bufSize, T* params)
+    {
+        using Value = std::remove_cvref_t<T>;
+        if constexpr (std::same_as<Value, GLfloat>)      { glGetnUniformfv(program, location, bufSize, params); }
+        else if constexpr (std::same_as<Value, GLint>)   { glGetnUniformiv(program, location, bufSize, params); }
+        else if constexpr (std::same_as<Value, GLuint>)  { glGetnUniformuiv(program, location, bufSize, params); }
+    }
 
 }

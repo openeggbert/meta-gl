@@ -63,7 +63,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | C3 | Replace `(GLsizeiptr size, const void* data)` in `glBufferData` with a template `std::span<const T>` overload (keep raw overload for compatibility) |
 | C4 | Replace `(GLsizeiptr size, const void* data)` in `glBufferSubData` with `std::span<const T>` template overload |
 | C5 | ✅ Add `std::span<const T>` (`SpanCompatible T`) overloads for `glTexImage2D`, `glTexImage3D`, `glTexSubImage2D`, `glTexSubImage3D` (raw void* overloads preserved for nullptr/mutable storage) |
-| C6 | Replace `(GLsizei imageSize, const void* data)` in all `glCompressedTexImage*` and `glCompressedTexSubImage*` with `std::span<const std::byte>` |
+| C6 | ✅ Add `std::span<const T>` (`SpanCompatible T`) overloads for `glCompressedTexImage2D/3D` and `glCompressedTexSubImage2D/3D`; `imageSize` derived from `pixels.size_bytes()` |
 | C7 | ✅ Add `std::span<const DrawBuffer>` overload for `glDrawBuffers` |
 | C8 | ✅ Add `std::span<const FramebufferAttachment>` overload for `glInvalidateFramebuffer` and `glInvalidateSubFramebuffer` |
 | C9 | ✅ Add `std::span<const GLuint>` overload for `glDebugMessageControl` `ids` parameter |

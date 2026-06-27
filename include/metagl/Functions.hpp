@@ -1495,4 +1495,49 @@ namespace metagl
         glTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels.data());
     }
 
+    // -------------------------------------------------------------------------
+    // std::span overloads for compressed texture upload functions (C6)
+    // imageSize is derived from pixels.size_bytes(); raw void* overloads kept.
+    // -------------------------------------------------------------------------
+
+    template<SpanCompatible T>
+    inline void glCompressedTexImage2D(TextureTarget target, GLint level,
+        CompressedInternalFormat internalformat,
+        GLsizei width, GLsizei height, GLint border,
+        std::span<const T> pixels)
+    {
+        glCompressedTexImage2D(target, level, internalformat, width, height, border,
+            static_cast<GLsizei>(pixels.size_bytes()), pixels.data());
+    }
+
+    template<SpanCompatible T>
+    inline void glCompressedTexImage3D(TextureTarget target, GLint level,
+        CompressedInternalFormat internalformat,
+        GLsizei width, GLsizei height, GLsizei depth, GLint border,
+        std::span<const T> pixels)
+    {
+        glCompressedTexImage3D(target, level, internalformat, width, height, depth, border,
+            static_cast<GLsizei>(pixels.size_bytes()), pixels.data());
+    }
+
+    template<SpanCompatible T>
+    inline void glCompressedTexSubImage2D(TextureTarget target, GLint level,
+        GLint xoffset, GLint yoffset, GLsizei width, GLsizei height,
+        CompressedInternalFormat format, std::span<const T> pixels)
+    {
+        glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height,
+            format, static_cast<GLsizei>(pixels.size_bytes()), pixels.data());
+    }
+
+    template<SpanCompatible T>
+    inline void glCompressedTexSubImage3D(TextureTarget target, GLint level,
+        GLint xoffset, GLint yoffset, GLint zoffset,
+        GLsizei width, GLsizei height, GLsizei depth,
+        CompressedInternalFormat format, std::span<const T> pixels)
+    {
+        glCompressedTexSubImage3D(target, level, xoffset, yoffset, zoffset,
+            width, height, depth, format,
+            static_cast<GLsizei>(pixels.size_bytes()), pixels.data());
+    }
+
 }

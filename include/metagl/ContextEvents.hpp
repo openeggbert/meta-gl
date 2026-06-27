@@ -40,7 +40,16 @@ namespace metagl
     void NotifyContextLost();
 
     /// Notify all registered listeners that the context has been restored,
-    /// then mark the context as restored.  Call only after LoadCurrentContext()
-    /// has successfully reloaded function pointers.
+    /// then mark the context as restored.
+    ///
+    /// Required call order after a context-restore event:
+    ///   1. Call LoadCurrentContext(getProcAddress) — reloads all GL function
+    ///      pointers and re-detects capabilities.  No metagl::gl* call is safe
+    ///      before this step completes successfully.
+    ///   2. Call NotifyContextRestored() — fires OnContextRestored() on all
+    ///      registered listeners so they can recreate GPU resources.
+    ///
+    /// Calling NotifyContextRestored() before LoadCurrentContext() is undefined
+    /// behaviour: listeners may invoke GL functions through stale/null pointers.
     void NotifyContextRestored();
 }

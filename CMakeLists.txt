@@ -70,6 +70,11 @@ if(BUILD_TESTING)
     add_subdirectory(tests)
 endif()
 
+option(BUILD_EXAMPLES "Build the examples" OFF)
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 

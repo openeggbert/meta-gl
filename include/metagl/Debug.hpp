@@ -40,6 +40,10 @@ namespace metagl::debug
             oss << "0x" << std::hex << reinterpret_cast<std::uintptr_t>(val);
             return oss.str();
         }
+        else if constexpr (requires { metagl::to_string(val); })
+        {
+            return std::string(metagl::to_string(val));
+        }
         else
             return std::to_string(val);
     }

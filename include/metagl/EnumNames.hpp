@@ -1,7 +1,9 @@
 #pragma once
-// Auto-generated: enum-to-string helpers for metagl enum classes.
+// Enum-to-string helpers for metagl enum classes and handle types.
 #include "metagl/Enums.hpp"
+#include "metagl/Types.hpp"
 #include "metagl/Context.hpp"
+#include <string>
 #include <string_view>
 
 namespace metagl
@@ -74,26 +76,6 @@ namespace metagl
         else if (v == BlendEquation::HslSaturation) return "HslSaturation";
         else if (v == BlendEquation::HslColor) return "HslColor";
         else if (v == BlendEquation::HslLuminosity) return "HslLuminosity";
-        return "?";
-    }
-
-    inline std::string_view to_string(BlendMode v)
-    {
-        if (v == BlendMode::Multiply) return "Multiply";
-        else if (v == BlendMode::Screen) return "Screen";
-        else if (v == BlendMode::Overlay) return "Overlay";
-        else if (v == BlendMode::Darken) return "Darken";
-        else if (v == BlendMode::Lighten) return "Lighten";
-        else if (v == BlendMode::ColorDodge) return "ColorDodge";
-        else if (v == BlendMode::ColorBurn) return "ColorBurn";
-        else if (v == BlendMode::HardLight) return "HardLight";
-        else if (v == BlendMode::SoftLight) return "SoftLight";
-        else if (v == BlendMode::Difference) return "Difference";
-        else if (v == BlendMode::Exclusion) return "Exclusion";
-        else if (v == BlendMode::HslHue) return "HslHue";
-        else if (v == BlendMode::HslSaturation) return "HslSaturation";
-        else if (v == BlendMode::HslColor) return "HslColor";
-        else if (v == BlendMode::HslLuminosity) return "HslLuminosity";
         return "?";
     }
 
@@ -699,10 +681,10 @@ namespace metagl
         return "?";
     }
 
-    inline std::string_view to_string(TextureFilter v)
+    inline std::string_view to_string(BlitFilter v)
     {
-        if (v == TextureFilter::Nearest) return "Nearest";
-        else if (v == TextureFilter::Linear) return "Linear";
+        if (v == BlitFilter::Nearest) return "Nearest";
+        else if (v == BlitFilter::Linear) return "Linear";
         return "?";
     }
 
@@ -712,15 +694,6 @@ namespace metagl
         else if (v == TextureWrapMode::ClampToEdge) return "ClampToEdge";
         else if (v == TextureWrapMode::MirroredRepeat) return "MirroredRepeat";
         else if (v == TextureWrapMode::ClampToBorder) return "ClampToBorder";
-        return "?";
-    }
-
-    inline std::string_view to_string(TextureWrap v)
-    {
-        if (v == TextureWrap::ClampToEdge) return "ClampToEdge";
-        else if (v == TextureWrap::Repeat) return "Repeat";
-        else if (v == TextureWrap::MirroredRepeat) return "MirroredRepeat";
-        else if (v == TextureWrap::ClampToBorder) return "ClampToBorder";
         return "?";
     }
 
@@ -1579,5 +1552,20 @@ namespace metagl
         if (v == SyncFlag::None) return "None";
         return "?";
     }
+
+    // Handle type to_string overloads — return std::string since values are dynamic.
+    inline std::string to_string(ShaderId v)              { return "ShaderId("             + std::to_string(v.value) + ")"; }
+    inline std::string to_string(ProgramId v)             { return "ProgramId("            + std::to_string(v.value) + ")"; }
+    inline std::string to_string(TextureId v)             { return "TextureId("            + std::to_string(v.value) + ")"; }
+    inline std::string to_string(BufferId v)              { return "BufferId("             + std::to_string(v.value) + ")"; }
+    inline std::string to_string(FramebufferId v)         { return "FramebufferId("        + std::to_string(v.value) + ")"; }
+    inline std::string to_string(RenderbufferId v)        { return "RenderbufferId("       + std::to_string(v.value) + ")"; }
+    inline std::string to_string(SamplerId v)             { return "SamplerId("            + std::to_string(v.value) + ")"; }
+    inline std::string to_string(VertexArrayId v)         { return "VertexArrayId("        + std::to_string(v.value) + ")"; }
+    inline std::string to_string(QueryId v)               { return "QueryId("              + std::to_string(v.value) + ")"; }
+    inline std::string to_string(TransformFeedbackId v)   { return "TransformFeedbackId("  + std::to_string(v.value) + ")"; }
+    inline std::string to_string(ProgramPipelineId v)     { return "ProgramPipelineId("    + std::to_string(v.value) + ")"; }
+    inline std::string to_string(UniformLocation v)       { return "UniformLocation("      + std::to_string(v.value) + ")"; }
+    inline std::string to_string(AttribLocation v)        { return "AttribLocation("       + std::to_string(v.value) + ")"; }
 
 } // namespace metagl

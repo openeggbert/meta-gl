@@ -1,3 +1,21 @@
+/**
+ * @file Enums.hpp
+ * @brief Strongly-typed OpenGL ES enum classes for all GL constant domains.
+ *
+ * Defines one `enum class` per OpenGL ES domain so that unrelated constants
+ * cannot be accidentally mixed.  All enumerators map 1-to-1 to the
+ * corresponding `GL_*` constant from `<GLES3/gl32.h>`.
+ *
+ * Bitfield enums (e.g. @ref ClearBufferBit, @ref MapBufferAccessMask) derive
+ * from `GLbitfield` and satisfy the @ref GlBitfield concept, which enables
+ * generic `operator|`, `operator&`, and `operator~` for them.
+ *
+ * Domain enums derive from `GLenum` and satisfy the @ref GlEnum concept
+ * defined in @ref Types.hpp.
+ *
+ * Availability annotations in enumerator comments (`ES 3.0+`, `ES 3.1+`,
+ * `ES 3.2+`) indicate the minimum OpenGL ES version required.
+ */
 #pragma once
 
 // Types.hpp includes <GLES3/gl32.h> which defines all GL_* constants used below.
@@ -5,8 +23,14 @@
 
 namespace metagl
 {
-    /// Satisfied by any enum class whose underlying type is GLbitfield.
-    /// Enables the generic operator|, operator&, operator~ below.
+    /**
+     * @brief Concept satisfied by any `enum class` whose underlying type is `GLbitfield`.
+     *
+     * Enables the generic @ref operator| , @ref operator& , and @ref operator~
+     * overloads defined below.  Bitfield enums in this file all satisfy this concept.
+     *
+     * @tparam T  Enum type to check.
+     */
     template<typename T>
     concept GlBitfield =
         std::is_enum_v<T> &&
@@ -16,9 +40,9 @@ namespace metagl
     template<GlBitfield T> inline T operator&(T a, T b) { return static_cast<T>(static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b)); }
     template<GlBitfield T> inline T operator~(T a)      { return static_cast<T>(~static_cast<GLbitfield>(a)); }
 
-    // -------------------------------------------------------------------------
-    // Clear buffer mask — bitfield passed to glClear().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Clear buffer mask — bitfield passed to glClear().
+     */
     enum class ClearBufferBit : GLbitfield
     {
         Color   = GL_COLOR_BUFFER_BIT,   ///< Clear the colour buffer.
@@ -26,10 +50,9 @@ namespace metagl
         Stencil = GL_STENCIL_BUFFER_BIT  ///< Clear the stencil buffer.
     };
 
-    // -------------------------------------------------------------------------
-    // Primitive topology for draw calls (glDrawArrays, glDrawElements, etc.).
-    // ES 3.2 adds adjacency types for geometry shaders and patches for tessellation.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Primitive topology for draw calls (glDrawArrays, glDrawElements, etc.). ES 3.2 adds adjacency types for geometry shaders and patches for tessellation.
+     */
     enum class PrimitiveType : GLenum
     {
         Points                 = GL_POINTS,
@@ -47,9 +70,9 @@ namespace metagl
         Quads                  = GL_QUADS                     ///< Tessellation gen mode only.
     };
 
-    // -------------------------------------------------------------------------
-    // Source and destination blend factors for glBlendFunc / glBlendFunci.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Source and destination blend factors for glBlendFunc / glBlendFunci.
+     */
     enum class BlendFactor : GLenum
     {
         Zero                  = GL_ZERO,
@@ -69,9 +92,9 @@ namespace metagl
         OneMinusConstantAlpha = GL_ONE_MINUS_CONSTANT_ALPHA
     };
 
-    // -------------------------------------------------------------------------
-    // Blend equation mode for glBlendEquation / glBlendEquationi.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Blend equation mode for glBlendEquation / glBlendEquationi.
+     */
     enum class BlendEquation : GLenum
     {
         FuncAdd             = GL_FUNC_ADD,
@@ -96,9 +119,9 @@ namespace metagl
         HslLuminosity       = GL_HSL_LUMINOSITY
     };
 
-    // -------------------------------------------------------------------------
-    // Buffer binding targets for glBindBuffer / glBufferData, etc.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Buffer binding targets for glBindBuffer / glBufferData, etc.
+     */
     enum class BufferTarget : GLenum
     {
         Array            = GL_ARRAY_BUFFER,              ///< Vertex attribute data.
@@ -115,9 +138,9 @@ namespace metagl
         AtomicCounter    = GL_ATOMIC_COUNTER_BUFFER       ///< Atomic counter data. ES 3.1+
     };
 
-    // -------------------------------------------------------------------------
-    // Usage hints for glBufferData — describes expected access pattern.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Usage hints for glBufferData — describes expected access pattern.
+     */
     enum class BufferUsage : GLenum
     {
         StreamDraw  = GL_STREAM_DRAW,
@@ -131,11 +154,9 @@ namespace metagl
         DynamicCopy = GL_DYNAMIC_COPY
     };
 
-    // -------------------------------------------------------------------------
-    // Parameters queryable via glGetBufferParameteriv / glGetBufferParameteri64v.
-    // GL_BUFFER_MAP_POINTER is intentionally excluded — use BufferPointerParameter
-    // with glGetBufferPointerv instead.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Parameters queryable via glGetBufferParameteriv / glGetBufferParameteri64v. GL_BUFFER_MAP_POINTER is intentionally excluded — use BufferPointerParameter with glGetBufferPointerv instead.
+     */
     enum class BufferParameter : GLenum
     {
         Size        = GL_BUFFER_SIZE,
@@ -146,17 +167,17 @@ namespace metagl
         MapOffset   = GL_BUFFER_MAP_OFFSET     ///< ES 3.0+
     };
 
-    // -------------------------------------------------------------------------
-    // The single valid pname for glGetBufferPointerv.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief The single valid pname for glGetBufferPointerv.
+     */
     enum class BufferPointerParameter : GLenum
     {
         MapPointer = GL_BUFFER_MAP_POINTER   ///< ES 3.0+
     };
 
-    // -------------------------------------------------------------------------
-    // Access flags for glMapBufferRange (bitfield).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Access flags for glMapBufferRange (bitfield).
+     */
     enum class MapBufferAccessMask : GLbitfield
     {
         Read             = GL_MAP_READ_BIT,
@@ -167,20 +188,18 @@ namespace metagl
         Unsynchronized   = GL_MAP_UNSYNCHRONIZED_BIT
     };
 
-    // -------------------------------------------------------------------------
-    // Per-word sample coverage mask for glSampleMaski() (ES 3.1+).
-    // Each bit position corresponds to one sample index within the word.
-    // Use operator| to combine individual sample bits.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Per-word sample coverage mask for glSampleMaski() (ES 3.1+). Each bit position corresponds to one sample index within the word. Use operator| to combine individual sample bits.
+     */
     enum class SampleMaskValue : GLbitfield
     {
         None = 0,
         All  = 0xFFFFFFFFu
     };
 
-    // -------------------------------------------------------------------------
-    // Server-side capabilities toggled with glEnable / glDisable.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Server-side capabilities toggled with glEnable / glDisable.
+     */
     enum class Capability : GLenum
     {
         Blend                       = GL_BLEND,
@@ -200,9 +219,9 @@ namespace metagl
         SampleShading               = GL_SAMPLE_SHADING              ///< ES 3.2+
     };
 
-    // -------------------------------------------------------------------------
-    // OpenGL error codes returned by glGetError().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief OpenGL error codes returned by glGetError().
+     */
     enum class ErrorCode : GLenum
     {
         NoError                   = GL_NO_ERROR,
@@ -216,18 +235,18 @@ namespace metagl
         ContextLost               = GL_CONTEXT_LOST      ///< ES 3.2+ robust context
     };
 
-    // -------------------------------------------------------------------------
-    // Front-face winding order for glFrontFace().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Front-face winding order for glFrontFace().
+     */
     enum class FrontFace : GLenum
     {
         CW  = GL_CW,
         CCW = GL_CCW
     };
 
-    // -------------------------------------------------------------------------
-    // Face selection used by glCullFace() and glStencilFuncSeparate().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Face selection used by glCullFace() and glStencilFuncSeparate().
+     */
     enum class CullFace : GLenum
     {
         Front        = GL_FRONT,
@@ -235,18 +254,18 @@ namespace metagl
         FrontAndBack = GL_FRONT_AND_BACK
     };
 
-    // -------------------------------------------------------------------------
-    // Hint target for glHint().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Hint target for glHint().
+     */
     enum class HintTarget : GLenum
     {
         GenerateMipmap            = GL_GENERATE_MIPMAP_HINT,
         FragmentShaderDerivative  = GL_FRAGMENT_SHADER_DERIVATIVE_HINT  ///< ES 3.0+
     };
 
-    // -------------------------------------------------------------------------
-    // Hint mode for glHint().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Hint mode for glHint().
+     */
     enum class HintMode : GLenum
     {
         DontCare = GL_DONT_CARE,
@@ -254,9 +273,9 @@ namespace metagl
         Nicest   = GL_NICEST
     };
 
-    // -------------------------------------------------------------------------
-    // Scalar data types used for vertex attributes, index buffers, and uniforms.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Scalar data types used for vertex attributes, index buffers, and uniforms.
+     */
     enum class DataType : GLenum
     {
         Byte                         = GL_BYTE,
@@ -273,9 +292,9 @@ namespace metagl
         UnsignedInt10F11F11FRev      = GL_UNSIGNED_INT_10F_11F_11F_REV ///< ES 3.0+
     };
 
-    // -------------------------------------------------------------------------
-    // Pixel transfer format (base format) used in glTexImage2D, glReadPixels, etc.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Pixel transfer format (base format) used in glTexImage2D, glReadPixels, etc.
+     */
     enum class PixelFormat : GLenum
     {
         DepthComponent = GL_DEPTH_COMPONENT,
@@ -298,9 +317,9 @@ namespace metagl
         Bgra           = 0x80E1
     };
 
-    // -------------------------------------------------------------------------
-    // Pixel data type used in glTexImage*, glReadPixels, etc.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Pixel data type used in glTexImage*, glReadPixels, etc.
+     */
     enum class PixelType : GLenum
     {
         UnsignedByte                = GL_UNSIGNED_BYTE,
@@ -321,9 +340,9 @@ namespace metagl
         Float32UnsignedInt248Rev    = GL_FLOAT_32_UNSIGNED_INT_24_8_REV ///< ES 3.0+
     };
 
-    // -------------------------------------------------------------------------
-    // Sized / unsized internal formats for textures and renderbuffers.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Sized / unsized internal formats for textures and renderbuffers.
+     */
     enum class InternalFormat : GLenum
     {
         // Base unsized formats (ES 2.0)
@@ -400,9 +419,9 @@ namespace metagl
         Depth32FStencil8  = GL_DEPTH32F_STENCIL8
     };
 
-    // -------------------------------------------------------------------------
-    // ETC2 / EAC and ASTC compressed internal formats (ES 3.0+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief ETC2 / EAC and ASTC compressed internal formats (ES 3.0+).
+     */
     enum class CompressedInternalFormat : GLenum
     {
         // ETC2 / EAC (ES 3.0+)
@@ -448,9 +467,9 @@ namespace metagl
         Srgb8Alpha8Astc12x12            = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12
     };
 
-    // -------------------------------------------------------------------------
-    // String identifiers for glGetString().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief String identifiers for glGetString().
+     */
     enum class StringName : GLenum
     {
         Vendor                 = GL_VENDOR,
@@ -460,10 +479,9 @@ namespace metagl
         ShadingLanguageVersion = GL_SHADING_LANGUAGE_VERSION
     };
 
-    // -------------------------------------------------------------------------
-    // Integer state names for glGetIntegerv() — kept for backwards compatibility
-    // with existing Functions.hpp signature.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Integer state names for glGetIntegerv() — kept for backwards compatibility with existing Functions.hpp signature.
+     */
     enum class IntegerName : GLenum
     {
         MajorVersion   = GL_MAJOR_VERSION,
@@ -473,9 +491,9 @@ namespace metagl
         Viewport       = GL_VIEWPORT  ///< Returns 4 integers: x, y, width, height.
     };
 
-    // -------------------------------------------------------------------------
-    // Shader stage types for glCreateShader().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Shader stage types for glCreateShader().
+     */
     enum class ShaderType : GLenum
     {
         Vertex         = GL_VERTEX_SHADER,
@@ -486,9 +504,9 @@ namespace metagl
         Compute        = GL_COMPUTE_SHADER           ///< ES 3.1+
     };
 
-    // -------------------------------------------------------------------------
-    // Shader stage bitfield for glUseProgramStages() (separable programs).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Shader stage bitfield for glUseProgramStages() (separable programs).
+     */
     enum class ShaderStageMask : GLbitfield
     {
         Vertex         = GL_VERTEX_SHADER_BIT,
@@ -500,9 +518,9 @@ namespace metagl
         AllShaderBits  = GL_ALL_SHADER_BITS
     };
 
-    // -------------------------------------------------------------------------
-    // Shader object parameter names for glGetShaderiv().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Shader object parameter names for glGetShaderiv().
+     */
     enum class ShaderParameter : GLenum
     {
         ShaderType    = GL_SHADER_TYPE,
@@ -512,9 +530,9 @@ namespace metagl
         SourceLength  = GL_SHADER_SOURCE_LENGTH
     };
 
-    // -------------------------------------------------------------------------
-    // Floating-point precision qualifiers, for glGetShaderPrecisionFormat().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Floating-point precision qualifiers, for glGetShaderPrecisionFormat().
+     */
     enum class PrecisionType : GLenum
     {
         LowFloat   = GL_LOW_FLOAT,
@@ -525,9 +543,9 @@ namespace metagl
         HighInt    = GL_HIGH_INT
     };
 
-    // -------------------------------------------------------------------------
-    // Program object parameter names for glGetProgramiv().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Program object parameter names for glGetProgramiv().
+     */
     enum class ProgramParameter : GLenum
     {
         DeleteStatus                = GL_DELETE_STATUS,
@@ -560,9 +578,9 @@ namespace metagl
         TessGenPointMode            = GL_TESS_GEN_POINT_MODE             ///< ES 3.2+
     };
 
-    // -------------------------------------------------------------------------
-    // Interface types for glGetProgramInterfaceiv() (ES 3.1+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Interface types for glGetProgramInterfaceiv() (ES 3.1+).
+     */
     enum class ProgramInterface : GLenum
     {
         Uniform                     = GL_UNIFORM,
@@ -575,9 +593,9 @@ namespace metagl
         TransformFeedbackVarying    = GL_TRANSFORM_FEEDBACK_VARYING
     };
 
-    // -------------------------------------------------------------------------
-    // Program interface query parameters for glGetProgramInterfaceiv() (ES 3.1+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Program interface query parameters for glGetProgramInterfaceiv() (ES 3.1+).
+     */
     enum class ProgramInterfaceParameter : GLenum
     {
         ActiveResources      = GL_ACTIVE_RESOURCES,
@@ -585,9 +603,9 @@ namespace metagl
         MaxNumActiveVariables = GL_MAX_NUM_ACTIVE_VARIABLES
     };
 
-    // -------------------------------------------------------------------------
-    // Resource property tokens for glGetProgramResourceiv() (ES 3.1+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Resource property tokens for glGetProgramResourceiv() (ES 3.1+).
+     */
     enum class ProgramResourceProperty : GLenum
     {
         NameLength                      = GL_NAME_LENGTH,
@@ -615,9 +633,9 @@ namespace metagl
         IsPerPatch                      = GL_IS_PER_PATCH  ///< ES 3.2+ tessellation
     };
 
-    // -------------------------------------------------------------------------
-    // GLSL uniform and sampler/image type tokens returned by glGetActiveUniform().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief GLSL uniform and sampler/image type tokens returned by glGetActiveUniform().
+     */
     enum class UniformType : GLenum
     {
         // Scalars and vectors
@@ -699,9 +717,9 @@ namespace metagl
         UnsignedIntSampler2DMultisampleArray = GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY
     };
 
-    // -------------------------------------------------------------------------
-    // Uniform block query parameters for glGetActiveUniformBlockiv().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Uniform block query parameters for glGetActiveUniformBlockiv().
+     */
     enum class UniformBlockParameter : GLenum
     {
         Binding                      = GL_UNIFORM_BLOCK_BINDING,
@@ -713,9 +731,9 @@ namespace metagl
         ReferencedByFragmentShader   = GL_UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER
     };
 
-    // -------------------------------------------------------------------------
-    // Per-uniform property tokens for glGetActiveUniformsiv().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Per-uniform property tokens for glGetActiveUniformsiv().
+     */
     enum class UniformParameter : GLenum
     {
         Type          = GL_UNIFORM_TYPE,
@@ -728,9 +746,9 @@ namespace metagl
         IsRowMajor    = GL_UNIFORM_IS_ROW_MAJOR
     };
 
-    // -------------------------------------------------------------------------
-    // Texture binding targets for glBindTexture(), glTexImage2D(), etc.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Texture binding targets for glBindTexture(), glTexImage2D(), etc.
+     */
     enum class TextureTarget : GLenum
     {
         Texture2D                = GL_TEXTURE_2D,
@@ -749,9 +767,9 @@ namespace metagl
         Texture2DMultisampleArray = GL_TEXTURE_2D_MULTISAMPLE_ARRAY ///< ES 3.2+
     };
 
-    // -------------------------------------------------------------------------
-    // Texture parameter names for glTexParameteri / glTexParameterf.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Texture parameter names for glTexParameteri / glTexParameterf.
+     */
     enum class TextureParameter : GLenum
     {
         MinFilter              = GL_TEXTURE_MIN_FILTER,
@@ -781,12 +799,9 @@ namespace metagl
         BufferSize             = GL_TEXTURE_BUFFER_SIZE           ///< ES 3.2+
     };
 
-    // -------------------------------------------------------------------------
-    // Sampler parameter names for glSamplerParameter* / glGetSamplerParameter*.
-    // Only the subset of texture parameters valid for sampler objects is included.
-    // GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_MAX_LEVEL, swizzle, etc. are excluded
-    // because the GL ES spec does not allow them on sampler objects.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Sampler parameter names for glSamplerParameter* / glGetSamplerParameter*. Only the subset of texture parameters valid for sampler objects is included. GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_MAX_LEVEL, swizzle, etc. are excluded because the GL ES spec does not allow them on sampler objects.
+     */
     enum class SamplerParameter : GLenum
     {
         MinFilter    = GL_TEXTURE_MIN_FILTER,    ///< Minification filter.
@@ -801,10 +816,9 @@ namespace metagl
         BorderColor  = GL_TEXTURE_BORDER_COLOR   ///< Border color for clamp-to-border. ES 3.2+
     };
 
-    // -------------------------------------------------------------------------
-    // Minification filter for TextureParameter::MinFilter (glTexParameter*).
-    // Includes mipmap variants; use TextureMagFilter for magnification.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Minification filter for TextureParameter::MinFilter (glTexParameter*). Includes mipmap variants; use TextureMagFilter for magnification.
+     */
     enum class TextureMinFilter : GLenum
     {
         Nearest              = GL_NEAREST,
@@ -815,29 +829,27 @@ namespace metagl
         LinearMipmapLinear   = GL_LINEAR_MIPMAP_LINEAR
     };
 
-    // -------------------------------------------------------------------------
-    // Magnification filter for TextureParameter::MagFilter (glTexParameter*).
-    // Only Nearest/Linear are valid; mipmap variants are not allowed here.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Magnification filter for TextureParameter::MagFilter (glTexParameter*). Only Nearest/Linear are valid; mipmap variants are not allowed here.
+     */
     enum class TextureMagFilter : GLenum
     {
         Nearest = GL_NEAREST,
         Linear  = GL_LINEAR
     };
 
-    // -------------------------------------------------------------------------
-    // Filter parameter for glBlitFramebuffer. Only Nearest/Linear are valid.
-    // Not related to texture sampling — kept separate to prevent misuse.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Filter parameter for glBlitFramebuffer. Only Nearest/Linear are valid. Not related to texture sampling — kept separate to prevent misuse.
+     */
     enum class BlitFilter : GLenum
     {
         Nearest = GL_NEAREST,
         Linear  = GL_LINEAR
     };
 
-    // -------------------------------------------------------------------------
-    // Texture wrap modes for TextureParameter::WrapS/T/R.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Texture wrap modes for TextureParameter::WrapS/T/R.
+     */
     enum class TextureWrapMode : GLenum
     {
         Repeat         = GL_REPEAT,
@@ -846,18 +858,18 @@ namespace metagl
         ClampToBorder  = GL_CLAMP_TO_BORDER  ///< ES 3.2+
     };
 
-    // -------------------------------------------------------------------------
-    // Texture compare mode for shadow samplers (TextureParameter::CompareMode).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Texture compare mode for shadow samplers (TextureParameter::CompareMode).
+     */
     enum class TextureCompareMode : GLenum
     {
         None                 = GL_NONE,
         CompareRefToTexture  = GL_COMPARE_REF_TO_TEXTURE  ///< ES 3.0+
     };
 
-    // -------------------------------------------------------------------------
-    // Swizzle component values for TextureParameter::SwizzleR/G/B/A (ES 3.0+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Swizzle component values for TextureParameter::SwizzleR/G/B/A (ES 3.0+).
+     */
     enum class TextureSwizzle : GLenum
     {
         Red   = GL_RED,
@@ -868,9 +880,9 @@ namespace metagl
         One   = GL_ONE
     };
 
-    // -------------------------------------------------------------------------
-    // Texture level parameters for glGetTexLevelParameteriv() (ES 3.1+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Texture level parameters for glGetTexLevelParameteriv() (ES 3.1+).
+     */
     enum class TextureLevelParameter : GLenum
     {
         Width               = GL_TEXTURE_WIDTH,
@@ -892,9 +904,9 @@ namespace metagl
         Compressed          = GL_TEXTURE_COMPRESSED
     };
 
-    // -------------------------------------------------------------------------
-    // Texture unit tokens for glActiveTexture() (GL_TEXTURE0 … GL_TEXTURE31).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Texture unit tokens for glActiveTexture() (GL_TEXTURE0 … GL_TEXTURE31).
+     */
     enum class TextureUnit : GLenum
     {
         Texture0  = GL_TEXTURE0,  Texture1  = GL_TEXTURE1,
@@ -915,9 +927,9 @@ namespace metagl
         Texture30 = GL_TEXTURE30, Texture31 = GL_TEXTURE31
     };
 
-    // -------------------------------------------------------------------------
-    // Pixel pack/unpack storage parameters for glPixelStorei().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Pixel pack/unpack storage parameters for glPixelStorei().
+     */
     enum class PixelStoreParam : GLenum
     {
         PackAlignment    = GL_PACK_ALIGNMENT,
@@ -932,9 +944,9 @@ namespace metagl
         UnpackImageHeight = GL_UNPACK_IMAGE_HEIGHT  ///< ES 3.0+
     };
 
-    // -------------------------------------------------------------------------
-    // Depth/stencil comparison function for glDepthFunc(), glStencilFunc(), etc.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Depth/stencil comparison function for glDepthFunc(), glStencilFunc(), etc.
+     */
     enum class CompareFunc : GLenum
     {
         Never        = GL_NEVER,
@@ -947,9 +959,9 @@ namespace metagl
         Always       = GL_ALWAYS
     };
 
-    // -------------------------------------------------------------------------
-    // Stencil operation codes for glStencilOp().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Stencil operation codes for glStencilOp().
+     */
     enum class StencilOp : GLenum
     {
         Keep      = GL_KEEP,
@@ -962,9 +974,9 @@ namespace metagl
         DecrWrap  = GL_DECR_WRAP
     };
 
-    // -------------------------------------------------------------------------
-    // Framebuffer binding targets for glBindFramebuffer().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Framebuffer binding targets for glBindFramebuffer().
+     */
     enum class FramebufferTarget : GLenum
     {
         Framebuffer     = GL_FRAMEBUFFER,
@@ -972,22 +984,17 @@ namespace metagl
         ReadFramebuffer = GL_READ_FRAMEBUFFER   ///< ES 3.0+
     };
 
-    // -------------------------------------------------------------------------
-    // Renderbuffer binding target for glBindRenderbuffer().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Renderbuffer binding target for glBindRenderbuffer().
+     */
     enum class RenderbufferTarget : GLenum
     {
         Renderbuffer = GL_RENDERBUFFER
     };
 
-    // -------------------------------------------------------------------------
-    // Framebuffer attachment points.
-    // -------------------------------------------------------------------------
-    // -------------------------------------------------------------------------
-    // The 32 color attachment points shared by FramebufferAttachment, DrawBuffer,
-    // and ReadBuffer. Defined once here; use the constexpr conversion helpers
-    // below to convert to the target enum when needed.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Framebuffer attachment points. The 32 color attachment points shared by FramebufferAttachment, DrawBuffer, and ReadBuffer. Defined once here; use the constexpr conversion helpers below to convert to the target enum when needed.
+     */
     enum class ColorAttachment : GLenum
     {
         Color0  = GL_COLOR_ATTACHMENT0,
@@ -1024,11 +1031,9 @@ namespace metagl
         Color31 = GL_COLOR_ATTACHMENT31
     };
 
-    // -------------------------------------------------------------------------
-    // Framebuffer attachment points.
-    // Color attachments are represented by ColorAttachment; use
-    // to_framebuffer_attachment() to convert.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Framebuffer attachment points. Color attachments are represented by ColorAttachment; use to_framebuffer_attachment() to convert.
+     */
     enum class FramebufferAttachment : GLenum
     {
         None         = GL_NONE,
@@ -1042,9 +1047,9 @@ namespace metagl
         return static_cast<FramebufferAttachment>(static_cast<GLenum>(a));
     }
 
-    // -------------------------------------------------------------------------
-    // Framebuffer completeness status returned by glCheckFramebufferStatus().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Framebuffer completeness status returned by glCheckFramebufferStatus().
+     */
     enum class FramebufferStatus : GLenum
     {
         Complete                    = GL_FRAMEBUFFER_COMPLETE,
@@ -1057,9 +1062,9 @@ namespace metagl
         IncompleteLayerTargets      = GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS ///< ES 3.2+
     };
 
-    // -------------------------------------------------------------------------
-    // Framebuffer attachment query parameters for glGetFramebufferAttachmentParameteriv().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Framebuffer attachment query parameters for glGetFramebufferAttachmentParameteriv().
+     */
     enum class FramebufferAttachmentParameter : GLenum
     {
         ObjectType          = GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE,
@@ -1078,9 +1083,9 @@ namespace metagl
         Layered             = GL_FRAMEBUFFER_ATTACHMENT_LAYERED                ///< ES 3.2+
     };
 
-    // -------------------------------------------------------------------------
-    // Framebuffer default parameter names for glFramebufferParameteri() (ES 3.1+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Framebuffer default parameter names for glFramebufferParameteri() (ES 3.1+).
+     */
     enum class FramebufferDefaultParameter : GLenum
     {
         Width               = GL_FRAMEBUFFER_DEFAULT_WIDTH,
@@ -1090,9 +1095,9 @@ namespace metagl
         Layers              = GL_FRAMEBUFFER_DEFAULT_LAYERS  ///< ES 3.2+
     };
 
-    // -------------------------------------------------------------------------
-    // Renderbuffer object parameters for glGetRenderbufferParameteriv().
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Renderbuffer object parameters for glGetRenderbufferParameteriv().
+     */
     enum class RenderbufferParameter : GLenum
     {
         Width          = GL_RENDERBUFFER_WIDTH,
@@ -1107,9 +1112,9 @@ namespace metagl
         Samples        = GL_RENDERBUFFER_SAMPLES  ///< ES 3.0+
     };
 
-    // -------------------------------------------------------------------------
-    // Vertex attribute array query parameters for glGetVertexAttribiv(), etc.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Vertex attribute array query parameters for glGetVertexAttribiv(), etc.
+     */
     enum class VertexAttribParameter : GLenum
     {
         ArrayEnabled        = GL_VERTEX_ATTRIB_ARRAY_ENABLED,
@@ -1126,26 +1131,26 @@ namespace metagl
         RelativeOffset      = GL_VERTEX_ATTRIB_RELATIVE_OFFSET    ///< ES 3.1+
     };
 
-    // -------------------------------------------------------------------------
-    // Transform feedback buffer mode for glTransformFeedbackVaryings() (ES 3.0+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Transform feedback buffer mode for glTransformFeedbackVaryings() (ES 3.0+).
+     */
     enum class TransformFeedbackBufferMode : GLenum
     {
         InterleavedAttribs = GL_INTERLEAVED_ATTRIBS,
         SeparateAttribs    = GL_SEPARATE_ATTRIBS
     };
 
-    // -------------------------------------------------------------------------
-    // Transform feedback object binding target for glBindTransformFeedback() (ES 3.0+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Transform feedback object binding target for glBindTransformFeedback() (ES 3.0+).
+     */
     enum class TransformFeedbackTarget : GLenum
     {
         TransformFeedback = GL_TRANSFORM_FEEDBACK
     };
 
-    // -------------------------------------------------------------------------
-    // Occlusion and primitives-written query targets (ES 3.0+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Occlusion and primitives-written query targets (ES 3.0+).
+     */
     enum class QueryTarget : GLenum
     {
         AnySamplesPassed             = GL_ANY_SAMPLES_PASSED,              ///< ES 3.0+
@@ -1154,34 +1159,34 @@ namespace metagl
         PrimitivesGenerated          = GL_PRIMITIVES_GENERATED             ///< ES 3.2+
     };
 
-    // -------------------------------------------------------------------------
-    // Query target state parameters for glGetQueryiv() (ES 3.0+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Query target state parameters for glGetQueryiv() (ES 3.0+).
+     */
     enum class QueryParameter : GLenum
     {
         CurrentQuery = GL_CURRENT_QUERY
     };
 
-    // -------------------------------------------------------------------------
-    // Per-query-object parameters for glGetQueryObjectuiv() (ES 3.0+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Per-query-object parameters for glGetQueryObjectuiv() (ES 3.0+).
+     */
     enum class QueryObjectParameter : GLenum
     {
         Result          = GL_QUERY_RESULT,
         ResultAvailable = GL_QUERY_RESULT_AVAILABLE
     };
 
-    // -------------------------------------------------------------------------
-    // Fence sync condition for glFenceSync() (ES 3.0+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Fence sync condition for glFenceSync() (ES 3.0+).
+     */
     enum class SyncCondition : GLenum
     {
         GpuCommandsComplete = GL_SYNC_GPU_COMMANDS_COMPLETE
     };
 
-    // -------------------------------------------------------------------------
-    // Sync object parameter names for glGetSynciv() (ES 3.0+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Sync object parameter names for glGetSynciv() (ES 3.0+).
+     */
     enum class SyncParameter : GLenum
     {
         ObjectType = GL_OBJECT_TYPE,
@@ -1190,9 +1195,9 @@ namespace metagl
         Flags      = GL_SYNC_FLAGS
     };
 
-    // -------------------------------------------------------------------------
-    // Sync wait result values returned by glClientWaitSync() (ES 3.0+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Sync wait result values returned by glClientWaitSync() (ES 3.0+).
+     */
     enum class SyncWaitResult : GLenum
     {
         AlreadySignaled    = GL_ALREADY_SIGNALED,
@@ -1201,18 +1206,18 @@ namespace metagl
         WaitFailed         = GL_WAIT_FAILED
     };
 
-    // -------------------------------------------------------------------------
-    // Flush flag bitfield for glClientWaitSync() (ES 3.0+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Flush flag bitfield for glClientWaitSync() (ES 3.0+).
+     */
     enum class SyncFlushMask : GLbitfield
     {
         None     = 0,
         Commands = GL_SYNC_FLUSH_COMMANDS_BIT
     };
 
-    // -------------------------------------------------------------------------
-    // Image unit access mode for glBindImageTexture() (ES 3.1+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Image unit access mode for glBindImageTexture() (ES 3.1+).
+     */
     enum class ImageAccess : GLenum
     {
         ReadOnly  = GL_READ_ONLY,
@@ -1220,9 +1225,9 @@ namespace metagl
         ReadWrite = GL_READ_WRITE
     };
 
-    // -------------------------------------------------------------------------
-    // Memory barrier bits for glMemoryBarrier() / glMemoryBarrierByRegion() (ES 3.1+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Memory barrier bits for glMemoryBarrier() / glMemoryBarrierByRegion() (ES 3.1+).
+     */
     enum class MemoryBarrierMask : GLbitfield
     {
         VertexAttribArray   = GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT,
@@ -1241,18 +1246,18 @@ namespace metagl
         AllBarrierBits      = GL_ALL_BARRIER_BITS
     };
 
-    // -------------------------------------------------------------------------
-    // Context flag bits returned by glGetIntegerv(GL_CONTEXT_FLAGS) (ES 3.2+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Context flag bits returned by glGetIntegerv(GL_CONTEXT_FLAGS) (ES 3.2+).
+     */
     enum class ContextFlagMask : GLbitfield
     {
         Debug        = GL_CONTEXT_FLAG_DEBUG_BIT,
         RobustAccess = GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT
     };
 
-    // -------------------------------------------------------------------------
-    // Graphics reset status returned by glGetGraphicsResetStatus() (ES 3.2+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Graphics reset status returned by glGetGraphicsResetStatus() (ES 3.2+).
+     */
     enum class GraphicsResetStatus : GLenum
     {
         NoError   = GL_NO_ERROR,
@@ -1261,18 +1266,18 @@ namespace metagl
         Unknown   = GL_UNKNOWN_CONTEXT_RESET
     };
 
-    // -------------------------------------------------------------------------
-    // Reset notification strategy tokens (ES 3.2+ robust context).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Reset notification strategy tokens (ES 3.2+ robust context).
+     */
     enum class ResetNotificationStrategy : GLenum
     {
         NoResetNotification = GL_NO_RESET_NOTIFICATION,
         LoseContextOnReset  = GL_LOSE_CONTEXT_ON_RESET
     };
 
-    // -------------------------------------------------------------------------
-    // Debug message sources for glDebugMessageControl() / callback (ES 3.2+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Debug message sources for glDebugMessageControl() / callback (ES 3.2+).
+     */
     enum class DebugSource : GLenum
     {
         DontCare = GL_DONT_CARE,
@@ -1284,9 +1289,9 @@ namespace metagl
         Other          = GL_DEBUG_SOURCE_OTHER
     };
 
-    // -------------------------------------------------------------------------
-    // Debug message type tokens (ES 3.2+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Debug message type tokens (ES 3.2+).
+     */
     enum class DebugType : GLenum
     {
         DontCare = GL_DONT_CARE,
@@ -1301,9 +1306,9 @@ namespace metagl
         PopGroup            = GL_DEBUG_TYPE_POP_GROUP
     };
 
-    // -------------------------------------------------------------------------
-    // Debug message severity levels (ES 3.2+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Debug message severity levels (ES 3.2+).
+     */
     enum class DebugSeverity : GLenum
     {
         DontCare = GL_DONT_CARE,
@@ -1313,9 +1318,9 @@ namespace metagl
         Notification = GL_DEBUG_SEVERITY_NOTIFICATION
     };
 
-    // -------------------------------------------------------------------------
-    // Object identifier tokens for glObjectLabel() / glGetObjectLabel() (ES 3.2+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Object identifier tokens for glObjectLabel() / glGetObjectLabel() (ES 3.2+).
+     */
     enum class DebugObjectLabel : GLenum
     {
         Buffer          = GL_BUFFER,
@@ -1327,9 +1332,9 @@ namespace metagl
         Sampler         = GL_SAMPLER
     };
 
-    // -------------------------------------------------------------------------
-    // Provoking-vertex convention for geometry shaders (ES 3.2+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Provoking-vertex convention for geometry shaders (ES 3.2+).
+     */
     enum class ProvokingVertex : GLenum
     {
         FirstVertex     = GL_FIRST_VERTEX_CONVENTION,
@@ -1337,9 +1342,9 @@ namespace metagl
         UndefinedVertex = GL_UNDEFINED_VERTEX
     };
 
-    // -------------------------------------------------------------------------
-    // Tessellation generation mode for glPatchParameteri (ES 3.2+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Tessellation generation mode for glPatchParameteri (ES 3.2+).
+     */
     enum class TessGenMode : GLenum
     {
         Quads     = GL_QUADS,
@@ -1347,9 +1352,9 @@ namespace metagl
         Isolines  = GL_ISOLINES
     };
 
-    // -------------------------------------------------------------------------
-    // Tessellation spacing for glPatchParameteri (ES 3.2+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Tessellation spacing for glPatchParameteri (ES 3.2+).
+     */
     enum class TessGenSpacing : GLenum
     {
         Equal         = GL_EQUAL,
@@ -1357,18 +1362,17 @@ namespace metagl
         FractionalEven = GL_FRACTIONAL_EVEN
     };
 
-    // -------------------------------------------------------------------------
-    // Patch parameter names for glPatchParameteri() (ES 3.2+).
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Patch parameter names for glPatchParameteri() (ES 3.2+).
+     */
     enum class TessellationParameter : GLenum
     {
         PatchVertices = GL_PATCH_VERTICES
     };
 
-    // -------------------------------------------------------------------------
-    // Large state-query token set — used with glGetBooleanv, glGetIntegerv,
-    // glGetInteger64v, glGetFloatv.  Grouped by functional area.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Large state-query token set — used with glGetBooleanv, glGetIntegerv, glGetInteger64v, glGetFloatv.  Grouped by functional area.
+     */
     enum class GetParameter : GLenum
     {
         // Viewport / scissor
@@ -1695,9 +1699,9 @@ namespace metagl
         PrimitiveBoundingBox    = GL_PRIMITIVE_BOUNDING_BOX    ///< ES 3.2+
     };
 
-    // -------------------------------------------------------------------------
-    // Buffer target for glClearBufferfv / glClearBufferiv / glClearBufferuiv.
-    // -------------------------------------------------------------------------
+    /**
+     * @brief Buffer target for glClearBufferfv / glClearBufferiv / glClearBufferuiv.
+     */
     enum class ClearBuffer : GLenum
     {
         Color   = GL_COLOR,
@@ -1709,7 +1713,10 @@ namespace metagl
     // -------------------------------------------------------------------------
     // Additional exact API categories used by generated Functions wrappers.
     // -------------------------------------------------------------------------
-    // Color attachments are represented by ColorAttachment; use to_draw_buffer() to convert.
+    /**
+     * @brief Draw buffer target for glDrawBuffers(). Non-color cases only.
+     * Convert @ref ColorAttachment values via @ref to_draw_buffer().
+     */
     enum class DrawBuffer : GLenum
     {
         None = GL_NONE,
@@ -1721,7 +1728,10 @@ namespace metagl
         return static_cast<DrawBuffer>(static_cast<GLenum>(a));
     }
 
-    // Color attachments are represented by ColorAttachment; use to_read_buffer() to convert.
+    /**
+     * @brief Read buffer source for glReadBuffer(). Non-color cases only.
+     * Convert @ref ColorAttachment values via @ref to_read_buffer().
+     */
     enum class ReadBuffer : GLenum
     {
         None = GL_NONE,
@@ -1733,21 +1743,25 @@ namespace metagl
         return static_cast<ReadBuffer>(static_cast<GLenum>(a));
     }
 
-    // Binary formats are implementation-specific numeric values reported by the driver.
+    /// @brief Opaque shader binary format token reported by the driver via GL_SHADER_BINARY_FORMATS.
     enum class ShaderBinaryFormat : GLenum {};
+    /// @brief Opaque program binary format token reported by the driver via GL_PROGRAM_BINARY_FORMATS.
     enum class ProgramBinaryFormat : GLenum {};
 
+    /** @brief Pointer parameter names for glGetPointerv() (ES 3.2+). */
     enum class GetPointerParameter : GLenum
     {
         DebugCallbackFunction = GL_DEBUG_CALLBACK_FUNCTION,
         DebugCallbackUserParam = GL_DEBUG_CALLBACK_USER_PARAM
     };
 
+    /** @brief Parameter name for glGetMultisamplefv() (ES 3.1+). */
     enum class MultisampleParameter : GLenum
     {
         SamplePosition = GL_SAMPLE_POSITION
     };
 
+    /** @brief Target type for glGetInternalformativ() (ES 3.0+). */
     enum class InternalFormatTarget : GLenum
     {
         Renderbuffer = GL_RENDERBUFFER,
@@ -1755,12 +1769,14 @@ namespace metagl
         Texture2DMultisampleArray = GL_TEXTURE_2D_MULTISAMPLE_ARRAY
     };
 
+    /** @brief Query parameter for glGetInternalformativ() (ES 3.0+). */
     enum class InternalFormatParameter : GLenum
     {
         Samples = GL_SAMPLES,
         NumSampleCounts = GL_NUM_SAMPLE_COUNTS
     };
 
+    /** @brief Parameter names for glGetProgramPipelineiv() (ES 3.1+). */
     enum class ProgramPipelineParameter : GLenum
     {
         ActiveProgram = GL_ACTIVE_PROGRAM,
@@ -1774,6 +1790,7 @@ namespace metagl
         ComputeShader = GL_COMPUTE_SHADER
     };
 
+    /** @brief Reserved flags parameter for glWaitSync() — currently must be zero. */
     enum class SyncFlag : GLbitfield
     {
         None = 0

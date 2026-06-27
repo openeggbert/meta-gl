@@ -1269,6 +1269,21 @@ namespace metagl
         RobustAccess = GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT
     };
 
+    inline ContextFlagMask operator|(ContextFlagMask a, ContextFlagMask b)
+    {
+        return static_cast<ContextFlagMask>(
+            static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
+    }
+    inline ContextFlagMask operator&(ContextFlagMask a, ContextFlagMask b)
+    {
+        return static_cast<ContextFlagMask>(
+            static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b));
+    }
+    inline ContextFlagMask operator~(ContextFlagMask a)
+    {
+        return static_cast<ContextFlagMask>(~static_cast<GLbitfield>(a));
+    }
+
     // -------------------------------------------------------------------------
     // Graphics reset status returned by glGetGraphicsResetStatus() (ES 3.2+).
     // -------------------------------------------------------------------------

@@ -33,6 +33,12 @@ namespace metagl
         { h.value } -> std::convertible_to<GLuint>;
     };
 
+    /// Satisfied by any enum class whose underlying type is GLenum.
+    template<typename T>
+    concept GlEnum =
+        std::is_enum_v<T> &&
+        std::same_as<std::underlying_type_t<T>, GLenum>;
+
     using ::GLbitfield;
     using ::GLboolean;
     using ::GLbyte;

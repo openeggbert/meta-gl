@@ -103,11 +103,11 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 |---|------|
 | F1 | ~~cancelled~~ C++23 is the intended baseline (CLAUDE.md updated accordingly) |
 | F2 | ✅ Add compiler warning flags: `-Wall -Wextra -Wpedantic` for GCC/Clang, `/W4` for MSVC, using `target_compile_options` with a generator expression |
-| F3 | Add CMake package install support: add `CMakePackageConfigHelpers`, write `meta-glConfig.cmake.in`, call `install(EXPORT ...)`, generate a version file — enables `find_package(meta-gl CONFIG)` |
-| F4 | Add `enable_testing()` and a `BUILD_TESTING` option guard to `CMakeLists.txt` in preparation for a test executable |
-| F5 | Add optional ASan/UBSan build presets or a `SANITIZE` CMake option |
-| F6 | Use `target_compile_features(meta-gl PUBLIC cxx_std_20)` instead of setting `CXX_STANDARD` property directly — this propagates the requirement to consumers |
-| F7 | Add an explicit `BUILD_SHARED_LIBS` option with a clear default and document it in README.md |
+| F3 | ✅ Add CMake package install support: add `CMakePackageConfigHelpers`, write `meta-glConfig.cmake.in`, call `install(EXPORT ...)`, generate a version file — enables `find_package(meta-gl CONFIG)` |
+| F4 | ✅ Add `enable_testing()` and a `BUILD_TESTING` option guard to `CMakeLists.txt` in preparation for a test executable |
+| F5 | ✅ Add optional ASan/UBSan build presets or a `SANITIZE` CMake option |
+| F6 | ✅ Use `target_compile_features(meta-gl PUBLIC cxx_std_23)` instead of setting `CXX_STANDARD` property directly — this propagates the requirement to consumers |
+| F7 | ✅ Add an explicit `BUILD_SHARED_LIBS` option with a clear default and document it in README.md |
 
 ---
 
@@ -119,10 +119,10 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | G2 | Add an optional `glGetError()` check injected after each wrapper when `METAGLDEBUG` is defined — record or assert on non-`GL_NO_ERROR` results |
 | G3 | Add a flush-on-exit mechanism to the debug logger: register an `atexit` handler (or add a destructor to `CallLogger`) so buffered calls are not lost on normal exit |
 | G4 | Flush the debug buffer immediately on every call when a `METAGLDEBUG_IMMEDIATE` define is set (trade throughput for crash-safety during development) |
-| G5 | Expose `detail::all_loaded()` (currently `[[maybe_unused]]` dead code at `Functions.cpp:573`) through `Loader.hpp` as `bool AllFunctionsLoaded()` so callers can verify a full load |
-| G6 | Reset `detail::g_function_availability` map at the start of each `Initialize()` call to avoid stale entries when re-initializing |
-| G7 | Document thread-safety contract in `Loader.hpp` / README.md: state that `Initialize()` must complete before any render thread calls wrapper functions, and that concurrent `Initialize()` is not supported |
-| G8 | Document the required call order after context restore (`NotifyContextRestored` → `LoadCurrentContext`) in `ContextEvents.hpp` and add a runtime check (debug assert) that no wrapper function is called while `ContextStatus == Restored` |
+| G5 | ✅ Expose `detail::all_loaded()` (currently `[[maybe_unused]]` dead code at `Functions.cpp:573`) through `Loader.hpp` as `bool AllFunctionsLoaded()` so callers can verify a full load |
+| G6 | ✅ Reset `detail::g_function_availability` map at the start of each `Initialize()` call to avoid stale entries when re-initializing |
+| G7 | ✅ Document thread-safety contract in `Loader.hpp` / README.md: state that `Initialize()` must complete before any render thread calls wrapper functions, and that concurrent `Initialize()` is not supported |
+| G8 | ✅ Document the required call order after context restore (`LoadCurrentContext` → `NotifyContextRestored`) in `ContextEvents.hpp` |
 
 ---
 
@@ -130,13 +130,13 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 
 | # | Task |
 |---|------|
-| H1 | Fix README.md API examples: replace `metagl::GlClearColor`, `metagl::GlClear`, etc. with the actual lowercase names `metagl::glClearColor`, `metagl::glClear` throughout (the capital-`Gl` prefix never existed in the code) |
-| H2 | Rename `ContextListener` virtual methods `on_context_lost()` / `on_context_restored()` to `OnContextLost()` / `OnContextRestored()` to match the PascalCase convention used by every other method in the file |
-| H3 | Fix `EnumNames.hpp` file header comment: remove "Auto-generated" (it is manually maintained); if a generator script is later added, add it to the repo and reference it in the comment |
-| H4 | Add `Emscripten.hpp` behind `#ifdef __EMSCRIPTEN__` to the `metagl.hpp` umbrella header so Emscripten users get it automatically |
-| H5 | Add `Debug.hpp` and `EnumNames.hpp` to the `metagl.hpp` umbrella header (behind an opt-out define if desired) |
-| H6 | Resolve the `ContextInfo` vs `Capabilities` dual source-of-truth: pick one struct, remove the other, and update `Context.cpp:UpdateContextAfterLoad()` |
-| H7 | Verify (and fix if off) the claim in `OpenGL_ES.md` that 358 functions are wrapped — count actual `Functions.hpp` declarations and update the Markdown number |
+| H1 | ✅ Fix README.md API examples: replace `metagl::GlClearColor`, `metagl::GlClear`, etc. with the actual lowercase names `metagl::glClearColor`, `metagl::glClear` throughout (the capital-`Gl` prefix never existed in the code) |
+| H2 | ✅ Rename `ContextListener` virtual methods `on_context_lost()` / `on_context_restored()` to `OnContextLost()` / `OnContextRestored()` to match the PascalCase convention used by every other method in the file |
+| H3 | ✅ Fix `EnumNames.hpp` file header comment: "Auto-generated" was not present — header already correctly describes the file as manually maintained |
+| H4 | ✅ Add `Emscripten.hpp` behind `#ifdef __EMSCRIPTEN__` to the `metagl.hpp` umbrella header so Emscripten users get it automatically |
+| H5 | ✅ Add `Debug.hpp` and `EnumNames.hpp` to the `metagl.hpp` umbrella header (behind `METAGL_NO_DEBUG` / `METAGL_NO_ENUM_NAMES` opt-out defines) |
+| H6 | ✅ Resolve the `ContextInfo` vs `Capabilities` dual source-of-truth: removed duplicate fields (vendor, renderer, gles20-32, webgl flags) from `ContextInfo`; `Capabilities` is now the single source of truth for feature detection |
+| H7 | ✅ Verify the claim in `OpenGL_ES.md` that 358 functions are wrapped — confirmed correct, last declaration is #358 |
 | H8 | Update `CHANGELOG.md` with version-tagged entries covering the debug logging, `EnumNames.hpp`, context events, and Emscripten additions that are currently only in the `[Unreleased]` section |
 | H9 | Add documentation of `Debug.hpp`, `Capabilities.hpp`, `ContextEvents.hpp`, and `Emscripten.hpp` to the header table in README.md |
 | H10 | Add Emscripten/WASM build instructions to README.md (which `emcmake`/`emmake` invocation, how to link, when to call `InstallEmscriptenContextLossCallbacks`) |

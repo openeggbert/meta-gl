@@ -12,11 +12,11 @@ namespace metagl
 
         /// Called when the GL context has been lost.  All GL handles are now
         /// invalid; do not call any GL function from this callback.
-        virtual void on_context_lost() {}
+        virtual void OnContextLost() {}
 
         /// Called after the GL context has been restored and function pointers
         /// have been reloaded.  Recreate GPU resources here.
-        virtual void on_context_restored() {}
+        virtual void OnContextRestored() {}
     };
 
     // -------------------------------------------------------------------------

@@ -199,14 +199,14 @@ namespace metagl
     {
         MarkContextLost();
         for (auto* l : detail::g_listeners)
-            if (l) l->on_context_lost();
+            if (l) l->OnContextLost();
     }
 
     void NotifyContextRestored()
     {
         MarkContextRestored();
         for (auto* l : detail::g_listeners)
-            if (l) l->on_context_restored();
+            if (l) l->OnContextRestored();
     }
 }
 

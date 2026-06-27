@@ -1,5 +1,30 @@
+/**
+ * @file EnumNames.hpp
+ * @brief `to_string()` overloads for all meta-gl enum classes and handle types.
+ *
+ * Provides one `to_string()` overload per @ref Enums.hpp enum class.
+ * Each function returns the enumerator name as a `std::string_view` literal,
+ * or `"?"` for values not found in the enum.
+ *
+ * Handle type overloads (for @ref Types.hpp handle structs) return a
+ * `std::string` of the form `"TypeName(value)"`, e.g. `"TextureId(42)"`.
+ *
+ * Usage example:
+ * @code
+ * metagl::ClearBufferBit mask = metagl::ClearBufferBit::Color;
+ * std::cout << metagl::to_string(mask);  // prints "Color"
+ *
+ * metagl::TextureId tex{7};
+ * std::cout << metagl::to_string(tex);   // prints "TextureId(7)"
+ * @endcode
+ *
+ * The debug logging layer (@ref Debug.hpp) uses these functions to produce
+ * human-readable output for every GL call when `METAGLDEBUG` is defined.
+ *
+ * Include this header via @ref metagl.hpp (included by default unless
+ * `METAGL_NO_ENUM_NAMES` is defined before the first metagl include).
+ */
 #pragma once
-// Enum-to-string helpers for metagl enum classes and handle types.
 #include "metagl/Enums.hpp"
 #include "metagl/Types.hpp"
 #include "metagl/Context.hpp"
@@ -8,6 +33,7 @@
 
 namespace metagl
 {
+    /// @brief Returns the enumerator name of a @ref ClearBufferBit value, or `"?"` for unknown values.
     inline std::string_view to_string(ClearBufferBit v)
     {
         if (v == ClearBufferBit::Color) return "Color";
@@ -16,6 +42,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref PrimitiveType value, or `"?"` for unknown values.
     inline std::string_view to_string(PrimitiveType v)
     {
         if (v == PrimitiveType::Points) return "Points";
@@ -34,6 +61,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref BlendFactor value, or `"?"` for unknown values.
     inline std::string_view to_string(BlendFactor v)
     {
         if (v == BlendFactor::Zero) return "Zero";
@@ -54,6 +82,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref BlendEquation value, or `"?"` for unknown values.
     inline std::string_view to_string(BlendEquation v)
     {
         if (v == BlendEquation::FuncAdd) return "FuncAdd";
@@ -79,6 +108,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref BufferTarget value, or `"?"` for unknown values.
     inline std::string_view to_string(BufferTarget v)
     {
         if (v == BufferTarget::Array) return "Array";
@@ -96,6 +126,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref BufferUsage value, or `"?"` for unknown values.
     inline std::string_view to_string(BufferUsage v)
     {
         if (v == BufferUsage::StreamDraw) return "StreamDraw";
@@ -110,6 +141,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref BufferParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(BufferParameter v)
     {
         if (v == BufferParameter::Size) return "Size";
@@ -121,12 +153,14 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref BufferPointerParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(BufferPointerParameter v)
     {
         if (v == BufferPointerParameter::MapPointer) return "MapPointer";
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref MapBufferAccessMask value, or `"?"` for unknown values.
     inline std::string_view to_string(MapBufferAccessMask v)
     {
         if (v == MapBufferAccessMask::Read) return "Read";
@@ -138,6 +172,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref SampleMaskValue value, or `"?"` for unknown values.
     inline std::string_view to_string(SampleMaskValue v)
     {
         if (v == SampleMaskValue::None) return "None";
@@ -145,6 +180,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref Capability value, or `"?"` for unknown values.
     inline std::string_view to_string(Capability v)
     {
         if (v == Capability::Blend) return "Blend";
@@ -165,6 +201,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ErrorCode value, or `"?"` for unknown values.
     inline std::string_view to_string(ErrorCode v)
     {
         if (v == ErrorCode::NoError) return "NoError";
@@ -179,6 +216,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref FrontFace value, or `"?"` for unknown values.
     inline std::string_view to_string(FrontFace v)
     {
         if (v == FrontFace::CW) return "CW";
@@ -186,6 +224,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref CullFace value, or `"?"` for unknown values.
     inline std::string_view to_string(CullFace v)
     {
         if (v == CullFace::Front) return "Front";
@@ -194,6 +233,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref HintTarget value, or `"?"` for unknown values.
     inline std::string_view to_string(HintTarget v)
     {
         if (v == HintTarget::GenerateMipmap) return "GenerateMipmap";
@@ -201,6 +241,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref HintMode value, or `"?"` for unknown values.
     inline std::string_view to_string(HintMode v)
     {
         if (v == HintMode::DontCare) return "DontCare";
@@ -209,6 +250,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref DataType value, or `"?"` for unknown values.
     inline std::string_view to_string(DataType v)
     {
         if (v == DataType::Byte) return "Byte";
@@ -226,6 +268,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref PixelFormat value, or `"?"` for unknown values.
     inline std::string_view to_string(PixelFormat v)
     {
         if (v == PixelFormat::DepthComponent) return "DepthComponent";
@@ -248,6 +291,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref PixelType value, or `"?"` for unknown values.
     inline std::string_view to_string(PixelType v)
     {
         if (v == PixelType::UnsignedByte) return "UnsignedByte";
@@ -269,6 +313,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref InternalFormat value, or `"?"` for unknown values.
     inline std::string_view to_string(InternalFormat v)
     {
         if (v == InternalFormat::DepthComponent) return "DepthComponent";
@@ -335,6 +380,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref CompressedInternalFormat value, or `"?"` for unknown values.
     inline std::string_view to_string(CompressedInternalFormat v)
     {
         if (v == CompressedInternalFormat::R11Eac) return "R11Eac";
@@ -378,6 +424,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref StringName value, or `"?"` for unknown values.
     inline std::string_view to_string(StringName v)
     {
         if (v == StringName::Vendor) return "Vendor";
@@ -388,6 +435,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref IntegerName value, or `"?"` for unknown values.
     inline std::string_view to_string(IntegerName v)
     {
         if (v == IntegerName::MajorVersion) return "MajorVersion";
@@ -398,6 +446,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ShaderType value, or `"?"` for unknown values.
     inline std::string_view to_string(ShaderType v)
     {
         if (v == ShaderType::Vertex) return "Vertex";
@@ -409,6 +458,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ShaderStageMask value, or `"?"` for unknown values.
     inline std::string_view to_string(ShaderStageMask v)
     {
         if (v == ShaderStageMask::Vertex) return "Vertex";
@@ -421,6 +471,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ShaderParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(ShaderParameter v)
     {
         if (v == ShaderParameter::ShaderType) return "ShaderType";
@@ -431,6 +482,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref PrecisionType value, or `"?"` for unknown values.
     inline std::string_view to_string(PrecisionType v)
     {
         if (v == PrecisionType::LowFloat) return "LowFloat";
@@ -442,6 +494,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ProgramParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(ProgramParameter v)
     {
         if (v == ProgramParameter::DeleteStatus) return "DeleteStatus";
@@ -475,6 +528,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ProgramInterface value, or `"?"` for unknown values.
     inline std::string_view to_string(ProgramInterface v)
     {
         if (v == ProgramInterface::Uniform) return "Uniform";
@@ -488,6 +542,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ProgramInterfaceParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(ProgramInterfaceParameter v)
     {
         if (v == ProgramInterfaceParameter::ActiveResources) return "ActiveResources";
@@ -496,6 +551,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ProgramResourceProperty value, or `"?"` for unknown values.
     inline std::string_view to_string(ProgramResourceProperty v)
     {
         if (v == ProgramResourceProperty::NameLength) return "NameLength";
@@ -524,6 +580,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref UniformType value, or `"?"` for unknown values.
     inline std::string_view to_string(UniformType v)
     {
         if (v == UniformType::Float) return "Float";
@@ -601,6 +658,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref UniformBlockParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(UniformBlockParameter v)
     {
         if (v == UniformBlockParameter::Binding) return "Binding";
@@ -613,6 +671,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref UniformParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(UniformParameter v)
     {
         if (v == UniformParameter::Type) return "Type";
@@ -626,6 +685,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TextureTarget value, or `"?"` for unknown values.
     inline std::string_view to_string(TextureTarget v)
     {
         if (v == TextureTarget::Texture2D) return "Texture2D";
@@ -645,6 +705,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TextureParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(TextureParameter v)
     {
         if (v == TextureParameter::MinFilter) return "MinFilter";
@@ -675,6 +736,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref SamplerParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(SamplerParameter v)
     {
         if (v == SamplerParameter::MinFilter) return "MinFilter";
@@ -690,6 +752,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TextureMinFilter value, or `"?"` for unknown values.
     inline std::string_view to_string(TextureMinFilter v)
     {
         if (v == TextureMinFilter::Nearest) return "Nearest";
@@ -701,6 +764,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TextureMagFilter value, or `"?"` for unknown values.
     inline std::string_view to_string(TextureMagFilter v)
     {
         if (v == TextureMagFilter::Nearest) return "Nearest";
@@ -708,6 +772,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref BlitFilter value, or `"?"` for unknown values.
     inline std::string_view to_string(BlitFilter v)
     {
         if (v == BlitFilter::Nearest) return "Nearest";
@@ -715,6 +780,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TextureWrapMode value, or `"?"` for unknown values.
     inline std::string_view to_string(TextureWrapMode v)
     {
         if (v == TextureWrapMode::Repeat) return "Repeat";
@@ -724,6 +790,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TextureCompareMode value, or `"?"` for unknown values.
     inline std::string_view to_string(TextureCompareMode v)
     {
         if (v == TextureCompareMode::None) return "None";
@@ -731,6 +798,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TextureSwizzle value, or `"?"` for unknown values.
     inline std::string_view to_string(TextureSwizzle v)
     {
         if (v == TextureSwizzle::Red) return "Red";
@@ -742,6 +810,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TextureLevelParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(TextureLevelParameter v)
     {
         if (v == TextureLevelParameter::Width) return "Width";
@@ -764,6 +833,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TextureUnit value, or `"?"` for unknown values.
     inline std::string_view to_string(TextureUnit v)
     {
         if (v == TextureUnit::Texture0) return "Texture0";
@@ -801,6 +871,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref PixelStoreParam value, or `"?"` for unknown values.
     inline std::string_view to_string(PixelStoreParam v)
     {
         if (v == PixelStoreParam::PackAlignment) return "PackAlignment";
@@ -816,6 +887,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref CompareFunc value, or `"?"` for unknown values.
     inline std::string_view to_string(CompareFunc v)
     {
         if (v == CompareFunc::Never) return "Never";
@@ -829,6 +901,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref StencilOp value, or `"?"` for unknown values.
     inline std::string_view to_string(StencilOp v)
     {
         if (v == StencilOp::Keep) return "Keep";
@@ -842,6 +915,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref FramebufferTarget value, or `"?"` for unknown values.
     inline std::string_view to_string(FramebufferTarget v)
     {
         if (v == FramebufferTarget::Framebuffer) return "Framebuffer";
@@ -850,12 +924,14 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref RenderbufferTarget value, or `"?"` for unknown values.
     inline std::string_view to_string(RenderbufferTarget v)
     {
         if (v == RenderbufferTarget::Renderbuffer) return "Renderbuffer";
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ColorAttachment value, or `"?"` for unknown values.
     inline std::string_view to_string(ColorAttachment v)
     {
         if (v == ColorAttachment::Color0) return "Color0";
@@ -893,6 +969,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref FramebufferAttachment value, or `"?"` for unknown values.
     inline std::string_view to_string(FramebufferAttachment v)
     {
         if (v == FramebufferAttachment::None) return "None";
@@ -902,6 +979,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref FramebufferStatus value, or `"?"` for unknown values.
     inline std::string_view to_string(FramebufferStatus v)
     {
         if (v == FramebufferStatus::Complete) return "Complete";
@@ -915,6 +993,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref FramebufferAttachmentParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(FramebufferAttachmentParameter v)
     {
         if (v == FramebufferAttachmentParameter::ObjectType) return "ObjectType";
@@ -934,6 +1013,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref FramebufferDefaultParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(FramebufferDefaultParameter v)
     {
         if (v == FramebufferDefaultParameter::Width) return "Width";
@@ -944,6 +1024,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref RenderbufferParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(RenderbufferParameter v)
     {
         if (v == RenderbufferParameter::Width) return "Width";
@@ -959,6 +1040,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref VertexAttribParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(VertexAttribParameter v)
     {
         if (v == VertexAttribParameter::ArrayEnabled) return "ArrayEnabled";
@@ -976,6 +1058,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TransformFeedbackBufferMode value, or `"?"` for unknown values.
     inline std::string_view to_string(TransformFeedbackBufferMode v)
     {
         if (v == TransformFeedbackBufferMode::InterleavedAttribs) return "InterleavedAttribs";
@@ -983,12 +1066,14 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TransformFeedbackTarget value, or `"?"` for unknown values.
     inline std::string_view to_string(TransformFeedbackTarget v)
     {
         if (v == TransformFeedbackTarget::TransformFeedback) return "TransformFeedback";
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref QueryTarget value, or `"?"` for unknown values.
     inline std::string_view to_string(QueryTarget v)
     {
         if (v == QueryTarget::AnySamplesPassed) return "AnySamplesPassed";
@@ -998,12 +1083,14 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref QueryParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(QueryParameter v)
     {
         if (v == QueryParameter::CurrentQuery) return "CurrentQuery";
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref QueryObjectParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(QueryObjectParameter v)
     {
         if (v == QueryObjectParameter::Result) return "Result";
@@ -1011,12 +1098,14 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref SyncCondition value, or `"?"` for unknown values.
     inline std::string_view to_string(SyncCondition v)
     {
         if (v == SyncCondition::GpuCommandsComplete) return "GpuCommandsComplete";
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref SyncParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(SyncParameter v)
     {
         if (v == SyncParameter::ObjectType) return "ObjectType";
@@ -1026,6 +1115,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref SyncWaitResult value, or `"?"` for unknown values.
     inline std::string_view to_string(SyncWaitResult v)
     {
         if (v == SyncWaitResult::AlreadySignaled) return "AlreadySignaled";
@@ -1035,6 +1125,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref SyncFlushMask value, or `"?"` for unknown values.
     inline std::string_view to_string(SyncFlushMask v)
     {
         if (v == SyncFlushMask::None) return "None";
@@ -1042,6 +1133,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ImageAccess value, or `"?"` for unknown values.
     inline std::string_view to_string(ImageAccess v)
     {
         if (v == ImageAccess::ReadOnly) return "ReadOnly";
@@ -1050,6 +1142,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref MemoryBarrierMask value, or `"?"` for unknown values.
     inline std::string_view to_string(MemoryBarrierMask v)
     {
         if (v == MemoryBarrierMask::VertexAttribArray) return "VertexAttribArray";
@@ -1069,6 +1162,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ContextFlagMask value, or `"?"` for unknown values.
     inline std::string_view to_string(ContextFlagMask v)
     {
         if (v == ContextFlagMask::Debug) return "Debug";
@@ -1076,6 +1170,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref GraphicsResetStatus value, or `"?"` for unknown values.
     inline std::string_view to_string(GraphicsResetStatus v)
     {
         if (v == GraphicsResetStatus::NoError) return "NoError";
@@ -1085,6 +1180,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ResetNotificationStrategy value, or `"?"` for unknown values.
     inline std::string_view to_string(ResetNotificationStrategy v)
     {
         if (v == ResetNotificationStrategy::NoResetNotification) return "NoResetNotification";
@@ -1092,6 +1188,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref DebugSource value, or `"?"` for unknown values.
     inline std::string_view to_string(DebugSource v)
     {
         if (v == DebugSource::DontCare) return "DontCare";
@@ -1104,6 +1201,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref DebugType value, or `"?"` for unknown values.
     inline std::string_view to_string(DebugType v)
     {
         if (v == DebugType::DontCare) return "DontCare";
@@ -1119,6 +1217,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref DebugSeverity value, or `"?"` for unknown values.
     inline std::string_view to_string(DebugSeverity v)
     {
         if (v == DebugSeverity::DontCare) return "DontCare";
@@ -1129,6 +1228,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref DebugObjectLabel value, or `"?"` for unknown values.
     inline std::string_view to_string(DebugObjectLabel v)
     {
         if (v == DebugObjectLabel::Buffer) return "Buffer";
@@ -1141,6 +1241,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ProvokingVertex value, or `"?"` for unknown values.
     inline std::string_view to_string(ProvokingVertex v)
     {
         if (v == ProvokingVertex::FirstVertex) return "FirstVertex";
@@ -1149,6 +1250,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TessGenMode value, or `"?"` for unknown values.
     inline std::string_view to_string(TessGenMode v)
     {
         if (v == TessGenMode::Quads) return "Quads";
@@ -1157,6 +1259,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TessGenSpacing value, or `"?"` for unknown values.
     inline std::string_view to_string(TessGenSpacing v)
     {
         if (v == TessGenSpacing::Equal) return "Equal";
@@ -1165,12 +1268,14 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TessellationParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(TessellationParameter v)
     {
         if (v == TessellationParameter::PatchVertices) return "PatchVertices";
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref GetParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(GetParameter v)
     {
         if (v == GetParameter::Viewport) return "Viewport";
@@ -1447,6 +1552,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ClearBuffer value, or `"?"` for unknown values.
     inline std::string_view to_string(ClearBuffer v)
     {
         if (v == ClearBuffer::Color) return "Color";
@@ -1455,6 +1561,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref DrawBuffer value, or `"?"` for unknown values.
     inline std::string_view to_string(DrawBuffer v)
     {
         if (v == DrawBuffer::None) return "None";
@@ -1462,6 +1569,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ReadBuffer value, or `"?"` for unknown values.
     inline std::string_view to_string(ReadBuffer v)
     {
         if (v == ReadBuffer::None) return "None";
@@ -1473,6 +1581,7 @@ namespace metagl
 
     inline std::string_view to_string(ProgramBinaryFormat) { return "ProgramBinaryFormat"; }
 
+    /// @brief Returns the enumerator name of a @ref GetPointerParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(GetPointerParameter v)
     {
         if (v == GetPointerParameter::DebugCallbackFunction) return "DebugCallbackFunction";
@@ -1480,12 +1589,14 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref MultisampleParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(MultisampleParameter v)
     {
         if (v == MultisampleParameter::SamplePosition) return "SamplePosition";
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref InternalFormatTarget value, or `"?"` for unknown values.
     inline std::string_view to_string(InternalFormatTarget v)
     {
         if (v == InternalFormatTarget::Renderbuffer) return "Renderbuffer";
@@ -1494,6 +1605,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref InternalFormatParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(InternalFormatParameter v)
     {
         if (v == InternalFormatParameter::Samples) return "Samples";
@@ -1501,6 +1613,7 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref ProgramPipelineParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(ProgramPipelineParameter v)
     {
         if (v == ProgramPipelineParameter::ActiveProgram) return "ActiveProgram";
@@ -1515,26 +1628,44 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref SyncFlag value, or `"?"` for unknown values.
     inline std::string_view to_string(SyncFlag v)
     {
         if (v == SyncFlag::None) return "None";
         return "?";
     }
 
-    // Handle type to_string overloads — return std::string since values are dynamic.
+    /// @name Handle type conversions
+    /// @brief These overloads format a typed GL handle as `"TypeName(value)"`, e.g. `"TextureId(42)"`.
+    /// @{
+    /// @brief Formats a @ref ShaderId handle as `"ShaderId(value)"`.
     inline std::string to_string(ShaderId v)              { return "ShaderId("             + std::to_string(v.value) + ")"; }
+    /// @brief Formats a @ref ProgramId handle as `"ProgramId(value)"`.
     inline std::string to_string(ProgramId v)             { return "ProgramId("            + std::to_string(v.value) + ")"; }
+    /// @brief Formats a @ref TextureId handle as `"TextureId(value)"`.
     inline std::string to_string(TextureId v)             { return "TextureId("            + std::to_string(v.value) + ")"; }
+    /// @brief Formats a @ref BufferId handle as `"BufferId(value)"`.
     inline std::string to_string(BufferId v)              { return "BufferId("             + std::to_string(v.value) + ")"; }
+    /// @brief Formats a @ref FramebufferId handle as `"FramebufferId(value)"`.
     inline std::string to_string(FramebufferId v)         { return "FramebufferId("        + std::to_string(v.value) + ")"; }
+    /// @brief Formats a @ref RenderbufferId handle as `"RenderbufferId(value)"`.
     inline std::string to_string(RenderbufferId v)        { return "RenderbufferId("       + std::to_string(v.value) + ")"; }
+    /// @brief Formats a @ref SamplerId handle as `"SamplerId(value)"`.
     inline std::string to_string(SamplerId v)             { return "SamplerId("            + std::to_string(v.value) + ")"; }
+    /// @brief Formats a @ref VertexArrayId handle as `"VertexArrayId(value)"`.
     inline std::string to_string(VertexArrayId v)         { return "VertexArrayId("        + std::to_string(v.value) + ")"; }
+    /// @brief Formats a @ref QueryId handle as `"QueryId(value)"`.
     inline std::string to_string(QueryId v)               { return "QueryId("              + std::to_string(v.value) + ")"; }
+    /// @brief Formats a @ref TransformFeedbackId handle as `"TransformFeedbackId(value)"`.
     inline std::string to_string(TransformFeedbackId v)   { return "TransformFeedbackId("  + std::to_string(v.value) + ")"; }
+    /// @brief Formats a @ref ProgramPipelineId handle as `"ProgramPipelineId(value)"`.
     inline std::string to_string(ProgramPipelineId v)     { return "ProgramPipelineId("    + std::to_string(v.value) + ")"; }
+    /// @brief Formats a @ref UniformLocation handle as `"UniformLocation(value)"`.
     inline std::string to_string(UniformLocation v)       { return "UniformLocation("      + std::to_string(v.value) + ")"; }
+    /// @brief Formats a @ref AttribLocation handle as `"AttribLocation(value)"`.
     inline std::string to_string(AttribLocation v)        { return "AttribLocation("       + std::to_string(v.value) + ")"; }
+    /// @brief Formats a @ref ImageUnit handle as `"ImageUnit(value)"`.
     inline std::string to_string(ImageUnit v)             { return "ImageUnit("            + std::to_string(v.value) + ")"; }
 
+    /// @}
 } // namespace metagl

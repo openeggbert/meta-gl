@@ -109,6 +109,35 @@ int main()
     check("Capabilities.version_string contains 'OpenGL ES 3.0'",
           caps.version_string.find("OpenGL ES 3.0") != std::string::npos);
 
+    // ==========================================================================
+    // I5 — Context lifecycle state transitions
+    // ==========================================================================
+
+    const auto gen1 = metagl::GetContextInfo().generation;
+    check("Initial generation > 0", gen1 > 0);
+
+    // Lost transition
+    metagl::MarkContextLost();
+    check("After MarkContextLost: status == Lost",
+          metagl::GetContextStatus() == metagl::ContextStatus::Lost);
+    check("IsContextLost() == true", metagl::IsContextLost());
+    check("Generation unchanged after MarkContextLost",
+          metagl::GetContextInfo().generation == gen1);
+
+    // Restored transition (without reloading function pointers — just state)
+    metagl::MarkContextRestored();
+    check("After MarkContextRestored: status == Restored",
+          metagl::GetContextStatus() == metagl::ContextStatus::Restored);
+    check("IsContextLost() == false after Restored", !metagl::IsContextLost());
+
+    // LoadCurrentContext re-initializes and bumps generation
+    check("LoadCurrentContext returns true",
+          metagl::LoadCurrentContext(mock_proc_address));
+    check("After LoadCurrentContext: status == Current",
+          metagl::GetContextStatus() == metagl::ContextStatus::Current);
+    check("Generation incremented after LoadCurrentContext",
+          metagl::GetContextInfo().generation > gen1);
+
     if (failed > 0)
         std::cerr << failed << " mock-loader test(s) failed.\n";
     return failed;

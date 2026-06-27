@@ -168,7 +168,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 |---|------|
 | J1 | Add `#ifdef __EMSCRIPTEN__` guards in `Loader.hpp` to select the correct function-pointer loading strategy (WebGL2 does not use `eglGetProcAddress`) |
 | J2 | Add documentation (and optionally a helper) for calling `LoadCurrentContext()` inside the Emscripten `EMSCRIPTEN_WEBGL_CONTEXT_RESTORED_CALLBACK` after `InstallEmscriptenContextLossCallbacks` |
-| J3 | Add a CMake toolchain preset or a `cmake --preset emscripten` configuration that sets `CMAKE_TOOLCHAIN_FILE` and disables EGL-specific options |
+| J3 | ✅ Add `CMakePresets.json` with `default`, `release`, `sanitize`, and `emscripten` presets; `emscripten` sets toolchain via `$env{EMSDK}`; documented in README.md |
 
 ---
 

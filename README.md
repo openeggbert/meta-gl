@@ -50,6 +50,26 @@ cmake -S . -B build -DBUILD_SHARED_LIBS=ON
 cmake --build build
 ```
 
+### CMake presets
+
+`CMakePresets.json` ships four configure/build presets:
+
+| Preset | Description |
+|--------|-------------|
+| `default` | Debug build, host compiler |
+| `release` | Optimized release, host compiler |
+| `sanitize` | Debug + ASan/UBSan |
+| `emscripten` | WebAssembly via Emscripten (requires `EMSDK` env var) |
+
+```bash
+cmake --preset default
+cmake --build --preset default
+
+# Emscripten (set EMSDK first)
+cmake --preset emscripten
+cmake --build --preset emscripten
+```
+
 ### Emscripten / WebGL
 
 Use the Emscripten toolchain wrappers:

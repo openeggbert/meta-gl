@@ -101,7 +101,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 
 | # | Task |
 |---|------|
-| F1 | ~~cancelled~~ C++23 je záměrný baseline (CLAUDE.md aktualizováno) |
+| F1 | ~~cancelled~~ C++23 is the intended baseline (CLAUDE.md updated accordingly) |
 | F2 | Add compiler warning flags: `-Wall -Wextra -Wpedantic` for GCC/Clang, `/W4` for MSVC, using `target_compile_options` with a generator expression |
 | F3 | Add CMake package install support: add `CMakePackageConfigHelpers`, write `meta-glConfig.cmake.in`, call `install(EXPORT ...)`, generate a version file — enables `find_package(meta-gl CONFIG)` |
 | F4 | Add `enable_testing()` and a `BUILD_TESTING` option guard to `CMakeLists.txt` in preparation for a test executable |

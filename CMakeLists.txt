@@ -47,6 +47,11 @@ target_include_directories(meta-gl
         $<INSTALL_INTERFACE:include>
 )
 
+target_compile_options(meta-gl PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra -Wpedantic>
+    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+)
+
 install(TARGETS meta-gl
         EXPORT meta-gl-targets
         FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}

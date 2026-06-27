@@ -1457,4 +1457,42 @@ namespace metagl
         else if constexpr (std::same_as<Value, GLuint>) { glGetVertexAttribIuiv(index, pname, params); }
     }
 
+    // -------------------------------------------------------------------------
+    // std::span overloads for texture upload functions (C5)
+    // The raw const-void* overloads are preserved for nullptr (mutable storage).
+    // -------------------------------------------------------------------------
+
+    template<SpanCompatible T>
+    inline void glTexImage2D(TextureTarget target, GLint level, InternalFormat internalformat,
+        GLsizei width, GLsizei height, GLint border,
+        PixelFormat format, PixelType type, std::span<const T> pixels)
+    {
+        glTexImage2D(target, level, internalformat, width, height, border, format, type, pixels.data());
+    }
+
+    template<SpanCompatible T>
+    inline void glTexImage3D(TextureTarget target, GLint level, InternalFormat internalformat,
+        GLsizei width, GLsizei height, GLsizei depth, GLint border,
+        PixelFormat format, PixelType type, std::span<const T> pixels)
+    {
+        glTexImage3D(target, level, internalformat, width, height, depth, border, format, type, pixels.data());
+    }
+
+    template<SpanCompatible T>
+    inline void glTexSubImage2D(TextureTarget target, GLint level,
+        GLint xoffset, GLint yoffset, GLsizei width, GLsizei height,
+        PixelFormat format, PixelType type, std::span<const T> pixels)
+    {
+        glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels.data());
+    }
+
+    template<SpanCompatible T>
+    inline void glTexSubImage3D(TextureTarget target, GLint level,
+        GLint xoffset, GLint yoffset, GLint zoffset,
+        GLsizei width, GLsizei height, GLsizei depth,
+        PixelFormat format, PixelType type, std::span<const T> pixels)
+    {
+        glTexSubImage3D(target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels.data());
+    }
+
 }

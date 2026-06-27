@@ -182,6 +182,64 @@ int main()
     check("No listeners: NotifyContextLost is silent (ml1 unchanged)", ml1.lost_count == 2);
     check("No listeners: NotifyContextLost is silent (ml2 unchanged)", ml2.lost_count == 1);
 
+    // ==========================================================================
+    // I7 — HasExtension / GetCapabilities with fake extension string
+    // ==========================================================================
+
+    // After the initial mock_proc_address Initialize(), extensions list is empty
+    check("No extensions reported by default stub",
+          metagl::GetCapabilities().extensions.empty());
+    check("HasExtension returns false for unknown extension",
+          !metagl::HasExtension("GL_EXT_texture_filter_anisotropic"));
+
+    // Re-initialize with a stub that advertises one extension via glGetStringi
+    {
+        static const char* ext_name = "GL_EXT_texture_filter_anisotropic";
+
+        static auto ext_GetIntegerv = [](GLenum pname, GLint* params)
+        {
+            if (!params) return;
+            *params = 0;
+            if (pname == GL_MAJOR_VERSION)   *params = 3;
+            if (pname == GL_MINOR_VERSION)   *params = 0;
+            if (pname == GL_NUM_EXTENSIONS)  *params = 1; // one extension
+        };
+
+        static auto ext_GetStringi = [](GLenum /*name*/, GLuint index) -> const GLubyte*
+        {
+            static const GLubyte aniso[] = "GL_EXT_texture_filter_anisotropic";
+            static const GLubyte empty[] = "";
+            return (index == 0) ? aniso : empty;
+        };
+
+        auto ext_loader = [](const char* name) -> void*
+        {
+            if (std::strcmp(name, "glGetString")   == 0)
+                return reinterpret_cast<void*>(stub_GetString);
+            if (std::strcmp(name, "glGetIntegerv") == 0)
+                return reinterpret_cast<void*>(+ext_GetIntegerv);
+            if (std::strcmp(name, "glGetStringi")  == 0)
+                return reinterpret_cast<void*>(+ext_GetStringi);
+            return reinterpret_cast<void*>(stub_noop);
+        };
+
+        check("Re-Initialize with extension stub returns true",
+              metagl::Initialize(ext_loader));
+    }
+
+    check("GetCapabilities().extensions has 1 entry",
+          metagl::GetCapabilities().extensions.size() == 1);
+    check("HasExtension finds GL_EXT_texture_filter_anisotropic",
+          metagl::HasExtension("GL_EXT_texture_filter_anisotropic"));
+    check("HasExtension returns false for absent extension",
+          !metagl::HasExtension("GL_OES_nonexistent"));
+
+    // SupportsGLES* convenience helpers
+    check("SupportsGLES20() == true",  metagl::SupportsGLES20());
+    check("SupportsGLES30() == true",  metagl::SupportsGLES30());
+    check("SupportsGLES31() == false", !metagl::SupportsGLES31());
+    check("SupportsGLES32() == false", !metagl::SupportsGLES32());
+
     if (failed > 0)
         std::cerr << failed << " mock-loader test(s) failed.\n";
     return failed;

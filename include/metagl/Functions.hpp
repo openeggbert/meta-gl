@@ -118,15 +118,15 @@ namespace metagl
 
     // Buffer Objects
     // #52 (2.0+) Generates one or more buffer object names
-    void glGenBuffers(GLsizei n, GLuint * buffers);
+    void glGenBuffers(GLsizei n, BufferId * buffers);
     // #53 (2.0+) Deletes buffer objects and frees their GPU memory
-    void glDeleteBuffers(GLsizei n, const GLuint * buffers);
+    void glDeleteBuffers(GLsizei n, const BufferId * buffers);
     // #54 (2.0+) Binds a buffer to a target (ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER, etc.)
-    void glBindBuffer(BufferTarget target, GLuint buffer);
+    void glBindBuffer(BufferTarget target, BufferId buffer);
     // #55 (3.0+) Binds a buffer to an indexed binding point (e.g. UBO slot N)
-    void glBindBufferBase(BufferTarget target, GLuint index, GLuint buffer);
+    void glBindBufferBase(BufferTarget target, GLuint index, BufferId buffer);
     // #56 (3.0+) Binds a sub-range of a buffer to an indexed binding point
-    void glBindBufferRange(BufferTarget target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
+    void glBindBufferRange(BufferTarget target, GLuint index, BufferId buffer, GLintptr offset, GLsizeiptr size);
     // #57 (2.0+) Allocates and optionally initializes a buffer's GPU data store
     void glBufferData(BufferTarget target, GLsizeiptr size, const void * data, BufferUsage usage);
     // #58 (2.0+) Updates a sub-range of an existing buffer without reallocating
@@ -140,7 +140,7 @@ namespace metagl
     // #62 (3.0+) Releases a buffer mapping; returns GL_FALSE if data was corrupted
     GLboolean glUnmapBuffer(BufferTarget target);
     // #63 (2.0+) Returns GL_TRUE if the name is a valid buffer object
-    GLboolean glIsBuffer(GLuint buffer);
+    GLboolean glIsBuffer(BufferId buffer);
     // #64 (2.0+) Queries buffer parameters (size, usage, map status) as 32-bit integer
     void glGetBufferParameteriv(BufferTarget target, BufferParameter pname, GLint * params);
     // #65 (3.0+) Queries buffer parameters (e.g. size on large buffers) as 64-bit integer
@@ -150,65 +150,65 @@ namespace metagl
 
     // Vertex Arrays
     // #67 (3.0+) Generates one or more Vertex Array Object (VAO) names
-    void glGenVertexArrays(GLsizei n, GLuint * arrays);
+    void glGenVertexArrays(GLsizei n, VertexArrayId * arrays);
     // #68 (3.0+) Deletes VAOs
-    void glDeleteVertexArrays(GLsizei n, const GLuint * arrays);
+    void glDeleteVertexArrays(GLsizei n, const VertexArrayId * arrays);
     // #69 (3.0+) Binds a VAO; all subsequent attribute state is recorded into it
-    void glBindVertexArray(GLuint array);
+    void glBindVertexArray(VertexArrayId array);
     // #70 (3.0+) Returns GL_TRUE if the name is a valid VAO
-    GLboolean glIsVertexArray(GLuint array);
+    GLboolean glIsVertexArray(VertexArrayId array);
     // #71 (2.0+) Enables a generic vertex attribute array at a given index
-    void glEnableVertexAttribArray(GLuint index);
+    void glEnableVertexAttribArray(AttribLocation index);
     // #72 (2.0+) Disables a generic vertex attribute array; attribute uses constant value
-    void glDisableVertexAttribArray(GLuint index);
+    void glDisableVertexAttribArray(AttribLocation index);
     // #73 (2.0+) Defines layout/source of a float or normalized-integer vertex attribute
-    void glVertexAttribPointer(GLuint index, GLint size, DataType type, GLboolean normalized, GLsizei stride, const void * pointer);
+    void glVertexAttribPointer(AttribLocation index, GLint size, DataType type, GLboolean normalized, GLsizei stride, const void * pointer);
     // #74 (3.0+) Defines layout/source of an integer vertex attribute (no normalization)
-    void glVertexAttribIPointer(GLuint index, GLint size, DataType type, GLsizei stride, const void * pointer);
+    void glVertexAttribIPointer(AttribLocation index, GLint size, DataType type, GLsizei stride, const void * pointer);
     // #75 (3.0+) Sets the instancing divisor for an attribute (0=per-vertex, N=per-N-instances)
-    void glVertexAttribDivisor(GLuint index, GLuint divisor);
+    void glVertexAttribDivisor(AttribLocation index, GLuint divisor);
     // #76 (2.0+) Sets a constant float scalar value for a vertex attribute
-    void glVertexAttrib1f(GLuint index, GLfloat x);
+    void glVertexAttrib1f(AttribLocation index, GLfloat x);
     // #77 (2.0+) Sets a constant vec2 float value for a vertex attribute
-    void glVertexAttrib2f(GLuint index, GLfloat x, GLfloat y);
+    void glVertexAttrib2f(AttribLocation index, GLfloat x, GLfloat y);
     // #78 (2.0+) Sets a constant vec3 float value for a vertex attribute
-    void glVertexAttrib3f(GLuint index, GLfloat x, GLfloat y, GLfloat z);
+    void glVertexAttrib3f(AttribLocation index, GLfloat x, GLfloat y, GLfloat z);
     // #79 (2.0+) Sets a constant vec4 float value for a vertex attribute
-    void glVertexAttrib4f(GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
+    void glVertexAttrib4f(AttribLocation index, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
     // #80 (2.0+) Sets a constant float scalar for a vertex attribute from a pointer
-    void glVertexAttrib1fv(GLuint index, const GLfloat * v);
+    void glVertexAttrib1fv(AttribLocation index, const GLfloat * v);
     // #81 (2.0+) Sets a constant vec2 float value for a vertex attribute from a pointer
-    void glVertexAttrib2fv(GLuint index, const GLfloat * v);
+    void glVertexAttrib2fv(AttribLocation index, const GLfloat * v);
     // #82 (2.0+) Sets a constant vec3 float value for a vertex attribute from a pointer
-    void glVertexAttrib3fv(GLuint index, const GLfloat * v);
+    void glVertexAttrib3fv(AttribLocation index, const GLfloat * v);
     // #83 (2.0+) Sets a constant vec4 float value for a vertex attribute from a pointer
-    void glVertexAttrib4fv(GLuint index, const GLfloat * v);
+    void glVertexAttrib4fv(AttribLocation index, const GLfloat * v);
     // #84 (3.0+) Sets a constant ivec4 signed integer value for a vertex attribute
-    void glVertexAttribI4i(GLuint index, GLint x, GLint y, GLint z, GLint w);
+    void glVertexAttribI4i(AttribLocation index, GLint x, GLint y, GLint z, GLint w);
     // #85 (3.0+) Sets a constant uvec4 unsigned integer value for a vertex attribute
-    void glVertexAttribI4ui(GLuint index, GLuint x, GLuint y, GLuint z, GLuint w);
+    void glVertexAttribI4ui(AttribLocation index, GLuint x, GLuint y, GLuint z, GLuint w);
     // #86 (3.0+) Sets a constant ivec4 value for a vertex attribute from a pointer
-    void glVertexAttribI4iv(GLuint index, const GLint * v);
+    void glVertexAttribI4iv(AttribLocation index, const GLint * v);
     // #87 (3.0+) Sets a constant uvec4 value for a vertex attribute from a pointer
-    void glVertexAttribI4uiv(GLuint index, const GLuint * v);
+    void glVertexAttribI4uiv(AttribLocation index, const GLuint * v);
     // #88 (2.0+) Queries float state of a vertex attribute (type, size, stride, etc.)
-    void glGetVertexAttribfv(GLuint index, VertexAttribParameter pname, GLfloat * params);
+    void glGetVertexAttribfv(AttribLocation index, VertexAttribParameter pname, GLfloat * params);
     // #89 (2.0+) Queries integer state of a vertex attribute
-    void glGetVertexAttribiv(GLuint index, VertexAttribParameter pname, GLint * params);
+    void glGetVertexAttribiv(AttribLocation index, VertexAttribParameter pname, GLint * params);
     // #90 (3.0+) Queries integer state of an integer-type vertex attribute
-    void glGetVertexAttribIiv(GLuint index, VertexAttribParameter pname, GLint * params);
+    void glGetVertexAttribIiv(AttribLocation index, VertexAttribParameter pname, GLint * params);
     // #91 (3.0+) Queries unsigned integer state of an unsigned-integer vertex attribute
-    void glGetVertexAttribIuiv(GLuint index, VertexAttribParameter pname, GLuint * params);
+    void glGetVertexAttribIuiv(AttribLocation index, VertexAttribParameter pname, GLuint * params);
     // #92 (2.0+) Returns the offset/pointer stored for a vertex attribute
-    void glGetVertexAttribPointerv(GLuint index, VertexAttribParameter pname, void ** pointer);
+    void glGetVertexAttribPointerv(AttribLocation index, VertexAttribParameter pname, void ** pointer);
     // #93 (3.1+) Specifies float attribute format independently from buffer binding
-    void glVertexAttribFormat(GLuint attribindex, GLint size, DataType type, GLboolean normalized, GLuint relativeoffset);
+    void glVertexAttribFormat(AttribLocation attribindex, GLint size, DataType type, GLboolean normalized, GLuint relativeoffset);
     // #94 (3.1+) Specifies integer attribute format independently from buffer binding
-    void glVertexAttribIFormat(GLuint attribindex, GLint size, DataType type, GLuint relativeoffset);
+    void glVertexAttribIFormat(AttribLocation attribindex, GLint size, DataType type, GLuint relativeoffset);
     // #95 (3.1+) Associates a vertex attribute index with a vertex buffer binding point
-    void glVertexAttribBinding(GLuint attribindex, GLuint bindingindex);
+    void glVertexAttribBinding(AttribLocation attribindex, GLuint bindingindex);
     // #96 (3.1+) Binds a buffer to a vertex buffer binding point with offset and stride
-    void glBindVertexBuffer(GLuint bindingindex, GLuint buffer, GLintptr offset, GLsizei stride);
+    void glBindVertexBuffer(GLuint bindingindex, BufferId buffer, GLintptr offset, GLsizei stride);
     // #97 (3.1+) Sets the instancing divisor for a vertex buffer binding point
     void glVertexBindingDivisor(GLuint bindingindex, GLuint divisor);
 
@@ -260,247 +260,247 @@ namespace metagl
 
     // Shaders
     // #120 (2.0+) Creates a shader object of the given type and returns its handle
-    GLuint glCreateShader(ShaderType type);
+    ShaderId glCreateShader(ShaderType type);
     // #121 (2.0+) Marks a shader for deletion (deferred until detached from all programs)
-    void glDeleteShader(GLuint shader);
+    void glDeleteShader(ShaderId shader);
     // #122 (2.0+) Loads GLSL source strings into a shader object
-    void glShaderSource(GLuint shader, GLsizei count, const GLchar *const* string, const GLint * length);
+    void glShaderSource(ShaderId shader, GLsizei count, const GLchar *const* string, const GLint * length);
     // #123 (2.0+) Compiles the GLSL source previously loaded into a shader object
-    void glCompileShader(GLuint shader);
+    void glCompileShader(ShaderId shader);
     // #124 (2.0+) Loads pre-compiled binary shader code into one or more shader objects
-    void glShaderBinary(GLsizei count, const GLuint * shaders, ShaderBinaryFormat binaryFormat, const void * binary, GLsizei length);
+    void glShaderBinary(GLsizei count, const ShaderId * shaders, ShaderBinaryFormat binaryFormat, const void * binary, GLsizei length);
     // #125 (2.0+) Hints that the GLSL compiler resources may be freed
     void glReleaseShaderCompiler(void);
     // #126 (2.0+) Queries shader parameters (compile status, type, source length, etc.)
-    void glGetShaderiv(GLuint shader, ShaderParameter pname, GLint * params);
+    void glGetShaderiv(ShaderId shader, ShaderParameter pname, GLint * params);
     // #127 (2.0+) Returns the compiler info log for a shader (errors and warnings)
-    void glGetShaderInfoLog(GLuint shader, GLsizei bufSize, GLsizei * length, GLchar * infoLog);
+    void glGetShaderInfoLog(ShaderId shader, GLsizei bufSize, GLsizei * length, GLchar * infoLog);
     // #128 (2.0+) Returns the GLSL source code stored in a shader object
-    void glGetShaderSource(GLuint shader, GLsizei bufSize, GLsizei * length, GLchar * source);
+    void glGetShaderSource(ShaderId shader, GLsizei bufSize, GLsizei * length, GLchar * source);
     // #129 (2.0+) Returns the precision range for lowp/mediump/highp in vertex/fragment shaders
     void glGetShaderPrecisionFormat(ShaderType shadertype, PrecisionType precisiontype, GLint * range, GLint * precision);
     // #130 (2.0+) Returns GL_TRUE if the name is a valid shader object
-    GLboolean glIsShader(GLuint shader);
+    GLboolean glIsShader(ShaderId shader);
     // #131 (2.0+) Creates a program object and returns its handle
-    GLuint glCreateProgram(void);
+    ProgramId glCreateProgram(void);
     // #132 (2.0+) Deletes a program object (deferred until no longer in use)
-    void glDeleteProgram(GLuint program);
+    void glDeleteProgram(ProgramId program);
     // #133 (2.0+) Attaches a compiled shader to a program for the next link operation
-    void glAttachShader(GLuint program, GLuint shader);
+    void glAttachShader(ProgramId program, ShaderId shader);
     // #134 (2.0+) Detaches a shader from a program
-    void glDetachShader(GLuint program, GLuint shader);
+    void glDetachShader(ProgramId program, ShaderId shader);
     // #135 (2.0+) Links all attached shaders into an executable GPU program
-    void glLinkProgram(GLuint program);
+    void glLinkProgram(ProgramId program);
     // #136 (2.0+) Installs a linked program as part of the current rendering state
-    void glUseProgram(GLuint program);
+    void glUseProgram(ProgramId program);
     // #137 (2.0+) Validates whether a program can execute given the current GL state
-    void glValidateProgram(GLuint program);
+    void glValidateProgram(ProgramId program);
     // #138 (2.0+) Queries program parameters (link status, active uniforms, etc.)
-    void glGetProgramiv(GLuint program, ProgramParameter pname, GLint * params);
+    void glGetProgramiv(ProgramId program, ProgramParameter pname, GLint * params);
     // #139 (2.0+) Returns the linker info log for a program (errors and warnings)
-    void glGetProgramInfoLog(GLuint program, GLsizei bufSize, GLsizei * length, GLchar * infoLog);
+    void glGetProgramInfoLog(ProgramId program, GLsizei bufSize, GLsizei * length, GLchar * infoLog);
     // #140 (2.0+) Returns GL_TRUE if the name is a valid program object
-    GLboolean glIsProgram(GLuint program);
+    GLboolean glIsProgram(ProgramId program);
     // #141 (2.0+) Returns the shader objects currently attached to a program
-    void glGetAttachedShaders(GLuint program, GLsizei maxCount, GLsizei * count, GLuint * shaders);
+    void glGetAttachedShaders(ProgramId program, GLsizei maxCount, GLsizei * count, ShaderId * shaders);
     // #142 (2.0+) Associates a vertex shader input variable with an attribute index before link
-    void glBindAttribLocation(GLuint program, GLuint index, const GLchar * name);
+    void glBindAttribLocation(ProgramId program, AttribLocation index, const GLchar * name);
     // #143 (2.0+) Returns the attribute index of a named vertex shader input in a linked program
-    GLint glGetAttribLocation(GLuint program, const GLchar * name);
+    AttribLocation glGetAttribLocation(ProgramId program, const GLchar * name);
     // #144 (2.0+) Returns name, type, and size of an active vertex attribute variable
-    void glGetActiveAttrib(GLuint program, GLuint index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name);
+    void glGetActiveAttrib(ProgramId program, AttribLocation index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name);
     // #145 (3.0+) Returns the binary representation of a linked program for caching
-    void glGetProgramBinary(GLuint program, GLsizei bufSize, GLsizei * length, ProgramBinaryFormat * binaryFormat, void * binary);
+    void glGetProgramBinary(ProgramId program, GLsizei bufSize, GLsizei * length, ProgramBinaryFormat * binaryFormat, void * binary);
     // #146 (3.0+) Loads a cached binary into a program, bypassing compilation and linking
-    void glProgramBinary(GLuint program, ProgramBinaryFormat binaryFormat, const void * binary, GLsizei length);
+    void glProgramBinary(ProgramId program, ProgramBinaryFormat binaryFormat, const void * binary, GLsizei length);
     // #147 (3.0+) Sets program parameters (binary retrievable hint, separable flag)
-    void glProgramParameteri(GLuint program, ProgramParameter pname, GLint value);
+    void glProgramParameteri(ProgramId program, ProgramParameter pname, GLint value);
     // #148 (3.0+) Returns the fragment output location for a named output variable
-    GLint glGetFragDataLocation(GLuint program, const GLchar * name);
+    GLint glGetFragDataLocation(ProgramId program, const GLchar * name);
     // #149 (3.1+) Queries properties of a program interface (e.g. number of active uniforms)
-    void glGetProgramInterfaceiv(GLuint program, ProgramInterface programInterface, ProgramInterfaceParameter pname, GLint * params);
+    void glGetProgramInterfaceiv(ProgramId program, ProgramInterface programInterface, ProgramInterfaceParameter pname, GLint * params);
     // #150 (3.1+) Returns the index of a named resource within a program interface
-    GLuint glGetProgramResourceIndex(GLuint program, ProgramInterface programInterface, const GLchar * name);
+    GLuint glGetProgramResourceIndex(ProgramId program, ProgramInterface programInterface, const GLchar * name);
     // #151 (3.1+) Returns the name of a resource at a given index in a program interface
-    void glGetProgramResourceName(GLuint program, ProgramInterface programInterface, GLuint index, GLsizei bufSize, GLsizei * length, GLchar * name);
+    void glGetProgramResourceName(ProgramId program, ProgramInterface programInterface, GLuint index, GLsizei bufSize, GLsizei * length, GLchar * name);
     // #152 (3.1+) Returns multiple properties of a program interface resource in one call
-    void glGetProgramResourceiv(GLuint program, ProgramInterface programInterface, GLuint index, GLsizei propCount, const ProgramResourceProperty * props, GLsizei count, GLsizei * length, GLint * params);
+    void glGetProgramResourceiv(ProgramId program, ProgramInterface programInterface, GLuint index, GLsizei propCount, const ProgramResourceProperty * props, GLsizei count, GLsizei * length, GLint * params);
     // #153 (3.1+) Returns the location of a named resource within a program interface
-    GLint glGetProgramResourceLocation(GLuint program, ProgramInterface programInterface, const GLchar * name);
+    GLint glGetProgramResourceLocation(ProgramId program, ProgramInterface programInterface, const GLchar * name);
 
     // Uniforms
     // #154 (2.0+) Returns the integer location of a named uniform in a linked program
-    GLint glGetUniformLocation(GLuint program, const GLchar * name);
+    UniformLocation glGetUniformLocation(ProgramId program, const GLchar * name);
     // #155 (2.0+) Returns the name, type, and size of an active uniform variable
-    void glGetActiveUniform(GLuint program, GLuint index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name);
+    void glGetActiveUniform(ProgramId program, GLuint index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name);
     // #156 (3.0+) Queries parameters for multiple uniforms by index in one call
-    void glGetActiveUniformsiv(GLuint program, GLsizei uniformCount, const GLuint * uniformIndices, UniformParameter pname, GLint * params);
+    void glGetActiveUniformsiv(ProgramId program, GLsizei uniformCount, const GLuint * uniformIndices, UniformParameter pname, GLint * params);
     // #157 (3.0+) Returns the indices of multiple named uniform variables
-    void glGetUniformIndices(GLuint program, GLsizei uniformCount, const GLchar *const* uniformNames, GLuint * uniformIndices);
+    void glGetUniformIndices(ProgramId program, GLsizei uniformCount, const GLchar *const* uniformNames, GLuint * uniformIndices);
     // #158 (3.0+) Returns the index of a named uniform block in a linked program
-    GLuint glGetUniformBlockIndex(GLuint program, const GLchar * uniformBlockName);
+    GLuint glGetUniformBlockIndex(ProgramId program, const GLchar * uniformBlockName);
     // #159 (3.0+) Queries parameters of a uniform block (size, binding, member count)
-    void glGetActiveUniformBlockiv(GLuint program, GLuint uniformBlockIndex, UniformBlockParameter pname, GLint * params);
+    void glGetActiveUniformBlockiv(ProgramId program, GLuint uniformBlockIndex, UniformBlockParameter pname, GLint * params);
     // #160 (3.0+) Returns the name string of a uniform block at a given index
-    void glGetActiveUniformBlockName(GLuint program, GLuint uniformBlockIndex, GLsizei bufSize, GLsizei * length, GLchar * uniformBlockName);
+    void glGetActiveUniformBlockName(ProgramId program, GLuint uniformBlockIndex, GLsizei bufSize, GLsizei * length, GLchar * uniformBlockName);
     // #161 (3.0+) Assigns a uniform block to a specific uniform buffer binding point
-    void glUniformBlockBinding(GLuint program, GLuint uniformBlockIndex, GLuint uniformBlockBinding);
+    void glUniformBlockBinding(ProgramId program, GLuint uniformBlockIndex, GLuint uniformBlockBinding);
     // #162 (2.0+) Sets a float scalar uniform in the current program
-    void glUniform1f(GLint location, GLfloat v0);
+    void glUniform1f(UniformLocation location, GLfloat v0);
     // #163 (2.0+) Sets a vec2 float uniform in the current program
-    void glUniform2f(GLint location, GLfloat v0, GLfloat v1);
+    void glUniform2f(UniformLocation location, GLfloat v0, GLfloat v1);
     // #164 (2.0+) Sets a vec3 float uniform in the current program
-    void glUniform3f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
+    void glUniform3f(UniformLocation location, GLfloat v0, GLfloat v1, GLfloat v2);
     // #165 (2.0+) Sets a vec4 float uniform in the current program
-    void glUniform4f(GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
+    void glUniform4f(UniformLocation location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
     // #166 (2.0+) Sets an array of float scalar uniforms in the current program
-    void glUniform1fv(GLint location, GLsizei count, const GLfloat * value);
+    void glUniform1fv(UniformLocation location, GLsizei count, const GLfloat * value);
     // #167 (2.0+) Sets an array of vec2 uniforms in the current program
-    void glUniform2fv(GLint location, GLsizei count, const GLfloat * value);
+    void glUniform2fv(UniformLocation location, GLsizei count, const GLfloat * value);
     // #168 (2.0+) Sets an array of vec3 uniforms in the current program
-    void glUniform3fv(GLint location, GLsizei count, const GLfloat * value);
+    void glUniform3fv(UniformLocation location, GLsizei count, const GLfloat * value);
     // #169 (2.0+) Sets an array of vec4 uniforms in the current program
-    void glUniform4fv(GLint location, GLsizei count, const GLfloat * value);
+    void glUniform4fv(UniformLocation location, GLsizei count, const GLfloat * value);
     // #170 (2.0+) Sets an int scalar uniform; also used to assign sampler texture units
-    void glUniform1i(GLint location, GLint v0);
+    void glUniform1i(UniformLocation location, GLint v0);
     // #171 (2.0+) Sets an ivec2 uniform in the current program
-    void glUniform2i(GLint location, GLint v0, GLint v1);
+    void glUniform2i(UniformLocation location, GLint v0, GLint v1);
     // #172 (2.0+) Sets an ivec3 uniform in the current program
-    void glUniform3i(GLint location, GLint v0, GLint v1, GLint v2);
+    void glUniform3i(UniformLocation location, GLint v0, GLint v1, GLint v2);
     // #173 (2.0+) Sets an ivec4 uniform in the current program
-    void glUniform4i(GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
+    void glUniform4i(UniformLocation location, GLint v0, GLint v1, GLint v2, GLint v3);
     // #174 (2.0+) Sets an array of int scalar uniforms in the current program
-    void glUniform1iv(GLint location, GLsizei count, const GLint * value);
+    void glUniform1iv(UniformLocation location, GLsizei count, const GLint * value);
     // #175 (2.0+) Sets an array of ivec2 uniforms in the current program
-    void glUniform2iv(GLint location, GLsizei count, const GLint * value);
+    void glUniform2iv(UniformLocation location, GLsizei count, const GLint * value);
     // #176 (2.0+) Sets an array of ivec3 uniforms in the current program
-    void glUniform3iv(GLint location, GLsizei count, const GLint * value);
+    void glUniform3iv(UniformLocation location, GLsizei count, const GLint * value);
     // #177 (2.0+) Sets an array of ivec4 uniforms in the current program
-    void glUniform4iv(GLint location, GLsizei count, const GLint * value);
+    void glUniform4iv(UniformLocation location, GLsizei count, const GLint * value);
     // #178 (3.0+) Sets an unsigned int scalar uniform in the current program
-    void glUniform1ui(GLint location, GLuint v0);
+    void glUniform1ui(UniformLocation location, GLuint v0);
     // #179 (3.0+) Sets a uvec2 uniform in the current program
-    void glUniform2ui(GLint location, GLuint v0, GLuint v1);
+    void glUniform2ui(UniformLocation location, GLuint v0, GLuint v1);
     // #180 (3.0+) Sets a uvec3 uniform in the current program
-    void glUniform3ui(GLint location, GLuint v0, GLuint v1, GLuint v2);
+    void glUniform3ui(UniformLocation location, GLuint v0, GLuint v1, GLuint v2);
     // #181 (3.0+) Sets a uvec4 uniform in the current program
-    void glUniform4ui(GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
+    void glUniform4ui(UniformLocation location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
     // #182 (3.0+) Sets an array of unsigned int scalar uniforms
-    void glUniform1uiv(GLint location, GLsizei count, const GLuint * value);
+    void glUniform1uiv(UniformLocation location, GLsizei count, const GLuint * value);
     // #183 (3.0+) Sets an array of uvec2 uniforms
-    void glUniform2uiv(GLint location, GLsizei count, const GLuint * value);
+    void glUniform2uiv(UniformLocation location, GLsizei count, const GLuint * value);
     // #184 (3.0+) Sets an array of uvec3 uniforms
-    void glUniform3uiv(GLint location, GLsizei count, const GLuint * value);
+    void glUniform3uiv(UniformLocation location, GLsizei count, const GLuint * value);
     // #185 (3.0+) Sets an array of uvec4 uniforms
-    void glUniform4uiv(GLint location, GLsizei count, const GLuint * value);
+    void glUniform4uiv(UniformLocation location, GLsizei count, const GLuint * value);
     // #186 (2.0+) Sets a mat2 uniform (or array of mat2) in the current program
-    void glUniformMatrix2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glUniformMatrix2fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #187 (2.0+) Sets a mat3 uniform (or array of mat3) in the current program
-    void glUniformMatrix3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glUniformMatrix3fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #188 (2.0+) Sets a mat4 uniform (or array of mat4) in the current program
-    void glUniformMatrix4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glUniformMatrix4fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #189 (3.0+) Sets a mat2x3 uniform (2 columns, 3 rows); non-square matrices not in ES 2.0
-    void glUniformMatrix2x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glUniformMatrix2x3fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #190 (3.0+) Sets a mat2x4 uniform in the current program
-    void glUniformMatrix2x4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glUniformMatrix2x4fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #191 (3.0+) Sets a mat3x2 uniform in the current program
-    void glUniformMatrix3x2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glUniformMatrix3x2fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #192 (3.0+) Sets a mat3x4 uniform in the current program
-    void glUniformMatrix3x4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glUniformMatrix3x4fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #193 (3.0+) Sets a mat4x2 uniform in the current program
-    void glUniformMatrix4x2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glUniformMatrix4x2fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #194 (3.0+) Sets a mat4x3 uniform in the current program
-    void glUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glUniformMatrix4x3fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #195 (2.0+) Returns the current value of a float uniform from a linked program
-    void glGetUniformfv(GLuint program, GLint location, GLfloat * params);
+    void glGetUniformfv(ProgramId program, UniformLocation location, GLfloat * params);
     // #196 (2.0+) Returns the current value of an integer uniform from a linked program
-    void glGetUniformiv(GLuint program, GLint location, GLint * params);
+    void glGetUniformiv(ProgramId program, UniformLocation location, GLint * params);
     // #197 (3.0+) Returns the current value of an unsigned integer uniform
-    void glGetUniformuiv(GLuint program, GLint location, GLuint * params);
+    void glGetUniformuiv(ProgramId program, UniformLocation location, GLuint * params);
     // #198 (3.2+) Returns float uniform values with an explicit destination buffer size for robustness
-    void glGetnUniformfv(GLuint program, GLint location, GLsizei bufSize, GLfloat * params);
+    void glGetnUniformfv(ProgramId program, UniformLocation location, GLsizei bufSize, GLfloat * params);
     // #199 (3.2+) Returns integer uniform values with an explicit destination buffer size for robustness
-    void glGetnUniformiv(GLuint program, GLint location, GLsizei bufSize, GLint * params);
+    void glGetnUniformiv(ProgramId program, UniformLocation location, GLsizei bufSize, GLint * params);
     // #200 (3.2+) Returns unsigned integer uniform values with an explicit destination buffer size for robustness
-    void glGetnUniformuiv(GLuint program, GLint location, GLsizei bufSize, GLuint * params);
+    void glGetnUniformuiv(ProgramId program, UniformLocation location, GLsizei bufSize, GLuint * params);
     // #201 (3.1+) Sets a float scalar uniform in a specific program without binding it
-    void glProgramUniform1f(GLuint program, GLint location, GLfloat v0);
+    void glProgramUniform1f(ProgramId program, UniformLocation location, GLfloat v0);
     // #202 (3.1+) Sets a vec2 float uniform in a specific program without binding it
-    void glProgramUniform2f(GLuint program, GLint location, GLfloat v0, GLfloat v1);
+    void glProgramUniform2f(ProgramId program, UniformLocation location, GLfloat v0, GLfloat v1);
     // #203 (3.1+) Sets a vec3 float uniform in a specific program without binding it
-    void glProgramUniform3f(GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2);
+    void glProgramUniform3f(ProgramId program, UniformLocation location, GLfloat v0, GLfloat v1, GLfloat v2);
     // #204 (3.1+) Sets a vec4 float uniform in a specific program without binding it
-    void glProgramUniform4f(GLuint program, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
+    void glProgramUniform4f(ProgramId program, UniformLocation location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
     // #205 (3.1+) Sets an array of float scalar uniforms in a specific program
-    void glProgramUniform1fv(GLuint program, GLint location, GLsizei count, const GLfloat * value);
+    void glProgramUniform1fv(ProgramId program, UniformLocation location, GLsizei count, const GLfloat * value);
     // #206 (3.1+) Sets an array of vec2 uniforms in a specific program
-    void glProgramUniform2fv(GLuint program, GLint location, GLsizei count, const GLfloat * value);
+    void glProgramUniform2fv(ProgramId program, UniformLocation location, GLsizei count, const GLfloat * value);
     // #207 (3.1+) Sets an array of vec3 uniforms in a specific program
-    void glProgramUniform3fv(GLuint program, GLint location, GLsizei count, const GLfloat * value);
+    void glProgramUniform3fv(ProgramId program, UniformLocation location, GLsizei count, const GLfloat * value);
     // #208 (3.1+) Sets an array of vec4 uniforms in a specific program
-    void glProgramUniform4fv(GLuint program, GLint location, GLsizei count, const GLfloat * value);
+    void glProgramUniform4fv(ProgramId program, UniformLocation location, GLsizei count, const GLfloat * value);
     // #209 (3.1+) Sets an int scalar uniform in a specific program
-    void glProgramUniform1i(GLuint program, GLint location, GLint v0);
+    void glProgramUniform1i(ProgramId program, UniformLocation location, GLint v0);
     // #210 (3.1+) Sets an ivec2 uniform in a specific program
-    void glProgramUniform2i(GLuint program, GLint location, GLint v0, GLint v1);
+    void glProgramUniform2i(ProgramId program, UniformLocation location, GLint v0, GLint v1);
     // #211 (3.1+) Sets an ivec3 uniform in a specific program
-    void glProgramUniform3i(GLuint program, GLint location, GLint v0, GLint v1, GLint v2);
+    void glProgramUniform3i(ProgramId program, UniformLocation location, GLint v0, GLint v1, GLint v2);
     // #212 (3.1+) Sets an ivec4 uniform in a specific program
-    void glProgramUniform4i(GLuint program, GLint location, GLint v0, GLint v1, GLint v2, GLint v3);
+    void glProgramUniform4i(ProgramId program, UniformLocation location, GLint v0, GLint v1, GLint v2, GLint v3);
     // #213 (3.1+) Sets an array of int scalars in a specific program
-    void glProgramUniform1iv(GLuint program, GLint location, GLsizei count, const GLint * value);
+    void glProgramUniform1iv(ProgramId program, UniformLocation location, GLsizei count, const GLint * value);
     // #214 (3.1+) Sets an array of ivec2 uniforms in a specific program
-    void glProgramUniform2iv(GLuint program, GLint location, GLsizei count, const GLint * value);
+    void glProgramUniform2iv(ProgramId program, UniformLocation location, GLsizei count, const GLint * value);
     // #215 (3.1+) Sets an array of ivec3 uniforms in a specific program
-    void glProgramUniform3iv(GLuint program, GLint location, GLsizei count, const GLint * value);
+    void glProgramUniform3iv(ProgramId program, UniformLocation location, GLsizei count, const GLint * value);
     // #216 (3.1+) Sets an array of ivec4 uniforms in a specific program
-    void glProgramUniform4iv(GLuint program, GLint location, GLsizei count, const GLint * value);
+    void glProgramUniform4iv(ProgramId program, UniformLocation location, GLsizei count, const GLint * value);
     // #217 (3.1+) Sets an unsigned int scalar uniform in a specific program
-    void glProgramUniform1ui(GLuint program, GLint location, GLuint v0);
+    void glProgramUniform1ui(ProgramId program, UniformLocation location, GLuint v0);
     // #218 (3.1+) Sets a uvec2 uniform in a specific program
-    void glProgramUniform2ui(GLuint program, GLint location, GLuint v0, GLuint v1);
+    void glProgramUniform2ui(ProgramId program, UniformLocation location, GLuint v0, GLuint v1);
     // #219 (3.1+) Sets a uvec3 uniform in a specific program
-    void glProgramUniform3ui(GLuint program, GLint location, GLuint v0, GLuint v1, GLuint v2);
+    void glProgramUniform3ui(ProgramId program, UniformLocation location, GLuint v0, GLuint v1, GLuint v2);
     // #220 (3.1+) Sets a uvec4 uniform in a specific program
-    void glProgramUniform4ui(GLuint program, GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
+    void glProgramUniform4ui(ProgramId program, UniformLocation location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
     // #221 (3.1+) Sets an array of unsigned int scalars in a specific program
-    void glProgramUniform1uiv(GLuint program, GLint location, GLsizei count, const GLuint * value);
+    void glProgramUniform1uiv(ProgramId program, UniformLocation location, GLsizei count, const GLuint * value);
     // #222 (3.1+) Sets an array of uvec2 uniforms in a specific program
-    void glProgramUniform2uiv(GLuint program, GLint location, GLsizei count, const GLuint * value);
+    void glProgramUniform2uiv(ProgramId program, UniformLocation location, GLsizei count, const GLuint * value);
     // #223 (3.1+) Sets an array of uvec3 uniforms in a specific program
-    void glProgramUniform3uiv(GLuint program, GLint location, GLsizei count, const GLuint * value);
+    void glProgramUniform3uiv(ProgramId program, UniformLocation location, GLsizei count, const GLuint * value);
     // #224 (3.1+) Sets an array of uvec4 uniforms in a specific program
-    void glProgramUniform4uiv(GLuint program, GLint location, GLsizei count, const GLuint * value);
+    void glProgramUniform4uiv(ProgramId program, UniformLocation location, GLsizei count, const GLuint * value);
     // #225 (3.1+) Sets a mat2 uniform in a specific program
-    void glProgramUniformMatrix2fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glProgramUniformMatrix2fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #226 (3.1+) Sets a mat3 uniform in a specific program
-    void glProgramUniformMatrix3fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glProgramUniformMatrix3fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #227 (3.1+) Sets a mat4 uniform in a specific program
-    void glProgramUniformMatrix4fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glProgramUniformMatrix4fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #228 (3.1+) Sets a mat2x3 uniform in a specific program
-    void glProgramUniformMatrix2x3fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glProgramUniformMatrix2x3fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #229 (3.1+) Sets a mat2x4 uniform in a specific program
-    void glProgramUniformMatrix2x4fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glProgramUniformMatrix2x4fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #230 (3.1+) Sets a mat3x2 uniform in a specific program
-    void glProgramUniformMatrix3x2fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glProgramUniformMatrix3x2fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #231 (3.1+) Sets a mat3x4 uniform in a specific program
-    void glProgramUniformMatrix3x4fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glProgramUniformMatrix3x4fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #232 (3.1+) Sets a mat4x2 uniform in a specific program
-    void glProgramUniformMatrix4x2fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glProgramUniformMatrix4x2fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
     // #233 (3.1+) Sets a mat4x3 uniform in a specific program
-    void glProgramUniformMatrix4x3fv(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat * value);
+    void glProgramUniformMatrix4x3fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
 
     // Textures
     // #234 (2.0+) Generates one or more texture object names
-    void glGenTextures(GLsizei n, GLuint * textures);
+    void glGenTextures(GLsizei n, TextureId * textures);
     // #235 (2.0+) Deletes texture objects and frees their GPU memory
-    void glDeleteTextures(GLsizei n, const GLuint * textures);
+    void glDeleteTextures(GLsizei n, const TextureId * textures);
     // #236 (2.0+) Binds a texture to a target in the active texture unit
-    void glBindTexture(TextureTarget target, GLuint texture);
+    void glBindTexture(TextureTarget target, TextureId texture);
     // #237 (2.0+) Selects the active texture unit for subsequent texture operations
     void glActiveTexture(TextureUnit texture);
     // #238 (2.0+) Returns GL_TRUE if the name is a valid texture object
-    GLboolean glIsTexture(GLuint texture);
+    GLboolean glIsTexture(TextureId texture);
     // #239 (2.0+) Specifies a 2D texture image and allocates GPU storage
     void glTexImage2D(TextureTarget target, GLint level, InternalFormat internalformat, GLsizei width, GLsizei height, GLint border, PixelFormat format, PixelType type, const void * pixels);
     // #240 (3.0+) Specifies a 3D or 2D-array texture image and allocates GPU storage
@@ -532,7 +532,7 @@ namespace metagl
     // #253 (3.0+) Copies a framebuffer region into a slice of a 3D or array texture
     void glCopyTexSubImage3D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height);
     // #254 (3.2+) Copies a region between two textures without format conversion
-    void glCopyImageSubData(GLuint srcName, TextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, GLuint dstName, TextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth);
+    void glCopyImageSubData(TextureId srcName, TextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, TextureId dstName, TextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth);
     // #255 (2.0+) Auto-generates all mipmap levels below the base level by downsampling
     void glGenerateMipmap(TextureTarget target);
     // #256 (2.0+) Sets a float texture sampling parameter (filter, LOD, wrap mode)
@@ -560,65 +560,65 @@ namespace metagl
     // #267 (3.1+) Returns float parameters of a specific texture mipmap level
     void glGetTexLevelParameterfv(TextureTarget target, GLint level, TextureLevelParameter pname, GLfloat * params);
     // #268 (3.2+) Attaches a buffer object's data store to a buffer texture
-    void glTexBuffer(TextureTarget target, InternalFormat internalformat, GLuint buffer);
+    void glTexBuffer(TextureTarget target, InternalFormat internalformat, BufferId buffer);
     // #269 (3.2+) Attaches a sub-range of a buffer object to a buffer texture
-    void glTexBufferRange(TextureTarget target, InternalFormat internalformat, GLuint buffer, GLintptr offset, GLsizeiptr size);
+    void glTexBufferRange(TextureTarget target, InternalFormat internalformat, BufferId buffer, GLintptr offset, GLsizeiptr size);
     // #270 (3.1+) Returns the location of a specific sample in a multisample texture
     void glGetMultisamplefv(MultisampleParameter pname, GLuint index, GLfloat * val);
     // #271 (3.0+) Queries implementation properties for a given internal format and target
     void glGetInternalformativ(InternalFormatTarget target, InternalFormat internalformat, InternalFormatParameter pname, GLsizei count, GLint * params);
     // #272 (3.1+) Binds a texture level to an image unit for image load/store in shaders
-    void glBindImageTexture(GLuint unit, GLuint texture, GLint level, GLboolean layered, GLint layer, ImageAccess access, InternalFormat format);
+    void glBindImageTexture(GLuint unit, TextureId texture, GLint level, GLboolean layered, GLint layer, ImageAccess access, InternalFormat format);
 
     // Samplers
     // #273 (3.0+) Generates one or more sampler object names
-    void glGenSamplers(GLsizei count, GLuint * samplers);
+    void glGenSamplers(GLsizei count, SamplerId * samplers);
     // #274 (3.0+) Deletes sampler objects
-    void glDeleteSamplers(GLsizei count, const GLuint * samplers);
+    void glDeleteSamplers(GLsizei count, const SamplerId * samplers);
     // #275 (3.0+) Binds a sampler to a texture unit, overriding the texture's own sampling state
-    void glBindSampler(GLuint unit, GLuint sampler);
+    void glBindSampler(GLuint unit, SamplerId sampler);
     // #276 (3.0+) Returns GL_TRUE if the name is a valid sampler object
-    GLboolean glIsSampler(GLuint sampler);
+    GLboolean glIsSampler(SamplerId sampler);
     // #277 (3.0+) Sets a float sampling parameter on a sampler object
-    void glSamplerParameterf(GLuint sampler, TextureParameter pname, GLfloat param);
+    void glSamplerParameterf(SamplerId sampler, TextureParameter pname, GLfloat param);
     // #278 (3.0+) Sets an integer sampling parameter on a sampler object
-    void glSamplerParameteri(GLuint sampler, TextureParameter pname, GLint param);
+    void glSamplerParameteri(SamplerId sampler, TextureParameter pname, GLint param);
     // #279 (3.0+) Sets multiple float sampling parameters on a sampler from a pointer
-    void glSamplerParameterfv(GLuint sampler, TextureParameter pname, const GLfloat * param);
+    void glSamplerParameterfv(SamplerId sampler, TextureParameter pname, const GLfloat * param);
     // #280 (3.0+) Sets multiple integer sampling parameters on a sampler from a pointer
-    void glSamplerParameteriv(GLuint sampler, TextureParameter pname, const GLint * param);
+    void glSamplerParameteriv(SamplerId sampler, TextureParameter pname, const GLint * param);
     // #281 (3.2+) Sets signed integer sampler parameters without conversion
-    void glSamplerParameterIiv(GLuint sampler, TextureParameter pname, const GLint * param);
+    void glSamplerParameterIiv(SamplerId sampler, TextureParameter pname, const GLint * param);
     // #282 (3.2+) Sets unsigned integer sampler parameters without conversion
-    void glSamplerParameterIuiv(GLuint sampler, TextureParameter pname, const GLuint * param);
+    void glSamplerParameterIuiv(SamplerId sampler, TextureParameter pname, const GLuint * param);
     // #283 (3.0+) Returns float sampling parameters from a sampler object
-    void glGetSamplerParameterfv(GLuint sampler, TextureParameter pname, GLfloat * params);
+    void glGetSamplerParameterfv(SamplerId sampler, TextureParameter pname, GLfloat * params);
     // #284 (3.0+) Returns integer sampling parameters from a sampler object
-    void glGetSamplerParameteriv(GLuint sampler, TextureParameter pname, GLint * params);
+    void glGetSamplerParameteriv(SamplerId sampler, TextureParameter pname, GLint * params);
     // #285 (3.2+) Returns signed integer sampler parameters as raw integers
-    void glGetSamplerParameterIiv(GLuint sampler, TextureParameter pname, GLint * params);
+    void glGetSamplerParameterIiv(SamplerId sampler, TextureParameter pname, GLint * params);
     // #286 (3.2+) Returns unsigned integer sampler parameters as raw unsigned integers
-    void glGetSamplerParameterIuiv(GLuint sampler, TextureParameter pname, GLuint * params);
+    void glGetSamplerParameterIuiv(SamplerId sampler, TextureParameter pname, GLuint * params);
 
     // Framebuffers
     // #287 (2.0+) Generates one or more framebuffer object names
-    void glGenFramebuffers(GLsizei n, GLuint * framebuffers);
+    void glGenFramebuffers(GLsizei n, FramebufferId * framebuffers);
     // #288 (2.0+) Deletes framebuffer objects
-    void glDeleteFramebuffers(GLsizei n, const GLuint * framebuffers);
+    void glDeleteFramebuffers(GLsizei n, const FramebufferId * framebuffers);
     // #289 (2.0+) Binds a framebuffer to GL_FRAMEBUFFER, GL_READ_FRAMEBUFFER, or GL_DRAW_FRAMEBUFFER
-    void glBindFramebuffer(FramebufferTarget target, GLuint framebuffer);
+    void glBindFramebuffer(FramebufferTarget target, FramebufferId framebuffer);
     // #290 (2.0+) Returns GL_TRUE if the name is a valid framebuffer object
-    GLboolean glIsFramebuffer(GLuint framebuffer);
+    GLboolean glIsFramebuffer(FramebufferId framebuffer);
     // #291 (2.0+) Returns the completeness status of the bound framebuffer
     FramebufferStatus glCheckFramebufferStatus(FramebufferTarget target);
     // #292 (2.0+) Attaches a 2D texture level as a framebuffer color/depth/stencil attachment
-    void glFramebufferTexture2D(FramebufferTarget target, FramebufferAttachment attachment, TextureTarget textarget, GLuint texture, GLint level);
+    void glFramebufferTexture2D(FramebufferTarget target, FramebufferAttachment attachment, TextureTarget textarget, TextureId texture, GLint level);
     // #293 (3.0+) Attaches a single layer of a layered texture to a framebuffer attachment point
-    void glFramebufferTextureLayer(FramebufferTarget target, FramebufferAttachment attachment, GLuint texture, GLint level, GLint layer);
+    void glFramebufferTextureLayer(FramebufferTarget target, FramebufferAttachment attachment, TextureId texture, GLint level, GLint layer);
     // #294 (3.2+) Attaches an entire layered texture to a framebuffer (for geometry shader layered rendering)
-    void glFramebufferTexture(FramebufferTarget target, FramebufferAttachment attachment, GLuint texture, GLint level);
+    void glFramebufferTexture(FramebufferTarget target, FramebufferAttachment attachment, TextureId texture, GLint level);
     // #295 (2.0+) Attaches a renderbuffer as a framebuffer color/depth/stencil attachment
-    void glFramebufferRenderbuffer(FramebufferTarget target, FramebufferAttachment attachment, RenderbufferTarget renderbuffertarget, GLuint renderbuffer);
+    void glFramebufferRenderbuffer(FramebufferTarget target, FramebufferAttachment attachment, RenderbufferTarget renderbuffertarget, RenderbufferId renderbuffer);
     // #296 (3.1+) Sets default parameters on a framebuffer that has no attachments
     void glFramebufferParameteri(FramebufferTarget target, FramebufferDefaultParameter pname, GLint param);
     // #297 (3.1+) Returns parameters set on a framebuffer via glFramebufferParameteri
@@ -626,7 +626,7 @@ namespace metagl
     // #298 (2.0+) Returns parameters of a specific framebuffer attachment
     void glGetFramebufferAttachmentParameteriv(FramebufferTarget target, FramebufferAttachment attachment, FramebufferAttachmentParameter pname, GLint * params);
     // #299 (3.0+) Copies a rectangle between framebuffers; also resolves MSAA
-    void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, ClearBufferBit mask, TextureFilter filter);
+    void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, ClearBufferBit mask, BlitFilter filter);
     // #300 (3.0+) Hints that attachment contents are no longer needed (bandwidth optimization)
     void glInvalidateFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments);
     // #301 (3.0+) Invalidates a sub-rectangle of framebuffer attachments
@@ -634,13 +634,13 @@ namespace metagl
 
     // Renderbuffers
     // #302 (2.0+) Generates one or more renderbuffer object names
-    void glGenRenderbuffers(GLsizei n, GLuint * renderbuffers);
+    void glGenRenderbuffers(GLsizei n, RenderbufferId * renderbuffers);
     // #303 (2.0+) Deletes renderbuffer objects and frees their GPU memory
-    void glDeleteRenderbuffers(GLsizei n, const GLuint * renderbuffers);
+    void glDeleteRenderbuffers(GLsizei n, const RenderbufferId * renderbuffers);
     // #304 (2.0+) Binds a renderbuffer to the GL_RENDERBUFFER target
-    void glBindRenderbuffer(RenderbufferTarget target, GLuint renderbuffer);
+    void glBindRenderbuffer(RenderbufferTarget target, RenderbufferId renderbuffer);
     // #305 (2.0+) Returns GL_TRUE if the name is a valid renderbuffer object
-    GLboolean glIsRenderbuffer(GLuint renderbuffer);
+    GLboolean glIsRenderbuffer(RenderbufferId renderbuffer);
     // #306 (2.0+) Allocates single-sample GPU storage for a renderbuffer
     void glRenderbufferStorage(RenderbufferTarget target, InternalFormat internalformat, GLsizei width, GLsizei height);
     // #307 (3.0+) Allocates multisample GPU storage for a renderbuffer (for MSAA)
@@ -650,13 +650,13 @@ namespace metagl
 
     // Transform Feedback
     // #309 (3.0+) Generates one or more transform feedback object names
-    void glGenTransformFeedbacks(GLsizei n, GLuint * ids);
+    void glGenTransformFeedbacks(GLsizei n, TransformFeedbackId * ids);
     // #310 (3.0+) Deletes transform feedback objects
-    void glDeleteTransformFeedbacks(GLsizei n, const GLuint * ids);
+    void glDeleteTransformFeedbacks(GLsizei n, const TransformFeedbackId * ids);
     // #311 (3.0+) Binds a transform feedback object to capture its output buffer state
-    void glBindTransformFeedback(TransformFeedbackTarget target, GLuint id);
+    void glBindTransformFeedback(TransformFeedbackTarget target, TransformFeedbackId id);
     // #312 (3.0+) Returns GL_TRUE if the name is a valid transform feedback object
-    GLboolean glIsTransformFeedback(GLuint id);
+    GLboolean glIsTransformFeedback(TransformFeedbackId id);
     // #313 (3.0+) Starts capturing vertex shader outputs into transform feedback buffers
     void glBeginTransformFeedback(PrimitiveType primitiveMode);
     // #314 (3.0+) Ends the current transform feedback capture session
@@ -666,25 +666,25 @@ namespace metagl
     // #316 (3.0+) Resumes a previously paused transform feedback session
     void glResumeTransformFeedback(void);
     // #317 (3.0+) Specifies which vertex shader outputs to capture before linking
-    void glTransformFeedbackVaryings(GLuint program, GLsizei count, const GLchar *const* varyings, TransformFeedbackBufferMode bufferMode);
+    void glTransformFeedbackVaryings(ProgramId program, GLsizei count, const GLchar *const* varyings, TransformFeedbackBufferMode bufferMode);
     // #318 (3.0+) Returns name, type, and size of a transform feedback varying by index
-    void glGetTransformFeedbackVarying(GLuint program, GLuint index, GLsizei bufSize, GLsizei * length, GLsizei * size, UniformType * type, GLchar * name);
+    void glGetTransformFeedbackVarying(ProgramId program, GLuint index, GLsizei bufSize, GLsizei * length, GLsizei * size, UniformType * type, GLchar * name);
 
     // Query Objects
     // #319 (3.0+) Generates one or more query object names
-    void glGenQueries(GLsizei n, GLuint * ids);
+    void glGenQueries(GLsizei n, QueryId * ids);
     // #320 (3.0+) Deletes query objects
-    void glDeleteQueries(GLsizei n, const GLuint * ids);
+    void glDeleteQueries(GLsizei n, const QueryId * ids);
     // #321 (3.0+) Returns GL_TRUE if the name is a valid query object
-    GLboolean glIsQuery(GLuint id);
+    GLboolean glIsQuery(QueryId id);
     // #322 (3.0+) Begins recording a GPU query (occlusion, primitives written, etc.)
-    void glBeginQuery(QueryTarget target, GLuint id);
+    void glBeginQuery(QueryTarget target, QueryId id);
     // #323 (3.0+) Ends a query; result becomes available asynchronously
     void glEndQuery(QueryTarget target);
     // #324 (3.0+) Returns info about a query target (active query name, counter bits)
     void glGetQueryiv(QueryTarget target, QueryParameter pname, GLint * params);
     // #325 (3.0+) Returns the result of a completed query as an unsigned integer
-    void glGetQueryObjectuiv(GLuint id, QueryObjectParameter pname, GLuint * params);
+    void glGetQueryObjectuiv(QueryId id, QueryObjectParameter pname, GLuint * params);
 
     // Sync Objects
     // #326 (3.0+) Creates a sync object and inserts a fence into the GL command stream
@@ -712,25 +712,25 @@ namespace metagl
 
     // Program Pipelines
     // #336 (3.1+) Generates one or more program pipeline object names
-    void glGenProgramPipelines(GLsizei n, GLuint * pipelines);
+    void glGenProgramPipelines(GLsizei n, ProgramPipelineId * pipelines);
     // #337 (3.1+) Deletes program pipeline objects
-    void glDeleteProgramPipelines(GLsizei n, const GLuint * pipelines);
+    void glDeleteProgramPipelines(GLsizei n, const ProgramPipelineId * pipelines);
     // #338 (3.1+) Binds a program pipeline for rendering
-    void glBindProgramPipeline(GLuint pipeline);
+    void glBindProgramPipeline(ProgramPipelineId pipeline);
     // #339 (3.1+) Returns GL_TRUE if the name is a valid program pipeline object
-    GLboolean glIsProgramPipeline(GLuint pipeline);
+    GLboolean glIsProgramPipeline(ProgramPipelineId pipeline);
     // #340 (3.1+) Installs shader stages from a separable program into a pipeline
-    void glUseProgramStages(GLuint pipeline, ShaderStageMask stages, GLuint program);
+    void glUseProgramStages(ProgramPipelineId pipeline, ShaderStageMask stages, ProgramId program);
     // #341 (3.1+) Sets the active program in a pipeline for direct uniform calls
-    void glActiveShaderProgram(GLuint pipeline, GLuint program);
+    void glActiveShaderProgram(ProgramPipelineId pipeline, ProgramId program);
     // #342 (3.1+) Compiles, links, and creates a separable program in one step
-    GLuint glCreateShaderProgramv(ShaderType type, GLsizei count, const GLchar *const* strings);
+    ProgramId glCreateShaderProgramv(ShaderType type, GLsizei count, const GLchar *const* strings);
     // #343 (3.1+) Validates a pipeline can execute given current GL state
-    void glValidateProgramPipeline(GLuint pipeline);
+    void glValidateProgramPipeline(ProgramPipelineId pipeline);
     // #344 (3.1+) Returns parameters of a program pipeline (installed stages, validate status)
-    void glGetProgramPipelineiv(GLuint pipeline, ProgramPipelineParameter pname, GLint * params);
+    void glGetProgramPipelineiv(ProgramPipelineId pipeline, ProgramPipelineParameter pname, GLint * params);
     // #345 (3.1+) Returns the info log for a pipeline (validation results, linker messages)
-    void glGetProgramPipelineInfoLog(GLuint pipeline, GLsizei bufSize, GLsizei * length, GLchar * infoLog);
+    void glGetProgramPipelineInfoLog(ProgramPipelineId pipeline, GLsizei bufSize, GLsizei * length, GLchar * infoLog);
 
     // Geometry / Tessellation
     // #346 (3.2+) Sets the number of vertices per patch for tessellation (GL_PATCH_VERTICES)
@@ -807,7 +807,7 @@ namespace metagl
 
         // #166-#185 - dispatch helper for glUniform*v variants.
         template<std::size_t Components, UniformScalar T>
-        inline void glUniformVectorDispatch(GLint location, GLsizei count, const T* data)
+        inline void glUniformVectorDispatch(UniformLocation location, GLsizei count, const T* data)
         {
             using Value = std::remove_cvref_t<T>;
 
@@ -836,7 +836,7 @@ namespace metagl
 
         // #205-#224 - dispatch helper for glProgramUniform*v variants.
         template<std::size_t Components, UniformScalar T>
-        inline void glProgramUniformVectorDispatch(GLuint program, GLint location, GLsizei count, const T* data)
+        inline void glProgramUniformVectorDispatch(ProgramId program, UniformLocation location, GLsizei count, const T* data)
         {
             using Value = std::remove_cvref_t<T>;
 
@@ -865,7 +865,7 @@ namespace metagl
 
         // #186-#194 - dispatch helper for glUniformMatrix*fv variants.
         template<std::size_t Columns, std::size_t Rows>
-        inline void glUniformMatrixDispatch(GLint location, GLsizei count, GLboolean transpose, const GLfloat* data)
+        inline void glUniformMatrixDispatch(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat* data)
         {
             if constexpr (Columns == 2 && Rows == 2) { glUniformMatrix2fv(location, count, transpose, data); }
             else if constexpr (Columns == 3 && Rows == 3) { glUniformMatrix3fv(location, count, transpose, data); }
@@ -880,7 +880,7 @@ namespace metagl
 
         // #225-#233 - dispatch helper for glProgramUniformMatrix*fv variants.
         template<std::size_t Columns, std::size_t Rows>
-        inline void glProgramUniformMatrixDispatch(GLuint program, GLint location, GLsizei count, GLboolean transpose, const GLfloat* data)
+        inline void glProgramUniformMatrixDispatch(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat* data)
         {
             if constexpr (Columns == 2 && Rows == 2) { glProgramUniformMatrix2fv(program, location, count, transpose, data); }
             else if constexpr (Columns == 3 && Rows == 3) { glProgramUniformMatrix3fv(program, location, count, transpose, data); }
@@ -896,7 +896,7 @@ namespace metagl
 
     // #162/#170/#178 - scalar uniform dispatch: float, int, unsigned int.
     template<UniformScalar T>
-    inline void glUniform(GLint location, T value)
+    inline void glUniform(UniformLocation location, T value)
     {
         using Value = std::remove_cvref_t<T>;
 
@@ -916,7 +916,7 @@ namespace metagl
 
     // #163/#171/#179 - vec2/ivec2/uvec2 uniform dispatch.
     template<UniformScalar T>
-    inline void glUniform(GLint location, T v0, T v1)
+    inline void glUniform(UniformLocation location, T v0, T v1)
     {
         using Value = std::remove_cvref_t<T>;
 
@@ -936,7 +936,7 @@ namespace metagl
 
     // #164/#172/#180 - vec3/ivec3/uvec3 uniform dispatch.
     template<UniformScalar T>
-    inline void glUniform(GLint location, T v0, T v1, T v2)
+    inline void glUniform(UniformLocation location, T v0, T v1, T v2)
     {
         using Value = std::remove_cvref_t<T>;
 
@@ -956,7 +956,7 @@ namespace metagl
 
     // #165/#173/#181 - vec4/ivec4/uvec4 uniform dispatch.
     template<UniformScalar T>
-    inline void glUniform(GLint location, T v0, T v1, T v2, T v3)
+    inline void glUniform(UniformLocation location, T v0, T v1, T v2, T v3)
     {
         using Value = std::remove_cvref_t<T>;
 
@@ -978,7 +978,7 @@ namespace metagl
     // Components=1 maps to glUniform1*v, Components=2 to glUniform2*v, etc.
     template<std::size_t Components = 1, UniformVector Vec>
         requires detail::IsUniformComponentCount<Components>
-    inline void glUniform(GLint location, const Vec& values)
+    inline void glUniform(UniformLocation location, const Vec& values)
     {
         using Value = std::ranges::range_value_t<Vec>;
 
@@ -990,7 +990,7 @@ namespace metagl
     // #166-#185 - fixed-size std::array convenience; N=2/3/4 means vec2/vec3/vec4.
     template<UniformScalar T, std::size_t N>
         requires detail::IsUniformComponentCount<N>
-    inline void glUniform(GLint location, const std::array<T, N>& values)
+    inline void glUniform(UniformLocation location, const std::array<T, N>& values)
     {
         detail::glUniformVectorDispatch<N, T>(location, 1, values.data());
     }
@@ -998,7 +998,7 @@ namespace metagl
     // #166-#185 - fixed-size C array convenience; N=2/3/4 means vec2/vec3/vec4.
     template<UniformScalar T, std::size_t N>
         requires detail::IsUniformComponentCount<N>
-    inline void glUniform(GLint location, const T (&values)[N])
+    inline void glUniform(UniformLocation location, const T (&values)[N])
     {
         detail::glUniformVectorDispatch<N, T>(location, 1, values);
     }
@@ -1006,7 +1006,7 @@ namespace metagl
     // #166-#185 - initializer_list overload for contiguous range dispatch.
     template<std::size_t Components = 1, UniformScalar T>
         requires detail::IsUniformComponentCount<Components>
-    inline void glUniform(GLint location, std::initializer_list<T> values)
+    inline void glUniform(UniformLocation location, std::initializer_list<T> values)
     {
         const auto count = static_cast<GLsizei>(values.size() / Components);
         detail::glUniformVectorDispatch<Components, T>(location, count, values.begin());
@@ -1015,7 +1015,7 @@ namespace metagl
     // #186-#194 - square matrix uniform dispatch. Size=2/3/4 maps to mat2/mat3/mat4.
     template<std::size_t Size, UniformFloatVector Vec>
         requires (Size >= 2 && Size <= 4)
-    inline void glUniformMatrix(GLint location, const Vec& values, GLboolean transpose = GL_FALSE)
+    inline void glUniformMatrix(UniformLocation location, const Vec& values, GLboolean transpose = GL_FALSE)
     {
         const auto* data = std::ranges::data(values);
         const auto count = static_cast<GLsizei>(std::ranges::size(values) / (Size * Size));
@@ -1025,7 +1025,7 @@ namespace metagl
     // #186-#194 - rectangular matrix uniform dispatch. Columns x Rows maps to glUniformMatrixCxRfv.
     template<std::size_t Columns, std::size_t Rows, UniformFloatVector Vec>
         requires detail::IsUniformMatrixShape<Columns, Rows>
-    inline void glUniformMatrix(GLint location, const Vec& values, GLboolean transpose = GL_FALSE)
+    inline void glUniformMatrix(UniformLocation location, const Vec& values, GLboolean transpose = GL_FALSE)
     {
         const auto* data = std::ranges::data(values);
         const auto count = static_cast<GLsizei>(std::ranges::size(values) / (Columns * Rows));
@@ -1035,7 +1035,7 @@ namespace metagl
     // #186-#194 - square matrix initializer_list overload.
     template<std::size_t Size>
         requires (Size >= 2 && Size <= 4)
-    inline void glUniformMatrix(GLint location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
+    inline void glUniformMatrix(UniformLocation location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
     {
         const auto count = static_cast<GLsizei>(values.size() / (Size * Size));
         detail::glUniformMatrixDispatch<Size, Size>(location, count, transpose, values.begin());
@@ -1044,7 +1044,7 @@ namespace metagl
     // #186-#194 - rectangular matrix initializer_list overload.
     template<std::size_t Columns, std::size_t Rows>
         requires detail::IsUniformMatrixShape<Columns, Rows>
-    inline void glUniformMatrix(GLint location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
+    inline void glUniformMatrix(UniformLocation location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
     {
         const auto count = static_cast<GLsizei>(values.size() / (Columns * Rows));
         detail::glUniformMatrixDispatch<Columns, Rows>(location, count, transpose, values.begin());
@@ -1052,7 +1052,7 @@ namespace metagl
 
     // #201/#209/#217 - scalar program-uniform dispatch: float, int, unsigned int.
     template<UniformScalar T>
-    inline void glProgramUniform(GLuint program, GLint location, T value)
+    inline void glProgramUniform(ProgramId program, UniformLocation location, T value)
     {
         using Value = std::remove_cvref_t<T>;
 
@@ -1072,7 +1072,7 @@ namespace metagl
 
     // #202/#210/#218 - vec2/ivec2/uvec2 program-uniform dispatch.
     template<UniformScalar T>
-    inline void glProgramUniform(GLuint program, GLint location, T v0, T v1)
+    inline void glProgramUniform(ProgramId program, UniformLocation location, T v0, T v1)
     {
         using Value = std::remove_cvref_t<T>;
 
@@ -1092,7 +1092,7 @@ namespace metagl
 
     // #203/#211/#219 - vec3/ivec3/uvec3 program-uniform dispatch.
     template<UniformScalar T>
-    inline void glProgramUniform(GLuint program, GLint location, T v0, T v1, T v2)
+    inline void glProgramUniform(ProgramId program, UniformLocation location, T v0, T v1, T v2)
     {
         using Value = std::remove_cvref_t<T>;
 
@@ -1112,7 +1112,7 @@ namespace metagl
 
     // #204/#212/#220 - vec4/ivec4/uvec4 program-uniform dispatch.
     template<UniformScalar T>
-    inline void glProgramUniform(GLuint program, GLint location, T v0, T v1, T v2, T v3)
+    inline void glProgramUniform(ProgramId program, UniformLocation location, T v0, T v1, T v2, T v3)
     {
         using Value = std::remove_cvref_t<T>;
 
@@ -1133,7 +1133,7 @@ namespace metagl
     // #205-#224 - contiguous range program-uniform dispatch.
     template<std::size_t Components = 1, UniformVector Vec>
         requires detail::IsUniformComponentCount<Components>
-    inline void glProgramUniform(GLuint program, GLint location, const Vec& values)
+    inline void glProgramUniform(ProgramId program, UniformLocation location, const Vec& values)
     {
         using Value = std::ranges::range_value_t<Vec>;
 
@@ -1145,7 +1145,7 @@ namespace metagl
     // #205-#224 - fixed-size std::array program-uniform convenience; N=2/3/4 means vec2/vec3/vec4.
     template<UniformScalar T, std::size_t N>
         requires detail::IsUniformComponentCount<N>
-    inline void glProgramUniform(GLuint program, GLint location, const std::array<T, N>& values)
+    inline void glProgramUniform(ProgramId program, UniformLocation location, const std::array<T, N>& values)
     {
         detail::glProgramUniformVectorDispatch<N, T>(program, location, 1, values.data());
     }
@@ -1153,7 +1153,7 @@ namespace metagl
     // #205-#224 - fixed-size C array program-uniform convenience; N=2/3/4 means vec2/vec3/vec4.
     template<UniformScalar T, std::size_t N>
         requires detail::IsUniformComponentCount<N>
-    inline void glProgramUniform(GLuint program, GLint location, const T (&values)[N])
+    inline void glProgramUniform(ProgramId program, UniformLocation location, const T (&values)[N])
     {
         detail::glProgramUniformVectorDispatch<N, T>(program, location, 1, values);
     }
@@ -1161,7 +1161,7 @@ namespace metagl
     // #205-#224 - initializer_list program-uniform overload.
     template<std::size_t Components = 1, UniformScalar T>
         requires detail::IsUniformComponentCount<Components>
-    inline void glProgramUniform(GLuint program, GLint location, std::initializer_list<T> values)
+    inline void glProgramUniform(ProgramId program, UniformLocation location, std::initializer_list<T> values)
     {
         const auto count = static_cast<GLsizei>(values.size() / Components);
         detail::glProgramUniformVectorDispatch<Components, T>(program, location, count, values.begin());
@@ -1170,7 +1170,7 @@ namespace metagl
     // #225-#233 - square matrix program-uniform dispatch. Size=2/3/4 maps to mat2/mat3/mat4.
     template<std::size_t Size, UniformFloatVector Vec>
         requires (Size >= 2 && Size <= 4)
-    inline void glProgramUniformMatrix(GLuint program, GLint location, const Vec& values, GLboolean transpose = GL_FALSE)
+    inline void glProgramUniformMatrix(ProgramId program, UniformLocation location, const Vec& values, GLboolean transpose = GL_FALSE)
     {
         const auto* data = std::ranges::data(values);
         const auto count = static_cast<GLsizei>(std::ranges::size(values) / (Size * Size));
@@ -1180,7 +1180,7 @@ namespace metagl
     // #225-#233 - rectangular matrix program-uniform dispatch. Columns x Rows maps to glProgramUniformMatrixCxRfv.
     template<std::size_t Columns, std::size_t Rows, UniformFloatVector Vec>
         requires detail::IsUniformMatrixShape<Columns, Rows>
-    inline void glProgramUniformMatrix(GLuint program, GLint location, const Vec& values, GLboolean transpose = GL_FALSE)
+    inline void glProgramUniformMatrix(ProgramId program, UniformLocation location, const Vec& values, GLboolean transpose = GL_FALSE)
     {
         const auto* data = std::ranges::data(values);
         const auto count = static_cast<GLsizei>(std::ranges::size(values) / (Columns * Rows));
@@ -1190,7 +1190,7 @@ namespace metagl
     // #225-#233 - square matrix program-uniform initializer_list overload.
     template<std::size_t Size>
         requires (Size >= 2 && Size <= 4)
-    inline void glProgramUniformMatrix(GLuint program, GLint location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
+    inline void glProgramUniformMatrix(ProgramId program, UniformLocation location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
     {
         const auto count = static_cast<GLsizei>(values.size() / (Size * Size));
         detail::glProgramUniformMatrixDispatch<Size, Size>(program, location, count, transpose, values.begin());
@@ -1199,7 +1199,7 @@ namespace metagl
     // #225-#233 - rectangular matrix program-uniform initializer_list overload.
     template<std::size_t Columns, std::size_t Rows>
         requires detail::IsUniformMatrixShape<Columns, Rows>
-    inline void glProgramUniformMatrix(GLuint program, GLint location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
+    inline void glProgramUniformMatrix(ProgramId program, UniformLocation location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
     {
         const auto count = static_cast<GLsizei>(values.size() / (Columns * Rows));
         detail::glProgramUniformMatrixDispatch<Columns, Rows>(program, location, count, transpose, values.begin());
@@ -1237,21 +1237,21 @@ namespace metagl
 
         // #73 - dispatch helper for floating-point vertex attributes.
         template<typename T>
-        inline void glVertexAttribPointerDispatch(FloatTag, GLuint index, GLint size, GLboolean normalized, GLsizei stride, const void* pointer)
+        inline void glVertexAttribPointerDispatch(FloatTag, AttribLocation index, GLint size, GLboolean normalized, GLsizei stride, const void* pointer)
         {
             glVertexAttribPointer(index, size, VertexAttributeTraits<T>::Type, normalized, stride, pointer);
         }
 
         // #74 - dispatch helper for signed integer vertex attributes.
         template<typename T>
-        inline void glVertexAttribPointerDispatch(IntTag, GLuint index, GLint size, GLboolean, GLsizei stride, const void* pointer)
+        inline void glVertexAttribPointerDispatch(IntTag, AttribLocation index, GLint size, GLboolean, GLsizei stride, const void* pointer)
         {
             glVertexAttribIPointer(index, size, VertexAttributeTraits<T>::Type, stride, pointer);
         }
 
         // #74 - dispatch helper for unsigned integer vertex attributes.
         template<typename T>
-        inline void glVertexAttribPointerDispatch(UIntTag, GLuint index, GLint size, GLboolean, GLsizei stride, const void* pointer)
+        inline void glVertexAttribPointerDispatch(UIntTag, AttribLocation index, GLint size, GLboolean, GLsizei stride, const void* pointer)
         {
             glVertexAttribIPointer(index, size, VertexAttributeTraits<T>::Type, stride, pointer);
         }
@@ -1266,7 +1266,7 @@ namespace metagl
     // #73-#74 - tag/constexpr dispatch for float/int/unsigned vertex attribute pointers.
     // GLfloat dispatches to glVertexAttribPointer; GLint/GLuint dispatch to glVertexAttribIPointer.
     template<VertexAttributeScalar T>
-    inline void glVertexAttribPointer(GLuint index, GLint size, GLboolean normalized = GL_FALSE, GLsizei stride = 0, const void* pointer = nullptr)
+    inline void glVertexAttribPointer(AttribLocation index, GLint size, GLboolean normalized = GL_FALSE, GLsizei stride = 0, const void* pointer = nullptr)
     {
         using Value = std::remove_cvref_t<T>;
         using Tag = typename detail::VertexAttributeTraits<Value>::Tag;
@@ -1275,26 +1275,26 @@ namespace metagl
     }
 
     // #76 - scalar float vertex attribute dispatch.
-    inline void glVertexAttrib(GLuint index, GLfloat x)
+    inline void glVertexAttrib(AttribLocation index, GLfloat x)
     {
         glVertexAttrib1f(index, x);
     }
 
     // #77 - vec2 float vertex attribute dispatch.
-    inline void glVertexAttrib(GLuint index, GLfloat x, GLfloat y)
+    inline void glVertexAttrib(AttribLocation index, GLfloat x, GLfloat y)
     {
         glVertexAttrib2f(index, x, y);
     }
 
     // #78 - vec3 float vertex attribute dispatch.
-    inline void glVertexAttrib(GLuint index, GLfloat x, GLfloat y, GLfloat z)
+    inline void glVertexAttrib(AttribLocation index, GLfloat x, GLfloat y, GLfloat z)
     {
         glVertexAttrib3f(index, x, y, z);
     }
 
     // #79/#84/#85 - vec4/ivec4/uvec4 vertex attribute dispatch.
     template<VertexAttributeScalar T>
-    inline void glVertexAttrib(GLuint index, T x, T y, T z, T w)
+    inline void glVertexAttrib(AttribLocation index, T x, T y, T z, T w)
     {
         using Value = std::remove_cvref_t<T>;
 
@@ -1315,7 +1315,7 @@ namespace metagl
     // #80-#83/#86-#87 - pointer/range vertex attribute dispatch.
     template<std::size_t Components = 4, VertexAttributeScalar T>
         requires detail::IsUniformComponentCount<Components>
-    inline void glVertexAttrib(GLuint index, const T* values)
+    inline void glVertexAttrib(AttribLocation index, const T* values)
     {
         using Value = std::remove_cvref_t<T>;
 
@@ -1341,7 +1341,7 @@ namespace metagl
     // #80-#83/#86-#87 - fixed-size std::array vertex attribute dispatch.
     template<VertexAttributeScalar T, std::size_t N>
         requires detail::IsUniformComponentCount<N>
-    inline void glVertexAttrib(GLuint index, const std::array<T, N>& values)
+    inline void glVertexAttrib(AttribLocation index, const std::array<T, N>& values)
     {
         glVertexAttrib<N, T>(index, values.data());
     }
@@ -1349,7 +1349,7 @@ namespace metagl
     // #80-#83/#86-#87 - fixed-size C array vertex attribute dispatch.
     template<VertexAttributeScalar T, std::size_t N>
         requires detail::IsUniformComponentCount<N>
-    inline void glVertexAttrib(GLuint index, const T (&values)[N])
+    inline void glVertexAttrib(AttribLocation index, const T (&values)[N])
     {
         glVertexAttrib<N, T>(index, values);
     }

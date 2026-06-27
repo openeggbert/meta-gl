@@ -9,6 +9,20 @@ namespace metagl
 {
     using GlGetProcAddressFn = void* (*)(const char* name);
 
+    struct ShaderId        { GLuint value{}; };
+    struct ProgramId       { GLuint value{}; };
+    struct TextureId       { GLuint value{}; };
+    struct BufferId        { GLuint value{}; };
+    struct FramebufferId   { GLuint value{}; };
+    struct RenderbufferId  { GLuint value{}; };
+    struct SamplerId       { GLuint value{}; };
+    struct VertexArrayId   { GLuint value{}; };
+    struct QueryId              { GLuint value{}; };
+    struct TransformFeedbackId  { GLuint value{}; };
+    struct ProgramPipelineId    { GLuint value{}; };
+    struct UniformLocation      { GLint  value{-1}; };
+    struct AttribLocation       { GLuint value{}; };
+
     using ::GLbitfield;
     using ::GLboolean;
     using ::GLbyte;

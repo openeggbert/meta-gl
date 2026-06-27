@@ -570,7 +570,7 @@ namespace metagl::detail
 
     /// Legacy helper kept for diagnostics — checks all 358 GLES 3.2 functions.
     /// Not used by Initialize(); provided for completeness and testing.
-    [[maybe_unused]] static bool all_loaded(const GlTable& gl)
+    static bool all_loaded(const GlTable& gl)
     {
         return
             gl.Enable != nullptr &&
@@ -1325,6 +1325,11 @@ namespace metagl
         auto it = detail::g_function_availability.find(std::string(name));
         if (it == detail::g_function_availability.end()) return false;
         return it->second;
+    }
+
+    bool AllFunctionsLoaded() noexcept
+    {
+        return detail::all_loaded(detail::g_gl);
     }
 
     // #1

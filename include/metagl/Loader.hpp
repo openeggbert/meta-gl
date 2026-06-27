@@ -40,4 +40,8 @@ namespace metagl
     /// Returns true if the named GL function was loaded successfully during the
     /// last Initialize() / LoadCurrentContext() call.
     [[nodiscard]] bool IsFunctionAvailable(std::string_view name) noexcept;
+
+    /// Returns true if every GL ES 3.2 function pointer was loaded successfully.
+    /// Useful for verifying a complete load on a full ES 3.2 driver.
+    [[nodiscard]] bool AllFunctionsLoaded() noexcept;
 }

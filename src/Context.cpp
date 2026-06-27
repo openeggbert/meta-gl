@@ -45,19 +45,16 @@ namespace metagl::detail
         caps.shading_language_version = to_str(metagl::glGetString(metagl::StringName::ShadingLanguageVersion));
 
 #ifdef __EMSCRIPTEN__
-        info.api   = ApiKind::WebGL;
-        info.webgl = true;
+        info.api = ApiKind::WebGL;
         if (caps.version_string.find("WebGL 2") != std::string::npos ||
             caps.version_string.find("OpenGL ES 3") != std::string::npos)
         {
-            info.webgl2 = true;
             caps.webgl2 = true;
             info.major  = 3;
             info.minor  = 0;
         }
         else
         {
-            info.webgl1 = true;
             caps.webgl1 = true;
             info.major  = 2;
             info.minor  = 0;
@@ -82,11 +79,11 @@ namespace metagl::detail
         }
 #endif
 
-        // GLES version flags
-        if (info.major >= 2)                               { caps.gles20 = true; info.gles20 = true; }
-        if (info.major >= 3)                               { caps.gles30 = true; info.gles30 = true; }
-        if (info.major == 3 && info.minor >= 1)            { caps.gles31 = true; info.gles31 = true; }
-        if (info.major == 3 && info.minor >= 2)            { caps.gles32 = true; info.gles32 = true; }
+        // GLES version flags — single source of truth in Capabilities
+        if (info.major >= 2)                    { caps.gles20 = true; }
+        if (info.major >= 3)                    { caps.gles30 = true; }
+        if (info.major == 3 && info.minor >= 1) { caps.gles31 = true; }
+        if (info.major == 3 && info.minor >= 2) { caps.gles32 = true; }
 
         // Extensions
         if (info.major >= 3)

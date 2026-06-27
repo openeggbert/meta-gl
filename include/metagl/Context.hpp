@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
 
 namespace metagl
 {
@@ -22,27 +21,15 @@ namespace metagl
         Restored     ///< Context was restored; resources must be recreated.
     };
 
-    /// Snapshot of capabilities detected after context initialisation.
+    /// Lifecycle state of the GL context: API kind, version, generation counter,
+    /// and status. Feature detection (GLES flags, extensions, strings) lives in
+    /// Capabilities (see Capabilities.hpp).
     struct ContextInfo
     {
         ApiKind api = ApiKind::Unknown;
 
         int major = 0;
         int minor = 0;
-
-        std::string vendor;
-        std::string renderer;
-
-        // OpenGL ES version flags
-        bool gles20 = false;
-        bool gles30 = false;
-        bool gles31 = false;
-        bool gles32 = false;
-
-        // WebGL version flags (only relevant when compiled with Emscripten)
-        bool webgl  = false;
-        bool webgl1 = false;
-        bool webgl2 = false;
 
         /// Monotonically increasing counter. Incremented each time a context is
         /// successfully initialised (or restored).  Resources created under a

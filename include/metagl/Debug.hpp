@@ -83,11 +83,28 @@ namespace metagl::debug
     {
         record(func, to_str(retval), fmt_args(std::forward<Args>(args)...));
     }
+
+    // ---- glGetError integration (G2) ----------------------------------------
+
+    // Called from Initialize() so the debug logger can call GetError directly.
+    void set_get_error_fn(unsigned int (*fn)()) noexcept;
+
+    // Called after each GL wrapper call.  Prints to stderr immediately if the
+    // raw GetError returns anything other than GL_NO_ERROR (== 0).
+    void check_gl_error(std::string_view func) noexcept;
 }
 
 // Macros used in Functions.cpp
-#define METAGL_DEBUG_LOG_VOID(name, ...) metagl::debug::record_void(name __VA_OPT__(,) __VA_ARGS__)
-#define METAGL_DEBUG_LOG(name, _r, ...)  metagl::debug::record_ret(name, _r __VA_OPT__(,) __VA_ARGS__)
+#define METAGL_DEBUG_LOG_VOID(name, ...) \
+    do { \
+        metagl::debug::record_void(name __VA_OPT__(,) __VA_ARGS__); \
+        metagl::debug::check_gl_error(name); \
+    } while(0)
+#define METAGL_DEBUG_LOG(name, _r, ...) \
+    do { \
+        metagl::debug::record_ret(name, _r __VA_OPT__(,) __VA_ARGS__); \
+        metagl::debug::check_gl_error(name); \
+    } while(0)
 
 #else // METAGLDEBUG not defined — zero overhead
 

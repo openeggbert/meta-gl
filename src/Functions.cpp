@@ -1314,6 +1314,14 @@ namespace metagl
             detail::UpdateContextAfterLoad();
         }
 
+#ifdef METAGLDEBUG
+        // Register raw GetError pointer so the debug logger can check for GL
+        // errors after each call without going through the wrapper.
+        if (gl.GetError)
+            metagl::debug::set_get_error_fn(
+                reinterpret_cast<unsigned int(*)()>(gl.GetError));
+#endif
+
         return gl.initialized;
     }
 

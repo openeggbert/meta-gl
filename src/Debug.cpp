@@ -52,6 +52,21 @@ namespace metagl::debug
         // ensuring buffered calls are not lost on normal program exit.
         struct FlushOnExit { ~FlushOnExit() { flush(); } };
         FlushOnExit g_flush_on_exit;
+
+        unsigned int (*g_get_error)() = nullptr;
+    }
+
+    void set_get_error_fn(unsigned int (*fn)()) noexcept { g_get_error = fn; }
+
+    void check_gl_error(std::string_view func) noexcept
+    {
+        if (!g_get_error) return;
+        const unsigned int err = g_get_error();
+        if (err == 0) return; // GL_NO_ERROR
+        std::cerr << "[METAGL GL_ERROR] "
+                  << metagl::to_string(static_cast<metagl::ErrorCode>(err))
+                  << " (0x" << std::hex << err << std::dec << ") after "
+                  << func << '\n';
     }
 
     void record(std::string_view func, std::string_view retval, std::string params)

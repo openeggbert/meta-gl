@@ -5,6 +5,17 @@
 
 namespace metagl
 {
+    /// Satisfied by any enum class whose underlying type is GLbitfield.
+    /// Enables the generic operator|, operator&, operator~ below.
+    template<typename T>
+    concept GlBitfield =
+        std::is_enum_v<T> &&
+        std::same_as<std::underlying_type_t<T>, GLbitfield>;
+
+    template<GlBitfield T> inline T operator|(T a, T b) { return static_cast<T>(static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b)); }
+    template<GlBitfield T> inline T operator&(T a, T b) { return static_cast<T>(static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b)); }
+    template<GlBitfield T> inline T operator~(T a)      { return static_cast<T>(~static_cast<GLbitfield>(a)); }
+
     // -------------------------------------------------------------------------
     // Clear buffer mask — bitfield passed to glClear().
     // -------------------------------------------------------------------------
@@ -14,21 +25,6 @@ namespace metagl
         Depth   = GL_DEPTH_BUFFER_BIT,   ///< Clear the depth buffer.
         Stencil = GL_STENCIL_BUFFER_BIT  ///< Clear the stencil buffer.
     };
-
-    inline ClearBufferBit operator|(ClearBufferBit a, ClearBufferBit b)
-    {
-        return static_cast<ClearBufferBit>(
-            static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
-    }
-    inline ClearBufferBit operator&(ClearBufferBit a, ClearBufferBit b)
-    {
-        return static_cast<ClearBufferBit>(
-            static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b));
-    }
-    inline ClearBufferBit operator~(ClearBufferBit a)
-    {
-        return static_cast<ClearBufferBit>(~static_cast<GLbitfield>(a));
-    }
 
     // -------------------------------------------------------------------------
     // Primitive topology for draw calls (glDrawArrays, glDrawElements, etc.).
@@ -171,21 +167,6 @@ namespace metagl
         Unsynchronized   = GL_MAP_UNSYNCHRONIZED_BIT
     };
 
-    inline MapBufferAccessMask operator|(MapBufferAccessMask a, MapBufferAccessMask b)
-    {
-        return static_cast<MapBufferAccessMask>(
-            static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
-    }
-    inline MapBufferAccessMask operator&(MapBufferAccessMask a, MapBufferAccessMask b)
-    {
-        return static_cast<MapBufferAccessMask>(
-            static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b));
-    }
-    inline MapBufferAccessMask operator~(MapBufferAccessMask a)
-    {
-        return static_cast<MapBufferAccessMask>(~static_cast<GLbitfield>(a));
-    }
-
     // -------------------------------------------------------------------------
     // Per-word sample coverage mask for glSampleMaski() (ES 3.1+).
     // Each bit position corresponds to one sample index within the word.
@@ -196,21 +177,6 @@ namespace metagl
         None = 0,
         All  = 0xFFFFFFFFu
     };
-
-    inline SampleMaskValue operator|(SampleMaskValue a, SampleMaskValue b)
-    {
-        return static_cast<SampleMaskValue>(
-            static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
-    }
-    inline SampleMaskValue operator&(SampleMaskValue a, SampleMaskValue b)
-    {
-        return static_cast<SampleMaskValue>(
-            static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b));
-    }
-    inline SampleMaskValue operator~(SampleMaskValue a)
-    {
-        return static_cast<SampleMaskValue>(~static_cast<GLbitfield>(a));
-    }
 
     // -------------------------------------------------------------------------
     // Server-side capabilities toggled with glEnable / glDisable.
@@ -533,21 +499,6 @@ namespace metagl
         Compute        = GL_COMPUTE_SHADER_BIT,         ///< ES 3.1+
         AllShaderBits  = GL_ALL_SHADER_BITS
     };
-
-    inline ShaderStageMask operator|(ShaderStageMask a, ShaderStageMask b)
-    {
-        return static_cast<ShaderStageMask>(
-            static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
-    }
-    inline ShaderStageMask operator&(ShaderStageMask a, ShaderStageMask b)
-    {
-        return static_cast<ShaderStageMask>(
-            static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b));
-    }
-    inline ShaderStageMask operator~(ShaderStageMask a)
-    {
-        return static_cast<ShaderStageMask>(~static_cast<GLbitfield>(a));
-    }
 
     // -------------------------------------------------------------------------
     // Shader object parameter names for glGetShaderiv().
@@ -1290,21 +1241,6 @@ namespace metagl
         AllBarrierBits      = GL_ALL_BARRIER_BITS
     };
 
-    inline MemoryBarrierMask operator|(MemoryBarrierMask a, MemoryBarrierMask b)
-    {
-        return static_cast<MemoryBarrierMask>(
-            static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
-    }
-    inline MemoryBarrierMask operator&(MemoryBarrierMask a, MemoryBarrierMask b)
-    {
-        return static_cast<MemoryBarrierMask>(
-            static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b));
-    }
-    inline MemoryBarrierMask operator~(MemoryBarrierMask a)
-    {
-        return static_cast<MemoryBarrierMask>(~static_cast<GLbitfield>(a));
-    }
-
     // -------------------------------------------------------------------------
     // Context flag bits returned by glGetIntegerv(GL_CONTEXT_FLAGS) (ES 3.2+).
     // -------------------------------------------------------------------------
@@ -1313,21 +1249,6 @@ namespace metagl
         Debug        = GL_CONTEXT_FLAG_DEBUG_BIT,
         RobustAccess = GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT
     };
-
-    inline ContextFlagMask operator|(ContextFlagMask a, ContextFlagMask b)
-    {
-        return static_cast<ContextFlagMask>(
-            static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
-    }
-    inline ContextFlagMask operator&(ContextFlagMask a, ContextFlagMask b)
-    {
-        return static_cast<ContextFlagMask>(
-            static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b));
-    }
-    inline ContextFlagMask operator~(ContextFlagMask a)
-    {
-        return static_cast<ContextFlagMask>(~static_cast<GLbitfield>(a));
-    }
 
     // -------------------------------------------------------------------------
     // Graphics reset status returned by glGetGraphicsResetStatus() (ES 3.2+).

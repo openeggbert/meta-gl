@@ -9,21 +9,30 @@
  *
  * Typical usage:
  * @code
- * // On context creation (SDL2 example):
- * if (!metagl::Initialize(SDL_GL_GetProcAddress))
- *     abort();
- *
- * // On context restore (Android / Emscripten):
- * metagl::LoadCurrentContext(getProcAddress);
- * metagl::NotifyContextRestored();
+ * // Platform-agnostic initialization — choose the right loader for the build target:
+ * #ifdef __EMSCRIPTEN__
+ *     // WebGL: use emscripten_webgl_get_proc_address, NOT eglGetProcAddress.
+ *     // The WebGL security model restricts which extensions eglGetProcAddress exposes;
+ *     // emscripten_webgl_get_proc_address returns the full set available in the browser.
+ *     metagl::Initialize(
+ *         reinterpret_cast<metagl::GlGetProcAddressFn>(emscripten_webgl_get_proc_address));
+ * #else
+ *     // Native OpenGL ES: any of these work depending on your windowing library:
+ *     //   SDL2:  SDL_GL_GetProcAddress
+ *     //   GLFW:  glfwGetProcAddress
+ *     //   EGL:   eglGetProcAddress
+ *     metagl::Initialize(eglGetProcAddress);
+ * #endif
  * @endcode
  *
- * Under Emscripten, use @ref InstallEmscriptenContextLossCallbacks (Emscripten.hpp)
- * to automate context-loss / context-restore handling.
+ * Under Emscripten, prefer @ref InstallEmscriptenContextLossCallbacks (Emscripten.hpp)
+ * to automate context-loss / context-restore handling instead of calling Initialize directly.
  *
- * @note On Emscripten/WebGL the correct loader is `emscripten_webgl_get_proc_address`,
- *       not `eglGetProcAddress`.  The two differ in the extensions they expose under
- *       the WebGL security model.
+ * @note **Emscripten loader selection:** on WebGL builds the correct loader is
+ *       `emscripten_webgl_get_proc_address` (from `<emscripten/html5.h>`),
+ *       **not** `eglGetProcAddress`.  The Emscripten EGL emulation layer does not
+ *       expose all WebGL 2 extensions through `eglGetProcAddress`; the HTML5 API
+ *       variant is the authoritative source for WebGL extension entry-points.
  */
 #pragma once
 

@@ -8,7 +8,7 @@ It is the foundation layer used by [easy-gl](../easy-gl) and provides:
 
 - Runtime OpenGL function loading via a host-supplied `GetProcAddress` callback.
 - Type-safe `enum class` wrappers for OpenGL constants (buffer targets, shader types, texture formats, etc.).
-- Thin inline-style wrapper functions in the `metagl` namespace (`metagl::GlBindBuffer`, `metagl::GlClear`, …).
+- Thin inline-style wrapper functions in the `metagl` namespace (`metagl::glBindBuffer`, `metagl::glClear`, …).
 - No windowing, no context creation — the host application owns the GL context lifecycle.
 
 ## Architecture
@@ -52,7 +52,7 @@ cmake --build build
 
 ## Initialization
 
-Before calling any `metagl::Gl*` function, initialize the function pointer table by passing a `GetProcAddress`-style callback:
+Before calling any `metagl::gl*` function, initialize the function pointer table by passing a `GetProcAddress`-style callback:
 
 ```cpp
 #include <metagl/metagl.hpp>
@@ -74,7 +74,7 @@ All symbols live in the `metagl` namespace under `include/metagl/`:
 |---|---|
 | `metagl/Types.hpp` | Primitive GL type aliases (`GLuint`, `GLint`, `GlGetProcAddressFn`, …) |
 | `metagl/Enums.hpp` | Type-safe `enum class` wrappers for GL constants |
-| `metagl/Functions.hpp` | Declarations of all `metagl::Gl*` wrapper functions |
+| `metagl/Functions.hpp` | Declarations of all `metagl::gl*` wrapper functions |
 | `metagl/Loader.hpp` | `metagl::Initialize()` / `metagl::IsInitialized()` |
 | `metagl/metagl.hpp` | Umbrella header — include this |
 
@@ -84,14 +84,14 @@ All symbols live in the `metagl` namespace under `include/metagl/`:
 #include <metagl/metagl.hpp>
 
 // After Initialize():
-metagl::GlClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-metagl::GlClear(metagl::ClearBufferBit::Color | metagl::ClearBufferBit::Depth);
+metagl::glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+metagl::glClear(metagl::ClearBufferBit::Color | metagl::ClearBufferBit::Depth);
 
-metagl::GLuint vao = 0;
-metagl::GlGenVertexArrays(1, &vao);
-metagl::GlBindVertexArray(vao);
+metagl::VertexArrayId vao{};
+metagl::glGenVertexArrays(1, &vao.value);
+metagl::glBindVertexArray(vao);
 
-metagl::GLuint shader = metagl::GlCreateShader(metagl::ShaderType::Vertex);
+metagl::ShaderId shader = metagl::glCreateShader(metagl::ShaderType::Vertex);
 ```
 
 ## Design notes

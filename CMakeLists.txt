@@ -9,11 +9,11 @@ add_library(meta-gl)
 add_library(meta-gl::meta-gl ALIAS meta-gl)
 
 set_target_properties(meta-gl PROPERTIES
-    CXX_STANDARD 23
-    CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR})
+
+target_compile_features(meta-gl PUBLIC cxx_std_23)
 
 target_sources(meta-gl
     PRIVATE

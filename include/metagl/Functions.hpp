@@ -138,6 +138,11 @@ namespace metagl
     }
     // #58 (2.0+) Updates a sub-range of an existing buffer without reallocating
     void glBufferSubData(BufferTarget target, GLintptr offset, GLsizeiptr size, const void * data);
+    template<typename T>
+    inline void glBufferSubData(BufferTarget target, GLintptr offset, std::span<const T> data)
+    {
+        glBufferSubData(target, offset, static_cast<GLsizeiptr>(data.size_bytes()), data.data());
+    }
     // #59 (3.0+) Copies a region from one buffer to another entirely on the GPU
     void glCopyBufferSubData(BufferTarget readTarget, BufferTarget writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size);
     // #60 (3.0+) Maps a buffer sub-range into CPU address space for read/write

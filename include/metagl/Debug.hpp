@@ -3,6 +3,8 @@
 // Define METAGLDEBUG to enable per-call GL logging.
 // Each call records the function name, formatted parameters, and return value.
 // The buffer is printed to stderr and cleared every 5 seconds.
+// Define METAGLDEBUG_IMMEDIATE (alongside METAGLDEBUG) to flush after every
+// call — trades throughput for crash-safety when debugging hard crashes.
 
 //#define METAGLDEBUG
 

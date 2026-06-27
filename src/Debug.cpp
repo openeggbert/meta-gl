@@ -64,12 +64,17 @@ namespace metagl::debug
             std::move(params)
         });
 
+#ifdef METAGLDEBUG_IMMEDIATE
+        flush();
+        g_last_flush = Clock::now();
+#else
         const auto now = Clock::now();
         if (now - g_last_flush >= std::chrono::seconds(5))
         {
             flush();
             g_last_flush = now;
         }
+#endif
     }
 }
 

@@ -118,7 +118,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | G1 | Add `assert(detail::g_gl.FunctionName != nullptr)` guards inside each wrapper function so a call to an unloaded ES 3.x function on an ES 2.0 device fails with a clear assertion rather than a segfault |
 | G2 | Add an optional `glGetError()` check injected after each wrapper when `METAGLDEBUG` is defined — record or assert on non-`GL_NO_ERROR` results |
 | G3 | ✅ Add `FlushOnExit` RAII guard (static destructor) in `Debug.cpp` so buffered GL calls are flushed to stderr on normal program exit |
-| G4 | Flush the debug buffer immediately on every call when a `METAGLDEBUG_IMMEDIATE` define is set (trade throughput for crash-safety during development) |
+| G4 | ✅ Flush the debug buffer immediately on every call when `METAGLDEBUG_IMMEDIATE` is defined (alongside `METAGLDEBUG`); documented in `Debug.hpp` header comment |
 | G5 | ✅ Expose `detail::all_loaded()` (currently `[[maybe_unused]]` dead code at `Functions.cpp:573`) through `Loader.hpp` as `bool AllFunctionsLoaded()` so callers can verify a full load |
 | G6 | ✅ Reset `detail::g_function_availability` map at the start of each `Initialize()` call to avoid stale entries when re-initializing |
 | G7 | ✅ Document thread-safety contract in `Loader.hpp` / README.md: state that `Initialize()` must complete before any render thread calls wrapper functions, and that concurrent `Initialize()` is not supported |

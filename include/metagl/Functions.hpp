@@ -836,7 +836,7 @@ namespace metagl
         inline constexpr bool IsUniformComponentCount = Components >= 1 && Components <= 4;
 
         template<std::size_t Columns, std::size_t Rows>
-        inline constexpr bool IsUniformMatrixShape =
+        concept UniformMatrixShape =
             Columns >= 2 && Columns <= 4 &&
             Rows >= 2 && Rows <= 4;
 
@@ -1059,7 +1059,7 @@ namespace metagl
 
     // #186-#194 - rectangular matrix uniform dispatch. Columns x Rows maps to glUniformMatrixCxRfv.
     template<std::size_t Columns, std::size_t Rows, UniformFloatVector Vec>
-        requires detail::IsUniformMatrixShape<Columns, Rows>
+        requires detail::UniformMatrixShape<Columns, Rows>
     inline void glUniformMatrix(UniformLocation location, const Vec& values, GLboolean transpose = GL_FALSE)
     {
         const auto* data = std::ranges::data(values);
@@ -1078,7 +1078,7 @@ namespace metagl
 
     // #186-#194 - rectangular matrix initializer_list overload.
     template<std::size_t Columns, std::size_t Rows>
-        requires detail::IsUniformMatrixShape<Columns, Rows>
+        requires detail::UniformMatrixShape<Columns, Rows>
     inline void glUniformMatrix(UniformLocation location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
     {
         const auto count = static_cast<GLsizei>(values.size() / (Columns * Rows));
@@ -1214,7 +1214,7 @@ namespace metagl
 
     // #225-#233 - rectangular matrix program-uniform dispatch. Columns x Rows maps to glProgramUniformMatrixCxRfv.
     template<std::size_t Columns, std::size_t Rows, UniformFloatVector Vec>
-        requires detail::IsUniformMatrixShape<Columns, Rows>
+        requires detail::UniformMatrixShape<Columns, Rows>
     inline void glProgramUniformMatrix(ProgramId program, UniformLocation location, const Vec& values, GLboolean transpose = GL_FALSE)
     {
         const auto* data = std::ranges::data(values);
@@ -1233,7 +1233,7 @@ namespace metagl
 
     // #225-#233 - rectangular matrix program-uniform initializer_list overload.
     template<std::size_t Columns, std::size_t Rows>
-        requires detail::IsUniformMatrixShape<Columns, Rows>
+        requires detail::UniformMatrixShape<Columns, Rows>
     inline void glProgramUniformMatrix(ProgramId program, UniformLocation location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
     {
         const auto count = static_cast<GLsizei>(values.size() / (Columns * Rows));

@@ -786,11 +786,14 @@ namespace metagl
     void glPushDebugGroup(DebugSource source, GLuint id, GLsizei length, const GLchar * message);
     // #353 (3.2+) Pops the innermost debug group from the stack
     void glPopDebugGroup(void);
-    // #354 (3.2+) Assigns a human-readable label to any GL object for GPU debugger tools
+    // #354 (3.2+) Assigns a human-readable label to any GL object for GPU debugger tools.
+    // `name` is a raw GLuint intentionally: the identifier parameter selects the object type
+    // (GL_TEXTURE, GL_BUFFER, GL_PROGRAM, …) at runtime, so a single typed overload per handle
+    // type would require a separate function for each — adding no safety benefit over the GL API.
     void glObjectLabel(DebugObjectLabel identifier, GLuint name, GLsizei length, const GLchar * label);
     // #355 (3.2+) Assigns a label to a sync object (identified by pointer)
     void glObjectPtrLabel(const void * ptr, GLsizei length, const GLchar * label);
-    // #356 (3.2+) Returns the label previously assigned to a GL object
+    // #356 (3.2+) Returns the label previously assigned to a GL object (same rationale as #354)
     void glGetObjectLabel(DebugObjectLabel identifier, GLuint name, GLsizei bufSize, GLsizei * length, GLchar * label);
     // #357 (3.2+) Returns the label previously assigned to a sync object
     void glGetObjectPtrLabel(const void * ptr, GLsizei bufSize, GLsizei * length, GLchar * label);

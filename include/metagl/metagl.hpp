@@ -1,3 +1,27 @@
+/**
+ * @file metagl.hpp
+ * @brief Umbrella include for the meta-gl library.
+ *
+ * Include this single header to pull in the complete meta-gl public API.
+ * Individual headers can be included directly when only a subset is needed.
+ *
+ * Headers pulled in unconditionally:
+ * - @ref Types.hpp   — GL type aliases, handle structs, and core concepts
+ * - @ref Enums.hpp   — strongly-typed OpenGL ES enum classes
+ * - @ref Loader.hpp  — function-pointer loader (Initialize / LoadCurrentContext)
+ * - @ref Functions.hpp — procedural GL wrapper functions
+ * - @ref Context.hpp — context lifecycle state and mutation API
+ * - @ref Capabilities.hpp — extension and version detection
+ * - @ref ContextEvents.hpp — context-lost / context-restored listener system
+ *
+ * Conditionally pulled in:
+ * - @ref Debug.hpp    — per-call logging layer; omit with `#define METAGL_NO_DEBUG`
+ * - @ref EnumNames.hpp — `to_string()` helpers; omit with `#define METAGL_NO_ENUM_NAMES`
+ * - @ref Emscripten.hpp — WebGL context-loss callbacks; auto-included under `__EMSCRIPTEN__`
+ *
+ * @defgroup metagl meta-gl
+ * @brief Low-level, procedural, type-safe C++23 wrapper over OpenGL ES 2.0–3.2.
+ */
 #pragma once
 
 #include "Types.hpp"

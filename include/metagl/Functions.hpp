@@ -1429,4 +1429,14 @@ namespace metagl
         else                                         { glSamplerParameteri(sampler, pname, param); }
     }
 
+    // #116-#118 - typed dispatch: glClearBuffer<float/int/unsigned int>(buffer, drawbuffer, value)
+    template<UniformScalar T>
+    inline void glClearBuffer(ClearBuffer buffer, GLint drawbuffer, const T* value)
+    {
+        using Value = std::remove_cvref_t<T>;
+        if constexpr (std::same_as<Value, GLfloat>)     { glClearBufferfv(buffer, drawbuffer, value); }
+        else if constexpr (std::same_as<Value, GLint>)  { glClearBufferiv(buffer, drawbuffer, value); }
+        else if constexpr (std::same_as<Value, GLuint>) { glClearBufferuiv(buffer, drawbuffer, value); }
+    }
+
 }

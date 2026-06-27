@@ -940,6 +940,8 @@ namespace metagl
     {
         if (loader == nullptr) return false;
 
+        detail::g_function_availability.clear();
+
         auto& gl = detail::g_gl;
 
         gl.Enable = detail::load<PFNGLENABLEPROC>(loader, "glEnable");

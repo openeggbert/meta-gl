@@ -72,11 +72,17 @@ All symbols live in the `metagl` namespace under `include/metagl/`:
 
 | Header | Contents |
 |---|---|
-| `metagl/Types.hpp` | Primitive GL type aliases (`GLuint`, `GLint`, `GlGetProcAddressFn`, …) |
-| `metagl/Enums.hpp` | Type-safe `enum class` wrappers for GL constants |
-| `metagl/Functions.hpp` | Declarations of all `metagl::gl*` wrapper functions |
-| `metagl/Loader.hpp` | `metagl::Initialize()` / `metagl::IsInitialized()` |
 | `metagl/metagl.hpp` | Umbrella header — include this |
+| `metagl/Types.hpp` | Primitive GL type aliases, handle structs (`ShaderId`, `BufferId`, …), concepts (`GlHandle`, `GlEnum`, `GlBitfield`, `SpanCompatible`) |
+| `metagl/Enums.hpp` | Type-safe `enum class` wrappers for all GL constants |
+| `metagl/Functions.hpp` | All 358 `metagl::gl*` wrapper functions plus typed template dispatch helpers |
+| `metagl/Loader.hpp` | `Initialize()`, `IsInitialized()`, `AllFunctionsLoaded()`, `IsFunctionAvailable()` |
+| `metagl/Context.hpp` | `ContextInfo` struct, `GetContextInfo()`, `GetContextStatus()`, `MarkContextLost/Restored()` |
+| `metagl/Capabilities.hpp` | `Capabilities` struct, `GetCapabilities()`, `SupportsGLES*()`, `HasExtension()` |
+| `metagl/ContextEvents.hpp` | `ContextListener` interface, `AddContextListener()`, `NotifyContextLost/Restored()` |
+| `metagl/EnumNames.hpp` | `to_string()` overloads for all enum classes and handle types (opt-out: `METAGL_NO_ENUM_NAMES`) |
+| `metagl/Debug.hpp` | GL call logging infrastructure controlled by `METAGLDEBUG` (opt-out: `METAGL_NO_DEBUG`) |
+| `metagl/Emscripten.hpp` | `InstallEmscriptenContextLossCallbacks()` — included automatically when `__EMSCRIPTEN__` is defined |
 
 ### Example
 

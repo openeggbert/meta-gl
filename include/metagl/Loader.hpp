@@ -18,6 +18,13 @@ namespace metagl
     ///   - Context status is set to Current.
     ///   - Capabilities are (re-)detected.
     ///
+    /// Thread-safety:
+    ///   Initialize() must complete fully before any render thread calls metagl::gl*
+    ///   wrapper functions.  Concurrent calls to Initialize() from multiple threads
+    ///   are NOT supported and result in undefined behaviour.  Typical usage:
+    ///   call once on the GL thread during context creation (and again after context
+    ///   restore), then hand off rendering to any thread.
+    ///
     /// Returns true when the core set of functions was loaded successfully.
     bool Initialize(GlGetProcAddressFn loader);
 

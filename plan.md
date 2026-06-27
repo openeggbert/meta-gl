@@ -154,7 +154,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | I3 | ✅ Add compile-time tests verifying that bitfield `operator|` / `&` / `~` compile and preserve the enum type for all bitfield enums |
 | I4 | ✅ Add compile-time tests verifying that mixing handle types (`ShaderId` vs `ProgramId`) does not compile (`static_assert(!std::is_convertible_v<...>)` / `!std::is_constructible_v`) |
 | I5 | ✅ Context lifecycle tests in `test_mock_loader.cpp`: verifies Lost/Restored/Current transitions, `IsContextLost()`, generation counter increment after `LoadCurrentContext()` |
-| I6 | Add unit tests for `ContextEvents.cpp`: `AddContextListener`, `RemoveContextListener`, `NotifyContextLost`, `NotifyContextRestored` — use a mock listener |
+| I6 | ✅ ContextEvents tests with MockListener: single/multiple listeners, NotifyContextLost/Restored dispatch, removed listener receives no further notifications |
 | I7 | Add unit tests for `HasExtension` and `GetCapabilities` with a fake extension string |
 | I8 | ✅ Runtime tests for all 89+ `to_string()` overloads in `EnumNames.hpp` — verify non-empty, non-"?" for one representative value per enum and all 14 handle types; run via CTest |
 | I9 | ✅ Mock-loader integration test (`test_mock_loader.cpp`): stub GetProcAddress returns stub_GetString/GetIntegerv/GetStringi + no-ops; verifies Initialize, IsInitialized, AllFunctionsLoaded, ContextStatus::Current, version parsing (ES 3.0), capabilities |

@@ -138,6 +138,50 @@ int main()
     check("Generation incremented after LoadCurrentContext",
           metagl::GetContextInfo().generation > gen1);
 
+    // ==========================================================================
+    // I6 — ContextEvents: listener registration and notification
+    // ==========================================================================
+
+    struct MockListener : metagl::ContextListener
+    {
+        int lost_count     = 0;
+        int restored_count = 0;
+        void OnContextLost()     override { ++lost_count; }
+        void OnContextRestored() override { ++restored_count; }
+    };
+
+    // Single listener receives both notifications
+    MockListener ml1;
+    metagl::AddContextListener(&ml1);
+
+    metagl::NotifyContextLost();
+    check("NotifyContextLost fires OnContextLost",     ml1.lost_count     == 1);
+    check("NotifyContextLost does not fire Restored",  ml1.restored_count == 0);
+
+    metagl::NotifyContextRestored();
+    check("NotifyContextRestored fires OnContextRestored", ml1.restored_count == 1);
+    check("NotifyContextRestored does not fire Lost",      ml1.lost_count     == 1);
+
+    // Multiple listeners
+    MockListener ml2;
+    metagl::AddContextListener(&ml2);
+
+    metagl::NotifyContextLost();
+    check("Both listeners receive NotifyContextLost (ml1)", ml1.lost_count == 2);
+    check("Both listeners receive NotifyContextLost (ml2)", ml2.lost_count == 1);
+
+    // Removing a listener stops notifications
+    metagl::RemoveContextListener(&ml1);
+    metagl::NotifyContextRestored();
+    check("Removed listener does not receive NotifyContextRestored", ml1.restored_count == 1);
+    check("Active listener still receives NotifyContextRestored",    ml2.restored_count == 1);
+
+    // Clean up
+    metagl::RemoveContextListener(&ml2);
+    metagl::NotifyContextLost();
+    check("No listeners: NotifyContextLost is silent (ml1 unchanged)", ml1.lost_count == 2);
+    check("No listeners: NotifyContextLost is silent (ml2 unchanged)", ml2.lost_count == 1);
+
     if (failed > 0)
         std::cerr << failed << " mock-loader test(s) failed.\n";
     return failed;

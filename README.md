@@ -50,6 +50,39 @@ cmake -S . -B build -DBUILD_SHARED_LIBS=ON
 cmake --build build
 ```
 
+### Emscripten / WebGL
+
+Use the Emscripten toolchain wrappers:
+
+```bash
+emcmake cmake -S . -B build-wasm
+emmake cmake --build build-wasm
+```
+
+Link your application with `-lGL` (Emscripten maps this to WebGL automatically):
+
+```cmake
+target_link_libraries(my-app PRIVATE meta-gl::meta-gl -lGL)
+```
+
+After creating a WebGL context, install the context-loss callbacks so meta-gl
+can track `webglcontextlost` / `webglcontextrestored` browser events:
+
+```cpp
+#include <metagl/metagl.hpp>  // includes Emscripten.hpp automatically
+
+metagl::Initialize(emscripten_webgl_get_proc_address);
+metagl::InstallEmscriptenContextLossCallbacks("#canvas");
+```
+
+When context is restored, reload function pointers before notifying listeners:
+
+```cpp
+// Inside your webglcontextrestored handler:
+metagl::LoadCurrentContext(emscripten_webgl_get_proc_address);
+metagl::NotifyContextRestored();
+```
+
 ## Initialization
 
 Before calling any `metagl::gl*` function, initialize the function pointer table by passing a `GetProcAddress`-style callback:

@@ -52,6 +52,12 @@ target_compile_options(meta-gl PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
 
+option(BUILD_TESTING "Build the test suite" OFF)
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
+
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 

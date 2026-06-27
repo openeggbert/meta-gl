@@ -20,6 +20,15 @@ namespace metagl
         return static_cast<ClearBufferBit>(
             static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
     }
+    inline ClearBufferBit operator&(ClearBufferBit a, ClearBufferBit b)
+    {
+        return static_cast<ClearBufferBit>(
+            static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b));
+    }
+    inline ClearBufferBit operator~(ClearBufferBit a)
+    {
+        return static_cast<ClearBufferBit>(~static_cast<GLbitfield>(a));
+    }
 
     // -------------------------------------------------------------------------
     // Primitive topology for draw calls (glDrawArrays, glDrawElements, etc.).
@@ -166,6 +175,15 @@ namespace metagl
     {
         return static_cast<MapBufferAccessMask>(
             static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
+    }
+    inline MapBufferAccessMask operator&(MapBufferAccessMask a, MapBufferAccessMask b)
+    {
+        return static_cast<MapBufferAccessMask>(
+            static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b));
+    }
+    inline MapBufferAccessMask operator~(MapBufferAccessMask a)
+    {
+        return static_cast<MapBufferAccessMask>(~static_cast<GLbitfield>(a));
     }
 
     // -------------------------------------------------------------------------
@@ -494,6 +512,15 @@ namespace metagl
     {
         return static_cast<ShaderStageMask>(
             static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
+    }
+    inline ShaderStageMask operator&(ShaderStageMask a, ShaderStageMask b)
+    {
+        return static_cast<ShaderStageMask>(
+            static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b));
+    }
+    inline ShaderStageMask operator~(ShaderStageMask a)
+    {
+        return static_cast<ShaderStageMask>(~static_cast<GLbitfield>(a));
     }
 
     // -------------------------------------------------------------------------
@@ -1222,6 +1249,15 @@ namespace metagl
     {
         return static_cast<MemoryBarrierMask>(
             static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
+    }
+    inline MemoryBarrierMask operator&(MemoryBarrierMask a, MemoryBarrierMask b)
+    {
+        return static_cast<MemoryBarrierMask>(
+            static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b));
+    }
+    inline MemoryBarrierMask operator~(MemoryBarrierMask a)
+    {
+        return static_cast<MemoryBarrierMask>(~static_cast<GLbitfield>(a));
     }
 
     // -------------------------------------------------------------------------

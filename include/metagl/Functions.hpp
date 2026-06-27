@@ -1,3 +1,25 @@
+/**
+ * @file Functions.hpp
+ * @brief Procedural GL wrapper declarations for all 358 OpenGL ES 2.0–3.2 functions.
+ *
+ * Each wrapper in this header corresponds 1-to-1 with a raw `gl*` entry point,
+ * but uses strongly-typed parameters from @ref Enums.hpp and @ref Types.hpp
+ * in place of raw `GLenum`/`GLuint` where it improves safety.
+ *
+ * `std::span<const T>` overloads are provided for data-upload functions
+ * (buffer data, texture images, compressed textures) as a convenience.
+ * The raw `const void*` overloads are preserved for null-pointer (allocate-only)
+ * use cases.
+ *
+ * Template-dispatch helpers at the bottom of this file (inside
+ * "Convenience dispatch API") provide typed overloads for the uniform,
+ * vertex attribute, texture parameter, sampler parameter, clear-buffer,
+ * and vertex attrib query families via `constexpr if` dispatch.
+ *
+ * @note All functions require a prior successful call to @ref Initialize.
+ *       `assert(fn != nullptr)` guards are inserted in `src/Functions.cpp` for
+ *       every wrapper in debug builds.
+ */
 #pragma once
 
 #include "Types.hpp"
@@ -13,800 +35,856 @@
 
 namespace metagl
 {
-    // State Management
-    // #1 (2.0+) Enables a server-side GL capability (e.g. depth test, blending, culling)
+    /// @name State Management
+    /// @{
+
+    /// @brief Enables a server-side GL capability (e.g. depth test, blending, culling) (GL ES 2.0+)
     void glEnable(Capability cap);
-    // #2 (2.0+) Disables a server-side GL capability
+    /// @brief Disables a server-side GL capability (GL ES 2.0+)
     void glDisable(Capability cap);
-    // #3 (3.2+) Enables a capability for a specific indexed target (per-draw-buffer)
+    /// @brief Enables a capability for a specific indexed target (per-draw-buffer) (GL ES 3.2+)
     void glEnablei(Capability target, GLuint index);
-    // #4 (3.2+) Disables a capability for a specific indexed target
+    /// @brief Disables a capability for a specific indexed target (GL ES 3.2+)
     void glDisablei(Capability target, GLuint index);
-    // #5 (2.0+) Returns whether a capability is currently enabled
+    /// @brief Returns whether a capability is currently enabled (GL ES 2.0+)
     bool glIsEnabled(Capability cap);
-    // #6 (3.2+) Returns whether an indexed capability is enabled
+    /// @brief Returns whether an indexed capability is enabled (GL ES 3.2+)
     bool glIsEnabledi(Capability target, GLuint index);
-    // #7 (2.0+) Sets blend source and destination factors for all draw buffers
+    /// @brief Sets blend source and destination factors for all draw buffers (GL ES 2.0+)
     void glBlendFunc(BlendFactor sfactor, BlendFactor dfactor);
-    // #8 (2.0+) Sets separate blend factors for RGB and alpha for all draw buffers
+    /// @brief Sets separate blend factors for RGB and alpha for all draw buffers (GL ES 2.0+)
     void glBlendFuncSeparate(BlendFactor sfactorRGB, BlendFactor dfactorRGB, BlendFactor sfactorAlpha, BlendFactor dfactorAlpha);
-    // #9 (3.2+) Sets blend factors for a specific indexed draw buffer
+    /// @brief Sets blend factors for a specific indexed draw buffer (GL ES 3.2+)
     void glBlendFunci(GLuint buf, BlendFactor src, BlendFactor dst);
-    // #10 (3.2+) Sets separate RGB/alpha blend factors for a specific draw buffer
+    /// @brief Sets separate RGB/alpha blend factors for a specific draw buffer (GL ES 3.2+)
     void glBlendFuncSeparatei(GLuint buf, BlendFactor srcRGB, BlendFactor dstRGB, BlendFactor srcAlpha, BlendFactor dstAlpha);
-    // #11 (2.0+) Sets the blend equation (e.g. GL_FUNC_ADD) for all draw buffers
+    /// @brief Sets the blend equation (e.g. GL_FUNC_ADD) for all draw buffers (GL ES 2.0+)
     void glBlendEquation(BlendEquation mode);
-    // #12 (2.0+) Sets separate blend equations for RGB and alpha for all draw buffers
+    /// @brief Sets separate blend equations for RGB and alpha for all draw buffers (GL ES 2.0+)
     void glBlendEquationSeparate(BlendEquation modeRGB, BlendEquation modeAlpha);
-    // #13 (3.2+) Sets the blend equation for a specific indexed draw buffer
+    /// @brief Sets the blend equation for a specific indexed draw buffer (GL ES 3.2+)
     void glBlendEquationi(GLuint buf, BlendEquation mode);
-    // #14 (3.2+) Sets separate blend equations for a specific draw buffer
+    /// @brief Sets separate blend equations for a specific draw buffer (GL ES 3.2+)
     void glBlendEquationSeparatei(GLuint buf, BlendEquation modeRGB, BlendEquation modeAlpha);
-    // #15 (2.0+) Sets the constant blend color used in blend factor expressions
+    /// @brief Sets the constant blend color used in blend factor expressions (GL ES 2.0+)
     void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-    // #16 (3.2+) Ensures prior fragment writes are visible before next blending operation
+    /// @brief Ensures prior fragment writes are visible before next blending operation (GL ES 3.2+)
     void glBlendBarrier(void);
-    // #17 (2.0+) Enables/disables writing of R, G, B, A components for all draw buffers
+    /// @brief Enables/disables writing of R, G, B, A components for all draw buffers (GL ES 2.0+)
     void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
-    // #18 (3.2+) Enables/disables writing of color components for a specific draw buffer
+    /// @brief Enables/disables writing of color components for a specific draw buffer (GL ES 3.2+)
     void glColorMaski(GLuint index, GLboolean r, GLboolean g, GLboolean b, GLboolean a);
-    // #19 (2.0+) Sets the depth comparison function (e.g. GL_LESS, GL_LEQUAL)
+    /// @brief Sets the depth comparison function (e.g. GL_LESS, GL_LEQUAL) (GL ES 2.0+)
     void glDepthFunc(CompareFunc func);
-    // #20 (2.0+) Enables or disables writing to the depth buffer
+    /// @brief Enables or disables writing to the depth buffer (GL ES 2.0+)
     void glDepthMask(GLboolean flag);
-    // #21 (2.0+) Maps NDC depth to window-space depth via near/far plane values
+    /// @brief Maps NDC depth to window-space depth via near/far plane values (GL ES 2.0+)
     void glDepthRangef(GLfloat n, GLfloat f);
-    // #22 (2.0+) Sets the stencil test function for both front and back faces
+    /// @brief Sets the stencil test function for both front and back faces (GL ES 2.0+)
     void glStencilFunc(CompareFunc func, GLint ref, GLuint mask);
-    // #23 (2.0+) Sets the stencil test function separately for front and back faces
+    /// @brief Sets the stencil test function separately for front and back faces (GL ES 2.0+)
     void glStencilFuncSeparate(CullFace face, CompareFunc func, GLint ref, GLuint mask);
-    // #24 (2.0+) Sets stencil operations (sfail, dpfail, dppass) for both faces
+    /// @brief Sets stencil operations (sfail, dpfail, dppass) for both faces (GL ES 2.0+)
     void glStencilOp(StencilOp fail, StencilOp zfail, StencilOp zpass);
-    // #25 (2.0+) Sets stencil operations separately for front and back faces
+    /// @brief Sets stencil operations separately for front and back faces (GL ES 2.0+)
     void glStencilOpSeparate(CullFace face, StencilOp sfail, StencilOp dpfail, StencilOp dppass);
-    // #26 (2.0+) Sets the stencil write mask for both faces
+    /// @brief Sets the stencil write mask for both faces (GL ES 2.0+)
     void glStencilMask(GLuint mask);
-    // #27 (2.0+) Sets the stencil write mask separately for front and back faces
+    /// @brief Sets the stencil write mask separately for front and back faces (GL ES 2.0+)
     void glStencilMaskSeparate(CullFace face, GLuint mask);
-    // #28 (2.0+) Defines a rectangular region outside which all fragments are discarded
+    /// @brief Defines a rectangular region outside which all fragments are discarded (GL ES 2.0+)
     void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
-    // #29 (2.0+) Sets the affine mapping from NDC to window-space coordinates
+    /// @brief Sets the affine mapping from NDC to window-space coordinates (GL ES 2.0+)
     void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
-    // #30 (2.0+) Specifies whether front, back, or both polygon faces are culled
+    /// @brief Specifies whether front, back, or both polygon faces are culled (GL ES 2.0+)
     void glCullFace(CullFace mode);
-    // #31 (2.0+) Sets the winding order (CW or CCW) that defines front-facing polygons
+    /// @brief Sets the winding order (CW or CCW) that defines front-facing polygons (GL ES 2.0+)
     void glFrontFace(FrontFace mode);
-    // #32 (2.0+) Sets the width of rasterized lines (only 1.0 is guaranteed portable)
+    /// @brief Sets the width of rasterized lines (only 1.0 is guaranteed portable) (GL ES 2.0+)
     void glLineWidth(GLfloat width);
-    // #33 (2.0+) Adds a scaled depth bias to polygon fragments (resolves z-fighting)
+    /// @brief Adds a scaled depth bias to polygon fragments (resolves z-fighting) (GL ES 2.0+)
     void glPolygonOffset(GLfloat factor, GLfloat units);
-    // #34 (2.0+) Sets a sample coverage mask used in multisampled rendering
+    /// @brief Sets a sample coverage mask used in multisampled rendering (GL ES 2.0+)
     void glSampleCoverage(GLfloat value, GLboolean invert);
-    // #35 (3.1+) Sets a bitmask qualifying which samples are written during MSAA
+    /// @brief Sets a bitmask qualifying which samples are written during MSAA (GL ES 3.1+)
     void glSampleMaski(GLuint maskNumber, SampleMaskValue mask);
-    // #36 (3.2+) Sets the minimum fraction of samples for which per-sample shading runs
+    /// @brief Sets the minimum fraction of samples for which per-sample shading runs (GL ES 3.2+)
     void glMinSampleShading(GLfloat value);
-    // #37 (2.0+) Provides a quality/performance trade-off hint for certain operations
+    /// @brief Provides a quality/performance trade-off hint for certain operations (GL ES 2.0+)
     void glHint(HintTarget target, HintMode mode);
-    // #38 (2.0+) Sets pixel pack/unpack alignment and stride for texture transfers
+    /// @brief Sets pixel pack/unpack alignment and stride for texture transfers (GL ES 2.0+)
     void glPixelStorei(PixelStoreParam pname, GLint param);
-    // #39 (2.0+) Blocks the CPU until all pending GL commands have finished on the GPU
+    /// @brief Blocks the CPU until all pending GL commands have finished on the GPU (GL ES 2.0+)
     void glFinish(void);
-    // #40 (2.0+) Submits all pending GL commands to the GPU without waiting for completion
+    /// @brief Submits all pending GL commands to the GPU without waiting for completion (GL ES 2.0+)
     void glFlush(void);
-    // #41 (2.0+) Returns the most recent GL error flag and clears it
+    /// @brief Returns the most recent GL error flag and clears it (GL ES 2.0+)
     ErrorCode glGetError(void);
-    // #42 (2.0+) Queries a named GL state parameter as a boolean value
+    /// @brief Queries a named GL state parameter as a boolean value (GL ES 2.0+)
     void glGetBooleanv(GetParameter pname, GLboolean * data);
-    // #43 (2.0+) Queries a named GL state parameter as a 32-bit integer
+    /// @brief Queries a named GL state parameter as a 32-bit integer (GL ES 2.0+)
     void glGetIntegerv(GetParameter pname, GLint * data);
-    // #44 (2.0+) Queries a named GL state parameter as a float
+    /// @brief Queries a named GL state parameter as a float (GL ES 2.0+)
     void glGetFloatv(GetParameter pname, GLfloat * data);
-    // #45 (3.0+) Queries a named GL state parameter as a 64-bit integer
+    /// @brief Queries a named GL state parameter as a 64-bit integer (GL ES 3.0+)
     void glGetInteger64v(GetParameter pname, GLint64 * data);
-    // #46 (3.0+) Queries an indexed GL state parameter as a 32-bit integer
+    /// @brief Queries an indexed GL state parameter as a 32-bit integer (GL ES 3.0+)
     void glGetIntegeri_v(GetParameter target, GLuint index, GLint * data);
-    // #47 (3.0+) Queries an indexed GL state parameter as a 64-bit integer
+    /// @brief Queries an indexed GL state parameter as a 64-bit integer (GL ES 3.0+)
     void glGetInteger64i_v(GetParameter target, GLuint index, GLint64 * data);
-    // #48 (3.1+) Queries an indexed GL state parameter as a boolean
+    /// @brief Queries an indexed GL state parameter as a boolean (GL ES 3.1+)
     void glGetBooleani_v(GetParameter target, GLuint index, GLboolean * data);
-    // #49 (2.0+) Returns a global implementation string (renderer, vendor, version, etc.)
+    /// @brief Returns a global implementation string (renderer, vendor, version, etc.) (GL ES 2.0+)
     const GLubyte* glGetString(StringName name);
-    // #50 (3.0+) Returns an indexed string (e.g. the nth supported extension)
+    /// @brief Returns an indexed string (e.g. the nth supported extension) (GL ES 3.0+)
     const GLubyte* glGetStringi(StringName name, GLuint index);
-    // #51 (3.2+) Returns pointer-valued GL state such as debug callback pointers
+    /// @brief Returns pointer-valued GL state such as debug callback pointers (GL ES 3.2+)
     void glGetPointerv(GetPointerParameter pname, void ** params);
 
-    // Buffer Objects
-    // #52 (2.0+) Generates one or more buffer object names
+    /// @}
+    /// @name Buffer Objects
+    /// @{
+
+    /// @brief Generates one or more buffer object names (GL ES 2.0+)
     void glGenBuffers(GLsizei n, BufferId * buffers);
     inline void glGenBuffers(std::span<BufferId> buffers) { glGenBuffers(static_cast<GLsizei>(buffers.size()), buffers.data()); }
-    // #53 (2.0+) Deletes buffer objects and frees their GPU memory
+    /// @brief Deletes buffer objects and frees their GPU memory (GL ES 2.0+)
     void glDeleteBuffers(GLsizei n, const BufferId * buffers);
     inline void glDeleteBuffers(std::span<const BufferId> buffers) { glDeleteBuffers(static_cast<GLsizei>(buffers.size()), buffers.data()); }
-    // #54 (2.0+) Binds a buffer to a target (ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER, etc.)
+    /// @brief Binds a buffer to a target (ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER, etc.) (GL ES 2.0+)
     void glBindBuffer(BufferTarget target, BufferId buffer);
-    // #55 (3.0+) Binds a buffer to an indexed binding point (e.g. UBO slot N)
+    /// @brief Binds a buffer to an indexed binding point (e.g. UBO slot N) (GL ES 3.0+)
     void glBindBufferBase(BufferTarget target, GLuint index, BufferId buffer);
-    // #56 (3.0+) Binds a sub-range of a buffer to an indexed binding point
+    /// @brief Binds a sub-range of a buffer to an indexed binding point (GL ES 3.0+)
     void glBindBufferRange(BufferTarget target, GLuint index, BufferId buffer, GLintptr offset, GLsizeiptr size);
-    // #57 (2.0+) Allocates and optionally initializes a buffer's GPU data store
+    /// @brief Allocates and optionally initializes a buffer's GPU data store (GL ES 2.0+)
     void glBufferData(BufferTarget target, GLsizeiptr size, const void * data, BufferUsage usage);
     template<SpanCompatible T>
     inline void glBufferData(BufferTarget target, std::span<const T> data, BufferUsage usage)
     {
         glBufferData(target, static_cast<GLsizeiptr>(data.size_bytes()), data.data(), usage);
     }
-    // #58 (2.0+) Updates a sub-range of an existing buffer without reallocating
+    /// @brief Updates a sub-range of an existing buffer without reallocating (GL ES 2.0+)
     void glBufferSubData(BufferTarget target, GLintptr offset, GLsizeiptr size, const void * data);
     template<SpanCompatible T>
     inline void glBufferSubData(BufferTarget target, GLintptr offset, std::span<const T> data)
     {
         glBufferSubData(target, offset, static_cast<GLsizeiptr>(data.size_bytes()), data.data());
     }
-    // #59 (3.0+) Copies a region from one buffer to another entirely on the GPU
+    /// @brief Copies a region from one buffer to another entirely on the GPU (GL ES 3.0+)
     void glCopyBufferSubData(BufferTarget readTarget, BufferTarget writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size);
-    // #60 (3.0+) Maps a buffer sub-range into CPU address space for read/write
+    /// @brief Maps a buffer sub-range into CPU address space for read/write (GL ES 3.0+)
     void* glMapBufferRange(BufferTarget target, GLintptr offset, GLsizeiptr length, MapBufferAccessMask access);
-    // #61 (3.0+) Flushes explicitly mapped writes when GL_MAP_FLUSH_EXPLICIT_BIT is set
+    /// @brief Flushes explicitly mapped writes when GL_MAP_FLUSH_EXPLICIT_BIT is set (GL ES 3.0+)
     void glFlushMappedBufferRange(BufferTarget target, GLintptr offset, GLsizeiptr length);
-    // #62 (3.0+) Releases a buffer mapping; returns GL_FALSE if data was corrupted
+    /// @brief Releases a buffer mapping; returns GL_FALSE if data was corrupted (GL ES 3.0+)
     GLboolean glUnmapBuffer(BufferTarget target);
-    // #63 (2.0+) Returns GL_TRUE if the name is a valid buffer object
+    /// @brief Returns GL_TRUE if the name is a valid buffer object (GL ES 2.0+)
     bool glIsBuffer(BufferId buffer);
-    // #64 (2.0+) Queries buffer parameters (size, usage, map status) as 32-bit integer
+    /// @brief Queries buffer parameters (size, usage, map status) as 32-bit integer (GL ES 2.0+)
     void glGetBufferParameteriv(BufferTarget target, BufferParameter pname, GLint * params);
-    // #65 (3.0+) Queries buffer parameters (e.g. size on large buffers) as 64-bit integer
+    /// @brief Queries buffer parameters (e.g. size on large buffers) as 64-bit integer (GL ES 3.0+)
     void glGetBufferParameteri64v(BufferTarget target, BufferParameter pname, GLint64 * params);
-    // #66 (3.0+) Returns the pointer to the currently mapped buffer data store
+    /// @brief Returns the pointer to the currently mapped buffer data store (GL ES 3.0+)
     void glGetBufferPointerv(BufferTarget target, BufferPointerParameter pname, void ** params);
 
-    // Vertex Arrays
-    // #67 (3.0+) Generates one or more Vertex Array Object (VAO) names
+    /// @}
+    /// @name Vertex Arrays
+    /// @{
+
+    /// @brief Generates one or more Vertex Array Object (VAO) names (GL ES 3.0+)
     void glGenVertexArrays(GLsizei n, VertexArrayId * arrays);
     inline void glGenVertexArrays(std::span<VertexArrayId> arrays) { glGenVertexArrays(static_cast<GLsizei>(arrays.size()), arrays.data()); }
-    // #68 (3.0+) Deletes VAOs
+    /// @brief Deletes VAOs (GL ES 3.0+)
     void glDeleteVertexArrays(GLsizei n, const VertexArrayId * arrays);
     inline void glDeleteVertexArrays(std::span<const VertexArrayId> arrays) { glDeleteVertexArrays(static_cast<GLsizei>(arrays.size()), arrays.data()); }
-    // #69 (3.0+) Binds a VAO; all subsequent attribute state is recorded into it
+    /// @brief Binds a VAO; all subsequent attribute state is recorded into it (GL ES 3.0+)
     void glBindVertexArray(VertexArrayId array);
-    // #70 (3.0+) Returns GL_TRUE if the name is a valid VAO
+    /// @brief Returns GL_TRUE if the name is a valid VAO (GL ES 3.0+)
     bool glIsVertexArray(VertexArrayId array);
-    // #71 (2.0+) Enables a generic vertex attribute array at a given index
+    /// @brief Enables a generic vertex attribute array at a given index (GL ES 2.0+)
     void glEnableVertexAttribArray(AttribLocation index);
-    // #72 (2.0+) Disables a generic vertex attribute array; attribute uses constant value
+    /// @brief Disables a generic vertex attribute array; attribute uses constant value (GL ES 2.0+)
     void glDisableVertexAttribArray(AttribLocation index);
-    // #73 (2.0+) Defines layout/source of a float or normalized-integer vertex attribute
+    /// @brief Defines layout/source of a float or normalized-integer vertex attribute (GL ES 2.0+)
     void glVertexAttribPointer(AttribLocation index, GLint size, DataType type, GLboolean normalized, GLsizei stride, const void * pointer);
-    // #74 (3.0+) Defines layout/source of an integer vertex attribute (no normalization)
+    /// @brief Defines layout/source of an integer vertex attribute (no normalization) (GL ES 3.0+)
     void glVertexAttribIPointer(AttribLocation index, GLint size, DataType type, GLsizei stride, const void * pointer);
-    // #75 (3.0+) Sets the instancing divisor for an attribute (0=per-vertex, N=per-N-instances)
+    /// @brief Sets the instancing divisor for an attribute (0=per-vertex, N=per-N-instances) (GL ES 3.0+)
     void glVertexAttribDivisor(AttribLocation index, GLuint divisor);
-    // #76 (2.0+) Sets a constant float scalar value for a vertex attribute
+    /// @brief Sets a constant float scalar value for a vertex attribute (GL ES 2.0+)
     void glVertexAttrib1f(AttribLocation index, GLfloat x);
-    // #77 (2.0+) Sets a constant vec2 float value for a vertex attribute
+    /// @brief Sets a constant vec2 float value for a vertex attribute (GL ES 2.0+)
     void glVertexAttrib2f(AttribLocation index, GLfloat x, GLfloat y);
-    // #78 (2.0+) Sets a constant vec3 float value for a vertex attribute
+    /// @brief Sets a constant vec3 float value for a vertex attribute (GL ES 2.0+)
     void glVertexAttrib3f(AttribLocation index, GLfloat x, GLfloat y, GLfloat z);
-    // #79 (2.0+) Sets a constant vec4 float value for a vertex attribute
+    /// @brief Sets a constant vec4 float value for a vertex attribute (GL ES 2.0+)
     void glVertexAttrib4f(AttribLocation index, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
-    // #80 (2.0+) Sets a constant float scalar for a vertex attribute from a pointer
+    /// @brief Sets a constant float scalar for a vertex attribute from a pointer (GL ES 2.0+)
     void glVertexAttrib1fv(AttribLocation index, const GLfloat * v);
-    // #81 (2.0+) Sets a constant vec2 float value for a vertex attribute from a pointer
+    /// @brief Sets a constant vec2 float value for a vertex attribute from a pointer (GL ES 2.0+)
     void glVertexAttrib2fv(AttribLocation index, const GLfloat * v);
-    // #82 (2.0+) Sets a constant vec3 float value for a vertex attribute from a pointer
+    /// @brief Sets a constant vec3 float value for a vertex attribute from a pointer (GL ES 2.0+)
     void glVertexAttrib3fv(AttribLocation index, const GLfloat * v);
-    // #83 (2.0+) Sets a constant vec4 float value for a vertex attribute from a pointer
+    /// @brief Sets a constant vec4 float value for a vertex attribute from a pointer (GL ES 2.0+)
     void glVertexAttrib4fv(AttribLocation index, const GLfloat * v);
-    // #84 (3.0+) Sets a constant ivec4 signed integer value for a vertex attribute
+    /// @brief Sets a constant ivec4 signed integer value for a vertex attribute (GL ES 3.0+)
     void glVertexAttribI4i(AttribLocation index, GLint x, GLint y, GLint z, GLint w);
-    // #85 (3.0+) Sets a constant uvec4 unsigned integer value for a vertex attribute
+    /// @brief Sets a constant uvec4 unsigned integer value for a vertex attribute (GL ES 3.0+)
     void glVertexAttribI4ui(AttribLocation index, GLuint x, GLuint y, GLuint z, GLuint w);
-    // #86 (3.0+) Sets a constant ivec4 value for a vertex attribute from a pointer
+    /// @brief Sets a constant ivec4 value for a vertex attribute from a pointer (GL ES 3.0+)
     void glVertexAttribI4iv(AttribLocation index, const GLint * v);
-    // #87 (3.0+) Sets a constant uvec4 value for a vertex attribute from a pointer
+    /// @brief Sets a constant uvec4 value for a vertex attribute from a pointer (GL ES 3.0+)
     void glVertexAttribI4uiv(AttribLocation index, const GLuint * v);
-    // #88 (2.0+) Queries float state of a vertex attribute (type, size, stride, etc.)
+    /// @brief Queries float state of a vertex attribute (type, size, stride, etc.) (GL ES 2.0+)
     void glGetVertexAttribfv(AttribLocation index, VertexAttribParameter pname, GLfloat * params);
-    // #89 (2.0+) Queries integer state of a vertex attribute
+    /// @brief Queries integer state of a vertex attribute (GL ES 2.0+)
     void glGetVertexAttribiv(AttribLocation index, VertexAttribParameter pname, GLint * params);
-    // #90 (3.0+) Queries integer state of an integer-type vertex attribute
+    /// @brief Queries integer state of an integer-type vertex attribute (GL ES 3.0+)
     void glGetVertexAttribIiv(AttribLocation index, VertexAttribParameter pname, GLint * params);
-    // #91 (3.0+) Queries unsigned integer state of an unsigned-integer vertex attribute
+    /// @brief Queries unsigned integer state of an unsigned-integer vertex attribute (GL ES 3.0+)
     void glGetVertexAttribIuiv(AttribLocation index, VertexAttribParameter pname, GLuint * params);
-    // #92 (2.0+) Returns the offset/pointer stored for a vertex attribute
+    /// @brief Returns the offset/pointer stored for a vertex attribute (GL ES 2.0+)
     void glGetVertexAttribPointerv(AttribLocation index, VertexAttribParameter pname, void ** pointer);
-    // #93 (3.1+) Specifies float attribute format independently from buffer binding
+    /// @brief Specifies float attribute format independently from buffer binding (GL ES 3.1+)
     void glVertexAttribFormat(AttribLocation attribindex, GLint size, DataType type, GLboolean normalized, GLuint relativeoffset);
-    // #94 (3.1+) Specifies integer attribute format independently from buffer binding
+    /// @brief Specifies integer attribute format independently from buffer binding (GL ES 3.1+)
     void glVertexAttribIFormat(AttribLocation attribindex, GLint size, DataType type, GLuint relativeoffset);
-    // #95 (3.1+) Associates a vertex attribute index with a vertex buffer binding point
+    /// @brief Associates a vertex attribute index with a vertex buffer binding point (GL ES 3.1+)
     void glVertexAttribBinding(AttribLocation attribindex, GLuint bindingindex);
-    // #96 (3.1+) Binds a buffer to a vertex buffer binding point with offset and stride
+    /// @brief Binds a buffer to a vertex buffer binding point with offset and stride (GL ES 3.1+)
     void glBindVertexBuffer(GLuint bindingindex, BufferId buffer, GLintptr offset, GLsizei stride);
-    // #97 (3.1+) Sets the instancing divisor for a vertex buffer binding point
+    /// @brief Sets the instancing divisor for a vertex buffer binding point (GL ES 3.1+)
     void glVertexBindingDivisor(GLuint bindingindex, GLuint divisor);
 
-    // Drawing
-    // #98 (2.0+) Renders primitives from vertex arrays starting at a given offset
+    /// @}
+    /// @name Drawing Commands
+    /// @{
+
+    /// @brief Renders primitives from vertex arrays starting at a given offset (GL ES 2.0+)
     void glDrawArrays(PrimitiveType mode, GLint first, GLsizei count);
-    // #99 (3.0+) Renders multiple instances of geometry using vertex arrays
+    /// @brief Renders multiple instances of geometry using vertex arrays (GL ES 3.0+)
     void glDrawArraysInstanced(PrimitiveType mode, GLint first, GLsizei count, GLsizei instancecount);
-    // #100 (3.1+) Renders instances; draw parameters read from GL_DRAW_INDIRECT_BUFFER
+    /// @brief Renders instances; draw parameters read from GL_DRAW_INDIRECT_BUFFER (GL ES 3.1+)
     void glDrawArraysIndirect(PrimitiveType mode, const void * indirect);
-    // #101 (2.0+) Renders indexed primitives from vertex arrays and an index buffer
+    /// @brief Renders indexed primitives from vertex arrays and an index buffer (GL ES 2.0+)
     void glDrawElements(PrimitiveType mode, GLsizei count, DataType type, const void * indices);
-    // #102 (3.0+) Renders multiple instances using indexed drawing
+    /// @brief Renders multiple instances using indexed drawing (GL ES 3.0+)
     void glDrawElementsInstanced(PrimitiveType mode, GLsizei count, DataType type, const void * indices, GLsizei instancecount);
-    // #103 (3.0+) Indexed draw with index range hints for driver prefetch optimization
+    /// @brief Indexed draw with index range hints for driver prefetch optimization (GL ES 3.0+)
     void glDrawRangeElements(PrimitiveType mode, GLuint start, GLuint end, GLsizei count, DataType type, const void * indices);
-    // #104 (3.2+) Indexed draw with a constant base vertex offset added to each index
+    /// @brief Indexed draw with a constant base vertex offset added to each index (GL ES 3.2+)
     void glDrawElementsBaseVertex(PrimitiveType mode, GLsizei count, DataType type, const void * indices, GLint basevertex);
-    // #105 (3.2+) Instanced indexed draw with a base vertex offset
+    /// @brief Instanced indexed draw with a base vertex offset (GL ES 3.2+)
     void glDrawElementsInstancedBaseVertex(PrimitiveType mode, GLsizei count, DataType type, const void * indices, GLsizei instancecount, GLint basevertex);
-    // #106 (3.2+) Range-indexed draw with a base vertex offset
+    /// @brief Range-indexed draw with a base vertex offset (GL ES 3.2+)
     void glDrawRangeElementsBaseVertex(PrimitiveType mode, GLuint start, GLuint end, GLsizei count, DataType type, const void * indices, GLint basevertex);
-    // #107 (3.1+) Indexed instanced draw; parameters read from GL_DRAW_INDIRECT_BUFFER
+    /// @brief Indexed instanced draw; parameters read from GL_DRAW_INDIRECT_BUFFER (GL ES 3.1+)
     void glDrawElementsIndirect(PrimitiveType mode, DataType type, const void * indirect);
-    // #108 (3.0+) Specifies the list of color buffers that fragment outputs are written to
+    /// @brief Specifies the list of color buffers that fragment outputs are written to (GL ES 3.0+)
     void glDrawBuffers(GLsizei n, const DrawBuffer * bufs);
     inline void glDrawBuffers(std::span<const DrawBuffer> bufs) { glDrawBuffers(static_cast<GLsizei>(bufs.size()), bufs.data()); }
-    // #109 (3.0+) Selects a color buffer as the source for glReadPixels and copy operations
+    /// @brief Selects a color buffer as the source for glReadPixels and copy operations (GL ES 3.0+)
     void glReadBuffer(ReadBuffer src);
-    // #110 (2.0+) Reads a rectangular block of pixels from the framebuffer into CPU memory
+    /// @brief Reads a rectangular block of pixels from the framebuffer into CPU memory (GL ES 2.0+)
     void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, PixelFormat format, PixelType type, void * pixels);
-    // #111 (3.2+) Reads pixels with an explicit destination buffer size for robustness
+    /// @brief Reads pixels with an explicit destination buffer size for robustness (GL ES 3.2+)
     void glReadnPixels(GLint x, GLint y, GLsizei width, GLsizei height, PixelFormat format, PixelType type, GLsizei bufSize, void * data);
-    // #112 (2.0+) Clears color, depth, and/or stencil buffers to their clear values
+    /// @brief Clears color, depth, and/or stencil buffers to their clear values (GL ES 2.0+)
     void glClear(ClearBufferBit mask);
-    // #113 (2.0+) Sets the RGBA value used when clearing the color buffer
+    /// @brief Sets the RGBA value used when clearing the color buffer (GL ES 2.0+)
     void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-    // #114 (2.0+) Sets the float depth value (0.0–1.0) used when clearing the depth buffer
+    /// @brief Sets the float depth value (0.0–1.0) used when clearing the depth buffer (GL ES 2.0+)
     void glClearDepthf(GLfloat d);
-    // #115 (2.0+) Sets the integer value used when clearing the stencil buffer
+    /// @brief Sets the integer value used when clearing the stencil buffer (GL ES 2.0+)
     void glClearStencil(GLint s);
-    // #116 (3.0+) Clears a float color or depth buffer attachment to a given value
+    /// @brief Clears a float color or depth buffer attachment to a given value (GL ES 3.0+)
     void glClearBufferfv(ClearBuffer buffer, GLint drawbuffer, const GLfloat * value);
-    // #117 (3.0+) Clears an integer color or stencil buffer attachment to a given value
+    /// @brief Clears an integer color or stencil buffer attachment to a given value (GL ES 3.0+)
     void glClearBufferiv(ClearBuffer buffer, GLint drawbuffer, const GLint * value);
-    // #118 (3.0+) Clears an unsigned integer color buffer attachment to a given value
+    /// @brief Clears an unsigned integer color buffer attachment to a given value (GL ES 3.0+)
     void glClearBufferuiv(ClearBuffer buffer, GLint drawbuffer, const GLuint * value);
-    // #119 (3.0+) Clears depth and stencil buffer attachments together in one call
+    /// @brief Clears depth and stencil buffer attachments together in one call (GL ES 3.0+)
     void glClearBufferfi(ClearBuffer buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
 
-    // Shaders
-    // #120 (2.0+) Creates a shader object of the given type and returns its handle
+    /// @}
+    /// @name Shaders and Programs
+    /// @{
+
+    /// @brief Creates a shader object of the given type and returns its handle (GL ES 2.0+)
     ShaderId glCreateShader(ShaderType type);
-    // #121 (2.0+) Marks a shader for deletion (deferred until detached from all programs)
+    /// @brief Marks a shader for deletion (deferred until detached from all programs) (GL ES 2.0+)
     void glDeleteShader(ShaderId shader);
-    // #122 (2.0+) Loads GLSL source strings into a shader object
+    /// @brief Loads GLSL source strings into a shader object (GL ES 2.0+)
     void glShaderSource(ShaderId shader, GLsizei count, const GLchar *const* string, const GLint * length);
     inline void glShaderSource(ShaderId shader, std::string_view source) { const GLchar* ptr = source.data(); const GLint len = static_cast<GLint>(source.size()); glShaderSource(shader, 1, &ptr, &len); }
-    // #123 (2.0+) Compiles the GLSL source previously loaded into a shader object
+    /// @brief Compiles the GLSL source previously loaded into a shader object (GL ES 2.0+)
     void glCompileShader(ShaderId shader);
-    // #124 (2.0+) Loads pre-compiled binary shader code into one or more shader objects
+    /// @brief Loads pre-compiled binary shader code into one or more shader objects (GL ES 2.0+)
     void glShaderBinary(GLsizei count, const ShaderId * shaders, ShaderBinaryFormat binaryFormat, const void * binary, GLsizei length);
-    // #125 (2.0+) Hints that the GLSL compiler resources may be freed
+    /// @brief Hints that the GLSL compiler resources may be freed (GL ES 2.0+)
     void glReleaseShaderCompiler(void);
-    // #126 (2.0+) Queries shader parameters (compile status, type, source length, etc.)
+    /// @brief Queries shader parameters (compile status, type, source length, etc.) (GL ES 2.0+)
     void glGetShaderiv(ShaderId shader, ShaderParameter pname, GLint * params);
-    // #127 (2.0+) Returns the compiler info log for a shader (errors and warnings)
+    /// @brief Returns the compiler info log for a shader (errors and warnings) (GL ES 2.0+)
     void glGetShaderInfoLog(ShaderId shader, GLsizei bufSize, GLsizei * length, GLchar * infoLog);
-    // #128 (2.0+) Returns the GLSL source code stored in a shader object
+    /// @brief Returns the GLSL source code stored in a shader object (GL ES 2.0+)
     void glGetShaderSource(ShaderId shader, GLsizei bufSize, GLsizei * length, GLchar * source);
-    // #129 (2.0+) Returns the precision range for lowp/mediump/highp in vertex/fragment shaders
+    /// @brief Returns the precision range for lowp/mediump/highp in vertex/fragment shaders (GL ES 2.0+)
     void glGetShaderPrecisionFormat(ShaderType shadertype, PrecisionType precisiontype, GLint * range, GLint * precision);
-    // #130 (2.0+) Returns GL_TRUE if the name is a valid shader object
+    /// @brief Returns GL_TRUE if the name is a valid shader object (GL ES 2.0+)
     bool glIsShader(ShaderId shader);
-    // #131 (2.0+) Creates a program object and returns its handle
+    /// @brief Creates a program object and returns its handle (GL ES 2.0+)
     ProgramId glCreateProgram(void);
-    // #132 (2.0+) Deletes a program object (deferred until no longer in use)
+    /// @brief Deletes a program object (deferred until no longer in use) (GL ES 2.0+)
     void glDeleteProgram(ProgramId program);
-    // #133 (2.0+) Attaches a compiled shader to a program for the next link operation
+    /// @brief Attaches a compiled shader to a program for the next link operation (GL ES 2.0+)
     void glAttachShader(ProgramId program, ShaderId shader);
-    // #134 (2.0+) Detaches a shader from a program
+    /// @brief Detaches a shader from a program (GL ES 2.0+)
     void glDetachShader(ProgramId program, ShaderId shader);
-    // #135 (2.0+) Links all attached shaders into an executable GPU program
+    /// @brief Links all attached shaders into an executable GPU program (GL ES 2.0+)
     void glLinkProgram(ProgramId program);
-    // #136 (2.0+) Installs a linked program as part of the current rendering state
+    /// @brief Installs a linked program as part of the current rendering state (GL ES 2.0+)
     void glUseProgram(ProgramId program);
-    // #137 (2.0+) Validates whether a program can execute given the current GL state
+    /// @brief Validates whether a program can execute given the current GL state (GL ES 2.0+)
     void glValidateProgram(ProgramId program);
-    // #138 (2.0+) Queries program parameters (link status, active uniforms, etc.)
+    /// @brief Queries program parameters (link status, active uniforms, etc.) (GL ES 2.0+)
     void glGetProgramiv(ProgramId program, ProgramParameter pname, GLint * params);
-    // #139 (2.0+) Returns the linker info log for a program (errors and warnings)
+    /// @brief Returns the linker info log for a program (errors and warnings) (GL ES 2.0+)
     void glGetProgramInfoLog(ProgramId program, GLsizei bufSize, GLsizei * length, GLchar * infoLog);
-    // #140 (2.0+) Returns GL_TRUE if the name is a valid program object
+    /// @brief Returns GL_TRUE if the name is a valid program object (GL ES 2.0+)
     bool glIsProgram(ProgramId program);
-    // #141 (2.0+) Returns the shader objects currently attached to a program
+    /// @brief Returns the shader objects currently attached to a program (GL ES 2.0+)
     void glGetAttachedShaders(ProgramId program, GLsizei maxCount, GLsizei * count, ShaderId * shaders);
-    // #142 (2.0+) Associates a vertex shader input variable with an attribute index before link
+    /// @brief Associates a vertex shader input variable with an attribute index before link (GL ES 2.0+)
     void glBindAttribLocation(ProgramId program, AttribLocation index, const GLchar * name);
-    // #143 (2.0+) Returns the attribute index of a named vertex shader input in a linked program
+    /// @brief Returns the attribute index of a named vertex shader input in a linked program (GL ES 2.0+)
     AttribLocation glGetAttribLocation(ProgramId program, const GLchar * name);
-    // #144 (2.0+) Returns name, type, and size of an active vertex attribute variable
+    /// @brief Returns name, type, and size of an active vertex attribute variable (GL ES 2.0+)
     void glGetActiveAttrib(ProgramId program, AttribLocation index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name);
-    // #145 (3.0+) Returns the binary representation of a linked program for caching
+    /// @brief Returns the binary representation of a linked program for caching (GL ES 3.0+)
     void glGetProgramBinary(ProgramId program, GLsizei bufSize, GLsizei * length, ProgramBinaryFormat * binaryFormat, void * binary);
-    // #146 (3.0+) Loads a cached binary into a program, bypassing compilation and linking
+    /// @brief Loads a cached binary into a program, bypassing compilation and linking (GL ES 3.0+)
     void glProgramBinary(ProgramId program, ProgramBinaryFormat binaryFormat, const void * binary, GLsizei length);
-    // #147 (3.0+) Sets program parameters (binary retrievable hint, separable flag)
+    /// @brief Sets program parameters (binary retrievable hint, separable flag) (GL ES 3.0+)
     void glProgramParameteri(ProgramId program, ProgramParameter pname, GLint value);
-    // #148 (3.0+) Returns the fragment output location for a named output variable
+    /// @brief Returns the fragment output location for a named output variable (GL ES 3.0+)
     GLint glGetFragDataLocation(ProgramId program, const GLchar * name);
-    // #149 (3.1+) Queries properties of a program interface (e.g. number of active uniforms)
+    /// @brief Queries properties of a program interface (e.g. number of active uniforms) (GL ES 3.1+)
     void glGetProgramInterfaceiv(ProgramId program, ProgramInterface programInterface, ProgramInterfaceParameter pname, GLint * params);
-    // #150 (3.1+) Returns the index of a named resource within a program interface
+    /// @brief Returns the index of a named resource within a program interface (GL ES 3.1+)
     GLuint glGetProgramResourceIndex(ProgramId program, ProgramInterface programInterface, const GLchar * name);
-    // #151 (3.1+) Returns the name of a resource at a given index in a program interface
+    /// @brief Returns the name of a resource at a given index in a program interface (GL ES 3.1+)
     void glGetProgramResourceName(ProgramId program, ProgramInterface programInterface, GLuint index, GLsizei bufSize, GLsizei * length, GLchar * name);
-    // #152 (3.1+) Returns multiple properties of a program interface resource in one call
+    /// @brief Returns multiple properties of a program interface resource in one call (GL ES 3.1+)
     void glGetProgramResourceiv(ProgramId program, ProgramInterface programInterface, GLuint index, GLsizei propCount, const ProgramResourceProperty * props, GLsizei count, GLsizei * length, GLint * params);
     inline void glGetProgramResourceiv(ProgramId program, ProgramInterface programInterface, GLuint index, std::span<const ProgramResourceProperty> props, GLsizei count, GLsizei * length, GLint * params) { glGetProgramResourceiv(program, programInterface, index, static_cast<GLsizei>(props.size()), props.data(), count, length, params); }
-    // #153 (3.1+) Returns the location of a named resource within a program interface
+    /// @brief Returns the location of a named resource within a program interface (GL ES 3.1+)
     GLint glGetProgramResourceLocation(ProgramId program, ProgramInterface programInterface, const GLchar * name);
 
-    // Uniforms
-    // #154 (2.0+) Returns the integer location of a named uniform in a linked program
+    /// @}
+    /// @name Uniform Variables
+    /// @{
+
+    /// @brief Returns the integer location of a named uniform in a linked program (GL ES 2.0+)
     UniformLocation glGetUniformLocation(ProgramId program, const GLchar * name);
-    // #155 (2.0+) Returns the name, type, and size of an active uniform variable
+    /// @brief Returns the name, type, and size of an active uniform variable (GL ES 2.0+)
     void glGetActiveUniform(ProgramId program, GLuint index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name);
-    // #156 (3.0+) Queries parameters for multiple uniforms by index in one call
+    /// @brief Queries parameters for multiple uniforms by index in one call (GL ES 3.0+)
     void glGetActiveUniformsiv(ProgramId program, GLsizei uniformCount, const GLuint * uniformIndices, UniformParameter pname, GLint * params);
-    // #157 (3.0+) Returns the indices of multiple named uniform variables
+    /// @brief Returns the indices of multiple named uniform variables (GL ES 3.0+)
     void glGetUniformIndices(ProgramId program, GLsizei uniformCount, const GLchar *const* uniformNames, GLuint * uniformIndices);
-    // #158 (3.0+) Returns the index of a named uniform block in a linked program
+    /// @brief Returns the index of a named uniform block in a linked program (GL ES 3.0+)
     GLuint glGetUniformBlockIndex(ProgramId program, const GLchar * uniformBlockName);
-    // #159 (3.0+) Queries parameters of a uniform block (size, binding, member count)
+    /// @brief Queries parameters of a uniform block (size, binding, member count) (GL ES 3.0+)
     void glGetActiveUniformBlockiv(ProgramId program, GLuint uniformBlockIndex, UniformBlockParameter pname, GLint * params);
-    // #160 (3.0+) Returns the name string of a uniform block at a given index
+    /// @brief Returns the name string of a uniform block at a given index (GL ES 3.0+)
     void glGetActiveUniformBlockName(ProgramId program, GLuint uniformBlockIndex, GLsizei bufSize, GLsizei * length, GLchar * uniformBlockName);
-    // #161 (3.0+) Assigns a uniform block to a specific uniform buffer binding point
+    /// @brief Assigns a uniform block to a specific uniform buffer binding point (GL ES 3.0+)
     void glUniformBlockBinding(ProgramId program, GLuint uniformBlockIndex, GLuint uniformBlockBinding);
-    // #162 (2.0+) Sets a float scalar uniform in the current program
+    /// @brief Sets a float scalar uniform in the current program (GL ES 2.0+)
     void glUniform1f(UniformLocation location, GLfloat v0);
-    // #163 (2.0+) Sets a vec2 float uniform in the current program
+    /// @brief Sets a vec2 float uniform in the current program (GL ES 2.0+)
     void glUniform2f(UniformLocation location, GLfloat v0, GLfloat v1);
-    // #164 (2.0+) Sets a vec3 float uniform in the current program
+    /// @brief Sets a vec3 float uniform in the current program (GL ES 2.0+)
     void glUniform3f(UniformLocation location, GLfloat v0, GLfloat v1, GLfloat v2);
-    // #165 (2.0+) Sets a vec4 float uniform in the current program
+    /// @brief Sets a vec4 float uniform in the current program (GL ES 2.0+)
     void glUniform4f(UniformLocation location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
-    // #166 (2.0+) Sets an array of float scalar uniforms in the current program
+    /// @brief Sets an array of float scalar uniforms in the current program (GL ES 2.0+)
     void glUniform1fv(UniformLocation location, GLsizei count, const GLfloat * value);
-    // #167 (2.0+) Sets an array of vec2 uniforms in the current program
+    /// @brief Sets an array of vec2 uniforms in the current program (GL ES 2.0+)
     void glUniform2fv(UniformLocation location, GLsizei count, const GLfloat * value);
-    // #168 (2.0+) Sets an array of vec3 uniforms in the current program
+    /// @brief Sets an array of vec3 uniforms in the current program (GL ES 2.0+)
     void glUniform3fv(UniformLocation location, GLsizei count, const GLfloat * value);
-    // #169 (2.0+) Sets an array of vec4 uniforms in the current program
+    /// @brief Sets an array of vec4 uniforms in the current program (GL ES 2.0+)
     void glUniform4fv(UniformLocation location, GLsizei count, const GLfloat * value);
-    // #170 (2.0+) Sets an int scalar uniform; also used to assign sampler texture units
+    /// @brief Sets an int scalar uniform; also used to assign sampler texture units (GL ES 2.0+)
     void glUniform1i(UniformLocation location, GLint v0);
-    // #171 (2.0+) Sets an ivec2 uniform in the current program
+    /// @brief Sets an ivec2 uniform in the current program (GL ES 2.0+)
     void glUniform2i(UniformLocation location, GLint v0, GLint v1);
-    // #172 (2.0+) Sets an ivec3 uniform in the current program
+    /// @brief Sets an ivec3 uniform in the current program (GL ES 2.0+)
     void glUniform3i(UniformLocation location, GLint v0, GLint v1, GLint v2);
-    // #173 (2.0+) Sets an ivec4 uniform in the current program
+    /// @brief Sets an ivec4 uniform in the current program (GL ES 2.0+)
     void glUniform4i(UniformLocation location, GLint v0, GLint v1, GLint v2, GLint v3);
-    // #174 (2.0+) Sets an array of int scalar uniforms in the current program
+    /// @brief Sets an array of int scalar uniforms in the current program (GL ES 2.0+)
     void glUniform1iv(UniformLocation location, GLsizei count, const GLint * value);
-    // #175 (2.0+) Sets an array of ivec2 uniforms in the current program
+    /// @brief Sets an array of ivec2 uniforms in the current program (GL ES 2.0+)
     void glUniform2iv(UniformLocation location, GLsizei count, const GLint * value);
-    // #176 (2.0+) Sets an array of ivec3 uniforms in the current program
+    /// @brief Sets an array of ivec3 uniforms in the current program (GL ES 2.0+)
     void glUniform3iv(UniformLocation location, GLsizei count, const GLint * value);
-    // #177 (2.0+) Sets an array of ivec4 uniforms in the current program
+    /// @brief Sets an array of ivec4 uniforms in the current program (GL ES 2.0+)
     void glUniform4iv(UniformLocation location, GLsizei count, const GLint * value);
-    // #178 (3.0+) Sets an unsigned int scalar uniform in the current program
+    /// @brief Sets an unsigned int scalar uniform in the current program (GL ES 3.0+)
     void glUniform1ui(UniformLocation location, GLuint v0);
-    // #179 (3.0+) Sets a uvec2 uniform in the current program
+    /// @brief Sets a uvec2 uniform in the current program (GL ES 3.0+)
     void glUniform2ui(UniformLocation location, GLuint v0, GLuint v1);
-    // #180 (3.0+) Sets a uvec3 uniform in the current program
+    /// @brief Sets a uvec3 uniform in the current program (GL ES 3.0+)
     void glUniform3ui(UniformLocation location, GLuint v0, GLuint v1, GLuint v2);
-    // #181 (3.0+) Sets a uvec4 uniform in the current program
+    /// @brief Sets a uvec4 uniform in the current program (GL ES 3.0+)
     void glUniform4ui(UniformLocation location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
-    // #182 (3.0+) Sets an array of unsigned int scalar uniforms
+    /// @brief Sets an array of unsigned int scalar uniforms (GL ES 3.0+)
     void glUniform1uiv(UniformLocation location, GLsizei count, const GLuint * value);
-    // #183 (3.0+) Sets an array of uvec2 uniforms
+    /// @brief Sets an array of uvec2 uniforms (GL ES 3.0+)
     void glUniform2uiv(UniformLocation location, GLsizei count, const GLuint * value);
-    // #184 (3.0+) Sets an array of uvec3 uniforms
+    /// @brief Sets an array of uvec3 uniforms (GL ES 3.0+)
     void glUniform3uiv(UniformLocation location, GLsizei count, const GLuint * value);
-    // #185 (3.0+) Sets an array of uvec4 uniforms
+    /// @brief Sets an array of uvec4 uniforms (GL ES 3.0+)
     void glUniform4uiv(UniformLocation location, GLsizei count, const GLuint * value);
-    // #186 (2.0+) Sets a mat2 uniform (or array of mat2) in the current program
+    /// @brief Sets a mat2 uniform (or array of mat2) in the current program (GL ES 2.0+)
     void glUniformMatrix2fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #187 (2.0+) Sets a mat3 uniform (or array of mat3) in the current program
+    /// @brief Sets a mat3 uniform (or array of mat3) in the current program (GL ES 2.0+)
     void glUniformMatrix3fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #188 (2.0+) Sets a mat4 uniform (or array of mat4) in the current program
+    /// @brief Sets a mat4 uniform (or array of mat4) in the current program (GL ES 2.0+)
     void glUniformMatrix4fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #189 (3.0+) Sets a mat2x3 uniform (2 columns, 3 rows); non-square matrices not in ES 2.0
+    /// @brief Sets a mat2x3 uniform (2 columns, 3 rows); non-square matrices not in ES 2.0 (GL ES 3.0+)
     void glUniformMatrix2x3fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #190 (3.0+) Sets a mat2x4 uniform in the current program
+    /// @brief Sets a mat2x4 uniform in the current program (GL ES 3.0+)
     void glUniformMatrix2x4fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #191 (3.0+) Sets a mat3x2 uniform in the current program
+    /// @brief Sets a mat3x2 uniform in the current program (GL ES 3.0+)
     void glUniformMatrix3x2fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #192 (3.0+) Sets a mat3x4 uniform in the current program
+    /// @brief Sets a mat3x4 uniform in the current program (GL ES 3.0+)
     void glUniformMatrix3x4fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #193 (3.0+) Sets a mat4x2 uniform in the current program
+    /// @brief Sets a mat4x2 uniform in the current program (GL ES 3.0+)
     void glUniformMatrix4x2fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #194 (3.0+) Sets a mat4x3 uniform in the current program
+    /// @brief Sets a mat4x3 uniform in the current program (GL ES 3.0+)
     void glUniformMatrix4x3fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #195 (2.0+) Returns the current value of a float uniform from a linked program
+    /// @brief Returns the current value of a float uniform from a linked program (GL ES 2.0+)
     void glGetUniformfv(ProgramId program, UniformLocation location, GLfloat * params);
-    // #196 (2.0+) Returns the current value of an integer uniform from a linked program
+    /// @brief Returns the current value of an integer uniform from a linked program (GL ES 2.0+)
     void glGetUniformiv(ProgramId program, UniformLocation location, GLint * params);
-    // #197 (3.0+) Returns the current value of an unsigned integer uniform
+    /// @brief Returns the current value of an unsigned integer uniform (GL ES 3.0+)
     void glGetUniformuiv(ProgramId program, UniformLocation location, GLuint * params);
-    // #198 (3.2+) Returns float uniform values with an explicit destination buffer size for robustness
+    /// @brief Returns float uniform values with an explicit destination buffer size for robustness (GL ES 3.2+)
     void glGetnUniformfv(ProgramId program, UniformLocation location, GLsizei bufSize, GLfloat * params);
-    // #199 (3.2+) Returns integer uniform values with an explicit destination buffer size for robustness
+    /// @brief Returns integer uniform values with an explicit destination buffer size for robustness (GL ES 3.2+)
     void glGetnUniformiv(ProgramId program, UniformLocation location, GLsizei bufSize, GLint * params);
-    // #200 (3.2+) Returns unsigned integer uniform values with an explicit destination buffer size for robustness
+    /// @brief Returns unsigned integer uniform values with an explicit destination buffer size for robustness (GL ES 3.2+)
     void glGetnUniformuiv(ProgramId program, UniformLocation location, GLsizei bufSize, GLuint * params);
-    // #201 (3.1+) Sets a float scalar uniform in a specific program without binding it
+    /// @brief Sets a float scalar uniform in a specific program without binding it (GL ES 3.1+)
     void glProgramUniform1f(ProgramId program, UniformLocation location, GLfloat v0);
-    // #202 (3.1+) Sets a vec2 float uniform in a specific program without binding it
+    /// @brief Sets a vec2 float uniform in a specific program without binding it (GL ES 3.1+)
     void glProgramUniform2f(ProgramId program, UniformLocation location, GLfloat v0, GLfloat v1);
-    // #203 (3.1+) Sets a vec3 float uniform in a specific program without binding it
+    /// @brief Sets a vec3 float uniform in a specific program without binding it (GL ES 3.1+)
     void glProgramUniform3f(ProgramId program, UniformLocation location, GLfloat v0, GLfloat v1, GLfloat v2);
-    // #204 (3.1+) Sets a vec4 float uniform in a specific program without binding it
+    /// @brief Sets a vec4 float uniform in a specific program without binding it (GL ES 3.1+)
     void glProgramUniform4f(ProgramId program, UniformLocation location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3);
-    // #205 (3.1+) Sets an array of float scalar uniforms in a specific program
+    /// @brief Sets an array of float scalar uniforms in a specific program (GL ES 3.1+)
     void glProgramUniform1fv(ProgramId program, UniformLocation location, GLsizei count, const GLfloat * value);
-    // #206 (3.1+) Sets an array of vec2 uniforms in a specific program
+    /// @brief Sets an array of vec2 uniforms in a specific program (GL ES 3.1+)
     void glProgramUniform2fv(ProgramId program, UniformLocation location, GLsizei count, const GLfloat * value);
-    // #207 (3.1+) Sets an array of vec3 uniforms in a specific program
+    /// @brief Sets an array of vec3 uniforms in a specific program (GL ES 3.1+)
     void glProgramUniform3fv(ProgramId program, UniformLocation location, GLsizei count, const GLfloat * value);
-    // #208 (3.1+) Sets an array of vec4 uniforms in a specific program
+    /// @brief Sets an array of vec4 uniforms in a specific program (GL ES 3.1+)
     void glProgramUniform4fv(ProgramId program, UniformLocation location, GLsizei count, const GLfloat * value);
-    // #209 (3.1+) Sets an int scalar uniform in a specific program
+    /// @brief Sets an int scalar uniform in a specific program (GL ES 3.1+)
     void glProgramUniform1i(ProgramId program, UniformLocation location, GLint v0);
-    // #210 (3.1+) Sets an ivec2 uniform in a specific program
+    /// @brief Sets an ivec2 uniform in a specific program (GL ES 3.1+)
     void glProgramUniform2i(ProgramId program, UniformLocation location, GLint v0, GLint v1);
-    // #211 (3.1+) Sets an ivec3 uniform in a specific program
+    /// @brief Sets an ivec3 uniform in a specific program (GL ES 3.1+)
     void glProgramUniform3i(ProgramId program, UniformLocation location, GLint v0, GLint v1, GLint v2);
-    // #212 (3.1+) Sets an ivec4 uniform in a specific program
+    /// @brief Sets an ivec4 uniform in a specific program (GL ES 3.1+)
     void glProgramUniform4i(ProgramId program, UniformLocation location, GLint v0, GLint v1, GLint v2, GLint v3);
-    // #213 (3.1+) Sets an array of int scalars in a specific program
+    /// @brief Sets an array of int scalars in a specific program (GL ES 3.1+)
     void glProgramUniform1iv(ProgramId program, UniformLocation location, GLsizei count, const GLint * value);
-    // #214 (3.1+) Sets an array of ivec2 uniforms in a specific program
+    /// @brief Sets an array of ivec2 uniforms in a specific program (GL ES 3.1+)
     void glProgramUniform2iv(ProgramId program, UniformLocation location, GLsizei count, const GLint * value);
-    // #215 (3.1+) Sets an array of ivec3 uniforms in a specific program
+    /// @brief Sets an array of ivec3 uniforms in a specific program (GL ES 3.1+)
     void glProgramUniform3iv(ProgramId program, UniformLocation location, GLsizei count, const GLint * value);
-    // #216 (3.1+) Sets an array of ivec4 uniforms in a specific program
+    /// @brief Sets an array of ivec4 uniforms in a specific program (GL ES 3.1+)
     void glProgramUniform4iv(ProgramId program, UniformLocation location, GLsizei count, const GLint * value);
-    // #217 (3.1+) Sets an unsigned int scalar uniform in a specific program
+    /// @brief Sets an unsigned int scalar uniform in a specific program (GL ES 3.1+)
     void glProgramUniform1ui(ProgramId program, UniformLocation location, GLuint v0);
-    // #218 (3.1+) Sets a uvec2 uniform in a specific program
+    /// @brief Sets a uvec2 uniform in a specific program (GL ES 3.1+)
     void glProgramUniform2ui(ProgramId program, UniformLocation location, GLuint v0, GLuint v1);
-    // #219 (3.1+) Sets a uvec3 uniform in a specific program
+    /// @brief Sets a uvec3 uniform in a specific program (GL ES 3.1+)
     void glProgramUniform3ui(ProgramId program, UniformLocation location, GLuint v0, GLuint v1, GLuint v2);
-    // #220 (3.1+) Sets a uvec4 uniform in a specific program
+    /// @brief Sets a uvec4 uniform in a specific program (GL ES 3.1+)
     void glProgramUniform4ui(ProgramId program, UniformLocation location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
-    // #221 (3.1+) Sets an array of unsigned int scalars in a specific program
+    /// @brief Sets an array of unsigned int scalars in a specific program (GL ES 3.1+)
     void glProgramUniform1uiv(ProgramId program, UniformLocation location, GLsizei count, const GLuint * value);
-    // #222 (3.1+) Sets an array of uvec2 uniforms in a specific program
+    /// @brief Sets an array of uvec2 uniforms in a specific program (GL ES 3.1+)
     void glProgramUniform2uiv(ProgramId program, UniformLocation location, GLsizei count, const GLuint * value);
-    // #223 (3.1+) Sets an array of uvec3 uniforms in a specific program
+    /// @brief Sets an array of uvec3 uniforms in a specific program (GL ES 3.1+)
     void glProgramUniform3uiv(ProgramId program, UniformLocation location, GLsizei count, const GLuint * value);
-    // #224 (3.1+) Sets an array of uvec4 uniforms in a specific program
+    /// @brief Sets an array of uvec4 uniforms in a specific program (GL ES 3.1+)
     void glProgramUniform4uiv(ProgramId program, UniformLocation location, GLsizei count, const GLuint * value);
-    // #225 (3.1+) Sets a mat2 uniform in a specific program
+    /// @brief Sets a mat2 uniform in a specific program (GL ES 3.1+)
     void glProgramUniformMatrix2fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #226 (3.1+) Sets a mat3 uniform in a specific program
+    /// @brief Sets a mat3 uniform in a specific program (GL ES 3.1+)
     void glProgramUniformMatrix3fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #227 (3.1+) Sets a mat4 uniform in a specific program
+    /// @brief Sets a mat4 uniform in a specific program (GL ES 3.1+)
     void glProgramUniformMatrix4fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #228 (3.1+) Sets a mat2x3 uniform in a specific program
+    /// @brief Sets a mat2x3 uniform in a specific program (GL ES 3.1+)
     void glProgramUniformMatrix2x3fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #229 (3.1+) Sets a mat2x4 uniform in a specific program
+    /// @brief Sets a mat2x4 uniform in a specific program (GL ES 3.1+)
     void glProgramUniformMatrix2x4fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #230 (3.1+) Sets a mat3x2 uniform in a specific program
+    /// @brief Sets a mat3x2 uniform in a specific program (GL ES 3.1+)
     void glProgramUniformMatrix3x2fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #231 (3.1+) Sets a mat3x4 uniform in a specific program
+    /// @brief Sets a mat3x4 uniform in a specific program (GL ES 3.1+)
     void glProgramUniformMatrix3x4fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #232 (3.1+) Sets a mat4x2 uniform in a specific program
+    /// @brief Sets a mat4x2 uniform in a specific program (GL ES 3.1+)
     void glProgramUniformMatrix4x2fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
-    // #233 (3.1+) Sets a mat4x3 uniform in a specific program
+    /// @brief Sets a mat4x3 uniform in a specific program (GL ES 3.1+)
     void glProgramUniformMatrix4x3fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value);
 
-    // Textures
-    // #234 (2.0+) Generates one or more texture object names
+    /// @}
+    /// @name Texture Objects
+    /// @{
+
+    /// @brief Generates one or more texture object names (GL ES 2.0+)
     void glGenTextures(GLsizei n, TextureId * textures);
     inline void glGenTextures(std::span<TextureId> textures) { glGenTextures(static_cast<GLsizei>(textures.size()), textures.data()); }
-    // #235 (2.0+) Deletes texture objects and frees their GPU memory
+    /// @brief Deletes texture objects and frees their GPU memory (GL ES 2.0+)
     void glDeleteTextures(GLsizei n, const TextureId * textures);
     inline void glDeleteTextures(std::span<const TextureId> textures) { glDeleteTextures(static_cast<GLsizei>(textures.size()), textures.data()); }
-    // #236 (2.0+) Binds a texture to a target in the active texture unit
+    /// @brief Binds a texture to a target in the active texture unit (GL ES 2.0+)
     void glBindTexture(TextureTarget target, TextureId texture);
-    // #237 (2.0+) Selects the active texture unit for subsequent texture operations
+    /// @brief Selects the active texture unit for subsequent texture operations (GL ES 2.0+)
     void glActiveTexture(TextureUnit texture);
-    // #238 (2.0+) Returns GL_TRUE if the name is a valid texture object
+    /// @brief Returns GL_TRUE if the name is a valid texture object (GL ES 2.0+)
     bool glIsTexture(TextureId texture);
-    // #239 (2.0+) Specifies a 2D texture image and allocates GPU storage
+    /// @brief Specifies a 2D texture image and allocates GPU storage (GL ES 2.0+)
     void glTexImage2D(TextureTarget target, GLint level, InternalFormat internalformat, GLsizei width, GLsizei height, GLint border, PixelFormat format, PixelType type, const void * pixels);
-    // #240 (3.0+) Specifies a 3D or 2D-array texture image and allocates GPU storage
+    /// @brief Specifies a 3D or 2D-array texture image and allocates GPU storage (GL ES 3.0+)
     void glTexImage3D(TextureTarget target, GLint level, InternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, PixelFormat format, PixelType type, const void * pixels);
-    // #241 (2.0+) Updates a sub-region of an existing 2D texture image
+    /// @brief Updates a sub-region of an existing 2D texture image (GL ES 2.0+)
     void glTexSubImage2D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, PixelFormat format, PixelType type, const void * pixels);
-    // #242 (3.0+) Updates a sub-region of an existing 3D or 2D-array texture
+    /// @brief Updates a sub-region of an existing 3D or 2D-array texture (GL ES 3.0+)
     void glTexSubImage3D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, PixelFormat format, PixelType type, const void * pixels);
-    // #243 (3.0+) Allocates immutable storage for all mip levels of a 2D texture
+    /// @brief Allocates immutable storage for all mip levels of a 2D texture (GL ES 3.0+)
     void glTexStorage2D(TextureTarget target, GLsizei levels, InternalFormat internalformat, GLsizei width, GLsizei height);
-    // #244 (3.0+) Allocates immutable storage for all mip levels of a 3D or array texture
+    /// @brief Allocates immutable storage for all mip levels of a 3D or array texture (GL ES 3.0+)
     void glTexStorage3D(TextureTarget target, GLsizei levels, InternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth);
-    // #245 (3.1+) Allocates immutable multisample storage for a 2D MSAA texture
+    /// @brief Allocates immutable multisample storage for a 2D MSAA texture (GL ES 3.1+)
     void glTexStorage2DMultisample(TextureTarget target, GLsizei samples, InternalFormat internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations);
-    // #246 (3.2+) Allocates immutable multisample storage for a 2D MSAA array texture
+    /// @brief Allocates immutable multisample storage for a 2D MSAA array texture (GL ES 3.2+)
     void glTexStorage3DMultisample(TextureTarget target, GLsizei samples, InternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLboolean fixedsamplelocations);
-    // #247 (2.0+) Loads compressed image data (ETC2, ASTC, etc.) into a 2D texture
+    /// @brief Loads compressed image data (ETC2, ASTC, etc.) into a 2D texture (GL ES 2.0+)
     void glCompressedTexImage2D(TextureTarget target, GLint level, CompressedInternalFormat internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void * data);
-    // #248 (3.0+) Loads compressed image data into a 3D or 2D-array texture
+    /// @brief Loads compressed image data into a 3D or 2D-array texture (GL ES 3.0+)
     void glCompressedTexImage3D(TextureTarget target, GLint level, CompressedInternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const void * data);
-    // #249 (2.0+) Updates a sub-region of an existing compressed 2D texture
+    /// @brief Updates a sub-region of an existing compressed 2D texture (GL ES 2.0+)
     void glCompressedTexSubImage2D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, CompressedInternalFormat format, GLsizei imageSize, const void * data);
-    // #250 (3.0+) Updates a sub-region of an existing compressed 3D or array texture
+    /// @brief Updates a sub-region of an existing compressed 3D or array texture (GL ES 3.0+)
     void glCompressedTexSubImage3D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, CompressedInternalFormat format, GLsizei imageSize, const void * data);
-    // #251 (2.0+) Copies pixels from the read framebuffer into a 2D texture image
+    /// @brief Copies pixels from the read framebuffer into a 2D texture image (GL ES 2.0+)
     void glCopyTexImage2D(TextureTarget target, GLint level, InternalFormat internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
-    // #252 (2.0+) Copies a framebuffer region into a sub-region of a 2D texture
+    /// @brief Copies a framebuffer region into a sub-region of a 2D texture (GL ES 2.0+)
     void glCopyTexSubImage2D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
-    // #253 (3.0+) Copies a framebuffer region into a slice of a 3D or array texture
+    /// @brief Copies a framebuffer region into a slice of a 3D or array texture (GL ES 3.0+)
     void glCopyTexSubImage3D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height);
-    // #254 (3.2+) Copies a region between two images without format conversion.
+    /// @brief Copies a region between two images without format conversion. (GL ES 3.2+)
     // srcName/dstName are raw GLuint: when srcTarget/dstTarget is GL_RENDERBUFFER the name
     // refers to a RenderbufferId, otherwise to a TextureId. The object type is determined
     // at runtime by the target, so a single typed handle cannot be used safely here.
     void glCopyImageSubData(GLuint srcName, TextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, GLuint dstName, TextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth);
-    // #255 (2.0+) Auto-generates all mipmap levels below the base level by downsampling
+    /// @brief Auto-generates all mipmap levels below the base level by downsampling (GL ES 2.0+)
     void glGenerateMipmap(TextureTarget target);
-    // #256 (2.0+) Sets a float texture sampling parameter (filter, LOD, wrap mode)
+    /// @brief Sets a float texture sampling parameter (filter, LOD, wrap mode) (GL ES 2.0+)
     void glTexParameterf(TextureTarget target, TextureParameter pname, GLfloat param);
-    // #257 (2.0+) Sets an integer texture sampling parameter
+    /// @brief Sets an integer texture sampling parameter (GL ES 2.0+)
     void glTexParameteri(TextureTarget target, TextureParameter pname, GLint param);
-    // #258 (2.0+) Sets multiple float texture parameters from a pointer
+    /// @brief Sets multiple float texture parameters from a pointer (GL ES 2.0+)
     void glTexParameterfv(TextureTarget target, TextureParameter pname, const GLfloat * params);
-    // #259 (2.0+) Sets multiple integer texture parameters from a pointer
+    /// @brief Sets multiple integer texture parameters from a pointer (GL ES 2.0+)
     void glTexParameteriv(TextureTarget target, TextureParameter pname, const GLint * params);
-    // #260 (3.2+) Sets integer texture parameters without integer-to-float conversion
+    /// @brief Sets integer texture parameters without integer-to-float conversion (GL ES 3.2+)
     void glTexParameterIiv(TextureTarget target, TextureParameter pname, const GLint * params);
-    // #261 (3.2+) Sets unsigned integer texture parameters without conversion
+    /// @brief Sets unsigned integer texture parameters without conversion (GL ES 3.2+)
     void glTexParameterIuiv(TextureTarget target, TextureParameter pname, const GLuint * params);
-    // #262 (2.0+) Returns float texture sampling parameters
+    /// @brief Returns float texture sampling parameters (GL ES 2.0+)
     void glGetTexParameterfv(TextureTarget target, TextureParameter pname, GLfloat * params);
-    // #263 (2.0+) Returns integer texture sampling parameters
+    /// @brief Returns integer texture sampling parameters (GL ES 2.0+)
     void glGetTexParameteriv(TextureTarget target, TextureParameter pname, GLint * params);
-    // #264 (3.2+) Returns integer texture parameters as raw integers
+    /// @brief Returns integer texture parameters as raw integers (GL ES 3.2+)
     void glGetTexParameterIiv(TextureTarget target, TextureParameter pname, GLint * params);
-    // #265 (3.2+) Returns unsigned integer texture parameters as raw unsigned integers
+    /// @brief Returns unsigned integer texture parameters as raw unsigned integers (GL ES 3.2+)
     void glGetTexParameterIuiv(TextureTarget target, TextureParameter pname, GLuint * params);
-    // #266 (3.1+) Returns integer parameters of a specific texture mipmap level
+    /// @brief Returns integer parameters of a specific texture mipmap level (GL ES 3.1+)
     void glGetTexLevelParameteriv(TextureTarget target, GLint level, TextureLevelParameter pname, GLint * params);
-    // #267 (3.1+) Returns float parameters of a specific texture mipmap level
+    /// @brief Returns float parameters of a specific texture mipmap level (GL ES 3.1+)
     void glGetTexLevelParameterfv(TextureTarget target, GLint level, TextureLevelParameter pname, GLfloat * params);
-    // #268 (3.2+) Attaches a buffer object's data store to a buffer texture
+    /// @brief Attaches a buffer object's data store to a buffer texture (GL ES 3.2+)
     void glTexBuffer(TextureTarget target, InternalFormat internalformat, BufferId buffer);
-    // #269 (3.2+) Attaches a sub-range of a buffer object to a buffer texture
+    /// @brief Attaches a sub-range of a buffer object to a buffer texture (GL ES 3.2+)
     void glTexBufferRange(TextureTarget target, InternalFormat internalformat, BufferId buffer, GLintptr offset, GLsizeiptr size);
-    // #270 (3.1+) Returns the location of a specific sample in a multisample texture
+    /// @brief Returns the location of a specific sample in a multisample texture (GL ES 3.1+)
     void glGetMultisamplefv(MultisampleParameter pname, GLuint index, GLfloat * val);
-    // #271 (3.0+) Queries implementation properties for a given internal format and target
+    /// @brief Queries implementation properties for a given internal format and target (GL ES 3.0+)
     void glGetInternalformativ(InternalFormatTarget target, InternalFormat internalformat, InternalFormatParameter pname, GLsizei count, GLint * params);
-    // #272 (3.1+) Binds a texture level to an image unit for image load/store in shaders
+    /// @brief Binds a texture level to an image unit for image load/store in shaders (GL ES 3.1+)
     void glBindImageTexture(ImageUnit unit, TextureId texture, GLint level, GLboolean layered, GLint layer, ImageAccess access, InternalFormat format);
 
-    // Samplers
-    // #273 (3.0+) Generates one or more sampler object names
+    /// @}
+    /// @name Sampler Objects
+    /// @{
+
+    /// @brief Generates one or more sampler object names (GL ES 3.0+)
     void glGenSamplers(GLsizei count, SamplerId * samplers);
     inline void glGenSamplers(std::span<SamplerId> samplers) { glGenSamplers(static_cast<GLsizei>(samplers.size()), samplers.data()); }
-    // #274 (3.0+) Deletes sampler objects
+    /// @brief Deletes sampler objects (GL ES 3.0+)
     void glDeleteSamplers(GLsizei count, const SamplerId * samplers);
     inline void glDeleteSamplers(std::span<const SamplerId> samplers) { glDeleteSamplers(static_cast<GLsizei>(samplers.size()), samplers.data()); }
-    // #275 (3.0+) Binds a sampler to a texture unit, overriding the texture's own sampling state
+    /// @brief Binds a sampler to a texture unit, overriding the texture's own sampling state (GL ES 3.0+)
     void glBindSampler(GLuint unit, SamplerId sampler);
-    // #276 (3.0+) Returns GL_TRUE if the name is a valid sampler object
+    /// @brief Returns GL_TRUE if the name is a valid sampler object (GL ES 3.0+)
     bool glIsSampler(SamplerId sampler);
-    // #277 (3.0+) Sets a float sampling parameter on a sampler object
+    /// @brief Sets a float sampling parameter on a sampler object (GL ES 3.0+)
     void glSamplerParameterf(SamplerId sampler, SamplerParameter pname, GLfloat param);
-    // #278 (3.0+) Sets an integer sampling parameter on a sampler object
+    /// @brief Sets an integer sampling parameter on a sampler object (GL ES 3.0+)
     void glSamplerParameteri(SamplerId sampler, SamplerParameter pname, GLint param);
-    // #279 (3.0+) Sets multiple float sampling parameters on a sampler from a pointer
+    /// @brief Sets multiple float sampling parameters on a sampler from a pointer (GL ES 3.0+)
     void glSamplerParameterfv(SamplerId sampler, SamplerParameter pname, const GLfloat * param);
-    // #280 (3.0+) Sets multiple integer sampling parameters on a sampler from a pointer
+    /// @brief Sets multiple integer sampling parameters on a sampler from a pointer (GL ES 3.0+)
     void glSamplerParameteriv(SamplerId sampler, SamplerParameter pname, const GLint * param);
-    // #281 (3.2+) Sets signed integer sampler parameters without conversion
+    /// @brief Sets signed integer sampler parameters without conversion (GL ES 3.2+)
     void glSamplerParameterIiv(SamplerId sampler, SamplerParameter pname, const GLint * param);
-    // #282 (3.2+) Sets unsigned integer sampler parameters without conversion
+    /// @brief Sets unsigned integer sampler parameters without conversion (GL ES 3.2+)
     void glSamplerParameterIuiv(SamplerId sampler, SamplerParameter pname, const GLuint * param);
-    // #283 (3.0+) Returns float sampling parameters from a sampler object
+    /// @brief Returns float sampling parameters from a sampler object (GL ES 3.0+)
     void glGetSamplerParameterfv(SamplerId sampler, SamplerParameter pname, GLfloat * params);
-    // #284 (3.0+) Returns integer sampling parameters from a sampler object
+    /// @brief Returns integer sampling parameters from a sampler object (GL ES 3.0+)
     void glGetSamplerParameteriv(SamplerId sampler, SamplerParameter pname, GLint * params);
-    // #285 (3.2+) Returns signed integer sampler parameters as raw integers
+    /// @brief Returns signed integer sampler parameters as raw integers (GL ES 3.2+)
     void glGetSamplerParameterIiv(SamplerId sampler, SamplerParameter pname, GLint * params);
-    // #286 (3.2+) Returns unsigned integer sampler parameters as raw unsigned integers
+    /// @brief Returns unsigned integer sampler parameters as raw unsigned integers (GL ES 3.2+)
     void glGetSamplerParameterIuiv(SamplerId sampler, SamplerParameter pname, GLuint * params);
 
-    // Framebuffers
-    // #287 (2.0+) Generates one or more framebuffer object names
+    /// @}
+    /// @name Framebuffer Objects
+    /// @{
+
+    /// @brief Generates one or more framebuffer object names (GL ES 2.0+)
     void glGenFramebuffers(GLsizei n, FramebufferId * framebuffers);
     inline void glGenFramebuffers(std::span<FramebufferId> framebuffers) { glGenFramebuffers(static_cast<GLsizei>(framebuffers.size()), framebuffers.data()); }
-    // #288 (2.0+) Deletes framebuffer objects
+    /// @brief Deletes framebuffer objects (GL ES 2.0+)
     void glDeleteFramebuffers(GLsizei n, const FramebufferId * framebuffers);
     inline void glDeleteFramebuffers(std::span<const FramebufferId> framebuffers) { glDeleteFramebuffers(static_cast<GLsizei>(framebuffers.size()), framebuffers.data()); }
-    // #289 (2.0+) Binds a framebuffer to GL_FRAMEBUFFER, GL_READ_FRAMEBUFFER, or GL_DRAW_FRAMEBUFFER
+    /// @brief Binds a framebuffer to GL_FRAMEBUFFER, GL_READ_FRAMEBUFFER, or GL_DRAW_FRAMEBUFFER (GL ES 2.0+)
     void glBindFramebuffer(FramebufferTarget target, FramebufferId framebuffer);
-    // #290 (2.0+) Returns GL_TRUE if the name is a valid framebuffer object
+    /// @brief Returns GL_TRUE if the name is a valid framebuffer object (GL ES 2.0+)
     bool glIsFramebuffer(FramebufferId framebuffer);
-    // #291 (2.0+) Returns the completeness status of the bound framebuffer
+    /// @brief Returns the completeness status of the bound framebuffer (GL ES 2.0+)
     FramebufferStatus glCheckFramebufferStatus(FramebufferTarget target);
-    // #292 (2.0+) Attaches a 2D texture level as a framebuffer color/depth/stencil attachment
+    /// @brief Attaches a 2D texture level as a framebuffer color/depth/stencil attachment (GL ES 2.0+)
     void glFramebufferTexture2D(FramebufferTarget target, FramebufferAttachment attachment, TextureTarget textarget, TextureId texture, GLint level);
-    // #293 (3.0+) Attaches a single layer of a layered texture to a framebuffer attachment point
+    /// @brief Attaches a single layer of a layered texture to a framebuffer attachment point (GL ES 3.0+)
     void glFramebufferTextureLayer(FramebufferTarget target, FramebufferAttachment attachment, TextureId texture, GLint level, GLint layer);
-    // #294 (3.2+) Attaches an entire layered texture to a framebuffer (for geometry shader layered rendering)
+    /// @brief Attaches an entire layered texture to a framebuffer (for geometry shader layered rendering) (GL ES 3.2+)
     void glFramebufferTexture(FramebufferTarget target, FramebufferAttachment attachment, TextureId texture, GLint level);
-    // #295 (2.0+) Attaches a renderbuffer as a framebuffer color/depth/stencil attachment
+    /// @brief Attaches a renderbuffer as a framebuffer color/depth/stencil attachment (GL ES 2.0+)
     void glFramebufferRenderbuffer(FramebufferTarget target, FramebufferAttachment attachment, RenderbufferTarget renderbuffertarget, RenderbufferId renderbuffer);
-    // #296 (3.1+) Sets default parameters on a framebuffer that has no attachments
+    /// @brief Sets default parameters on a framebuffer that has no attachments (GL ES 3.1+)
     void glFramebufferParameteri(FramebufferTarget target, FramebufferDefaultParameter pname, GLint param);
-    // #297 (3.1+) Returns parameters set on a framebuffer via glFramebufferParameteri
+    /// @brief Returns parameters set on a framebuffer via glFramebufferParameteri (GL ES 3.1+)
     void glGetFramebufferParameteriv(FramebufferTarget target, FramebufferDefaultParameter pname, GLint * params);
-    // #298 (2.0+) Returns parameters of a specific framebuffer attachment
+    /// @brief Returns parameters of a specific framebuffer attachment (GL ES 2.0+)
     void glGetFramebufferAttachmentParameteriv(FramebufferTarget target, FramebufferAttachment attachment, FramebufferAttachmentParameter pname, GLint * params);
-    // #299 (3.0+) Copies a rectangle between framebuffers; also resolves MSAA
+    /// @brief Copies a rectangle between framebuffers; also resolves MSAA (GL ES 3.0+)
     void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, ClearBufferBit mask, BlitFilter filter);
-    // #300 (3.0+) Hints that attachment contents are no longer needed (bandwidth optimization)
+    /// @brief Hints that attachment contents are no longer needed (bandwidth optimization) (GL ES 3.0+)
     void glInvalidateFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments);
     inline void glInvalidateFramebuffer(FramebufferTarget target, std::span<const FramebufferAttachment> attachments) { glInvalidateFramebuffer(target, static_cast<GLsizei>(attachments.size()), attachments.data()); }
-    // #301 (3.0+) Invalidates a sub-rectangle of framebuffer attachments
+    /// @brief Invalidates a sub-rectangle of framebuffer attachments (GL ES 3.0+)
     void glInvalidateSubFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments, GLint x, GLint y, GLsizei width, GLsizei height);
     inline void glInvalidateSubFramebuffer(FramebufferTarget target, std::span<const FramebufferAttachment> attachments, GLint x, GLint y, GLsizei width, GLsizei height) { glInvalidateSubFramebuffer(target, static_cast<GLsizei>(attachments.size()), attachments.data(), x, y, width, height); }
 
-    // Renderbuffers
-    // #302 (2.0+) Generates one or more renderbuffer object names
+    /// @}
+    /// @name Renderbuffer Objects
+    /// @{
+
+    /// @brief Generates one or more renderbuffer object names (GL ES 2.0+)
     void glGenRenderbuffers(GLsizei n, RenderbufferId * renderbuffers);
     inline void glGenRenderbuffers(std::span<RenderbufferId> renderbuffers) { glGenRenderbuffers(static_cast<GLsizei>(renderbuffers.size()), renderbuffers.data()); }
-    // #303 (2.0+) Deletes renderbuffer objects and frees their GPU memory
+    /// @brief Deletes renderbuffer objects and frees their GPU memory (GL ES 2.0+)
     void glDeleteRenderbuffers(GLsizei n, const RenderbufferId * renderbuffers);
     inline void glDeleteRenderbuffers(std::span<const RenderbufferId> renderbuffers) { glDeleteRenderbuffers(static_cast<GLsizei>(renderbuffers.size()), renderbuffers.data()); }
-    // #304 (2.0+) Binds a renderbuffer to the GL_RENDERBUFFER target
+    /// @brief Binds a renderbuffer to the GL_RENDERBUFFER target (GL ES 2.0+)
     void glBindRenderbuffer(RenderbufferTarget target, RenderbufferId renderbuffer);
-    // #305 (2.0+) Returns GL_TRUE if the name is a valid renderbuffer object
+    /// @brief Returns GL_TRUE if the name is a valid renderbuffer object (GL ES 2.0+)
     bool glIsRenderbuffer(RenderbufferId renderbuffer);
-    // #306 (2.0+) Allocates single-sample GPU storage for a renderbuffer
+    /// @brief Allocates single-sample GPU storage for a renderbuffer (GL ES 2.0+)
     void glRenderbufferStorage(RenderbufferTarget target, InternalFormat internalformat, GLsizei width, GLsizei height);
-    // #307 (3.0+) Allocates multisample GPU storage for a renderbuffer (for MSAA)
+    /// @brief Allocates multisample GPU storage for a renderbuffer (for MSAA) (GL ES 3.0+)
     void glRenderbufferStorageMultisample(RenderbufferTarget target, GLsizei samples, InternalFormat internalformat, GLsizei width, GLsizei height);
-    // #308 (2.0+) Returns parameters of the bound renderbuffer (width, height, format, samples)
+    /// @brief Returns parameters of the bound renderbuffer (width, height, format, samples) (GL ES 2.0+)
     void glGetRenderbufferParameteriv(RenderbufferTarget target, RenderbufferParameter pname, GLint * params);
 
-    // Transform Feedback
-    // #309 (3.0+) Generates one or more transform feedback object names
+    /// @}
+    /// @name Transform Feedback
+    /// @{
+
+    /// @brief Generates one or more transform feedback object names (GL ES 3.0+)
     void glGenTransformFeedbacks(GLsizei n, TransformFeedbackId * ids);
     inline void glGenTransformFeedbacks(std::span<TransformFeedbackId> ids) { glGenTransformFeedbacks(static_cast<GLsizei>(ids.size()), ids.data()); }
-    // #310 (3.0+) Deletes transform feedback objects
+    /// @brief Deletes transform feedback objects (GL ES 3.0+)
     void glDeleteTransformFeedbacks(GLsizei n, const TransformFeedbackId * ids);
     inline void glDeleteTransformFeedbacks(std::span<const TransformFeedbackId> ids) { glDeleteTransformFeedbacks(static_cast<GLsizei>(ids.size()), ids.data()); }
-    // #311 (3.0+) Binds a transform feedback object to capture its output buffer state
+    /// @brief Binds a transform feedback object to capture its output buffer state (GL ES 3.0+)
     void glBindTransformFeedback(TransformFeedbackTarget target, TransformFeedbackId id);
-    // #312 (3.0+) Returns GL_TRUE if the name is a valid transform feedback object
+    /// @brief Returns GL_TRUE if the name is a valid transform feedback object (GL ES 3.0+)
     bool glIsTransformFeedback(TransformFeedbackId id);
-    // #313 (3.0+) Starts capturing vertex shader outputs into transform feedback buffers
+    /// @brief Starts capturing vertex shader outputs into transform feedback buffers (GL ES 3.0+)
     void glBeginTransformFeedback(PrimitiveType primitiveMode);
-    // #314 (3.0+) Ends the current transform feedback capture session
+    /// @brief Ends the current transform feedback capture session (GL ES 3.0+)
     void glEndTransformFeedback(void);
-    // #315 (3.0+) Pauses an active transform feedback session (can be resumed)
+    /// @brief Pauses an active transform feedback session (can be resumed) (GL ES 3.0+)
     void glPauseTransformFeedback(void);
-    // #316 (3.0+) Resumes a previously paused transform feedback session
+    /// @brief Resumes a previously paused transform feedback session (GL ES 3.0+)
     void glResumeTransformFeedback(void);
-    // #317 (3.0+) Specifies which vertex shader outputs to capture before linking
+    /// @brief Specifies which vertex shader outputs to capture before linking (GL ES 3.0+)
     void glTransformFeedbackVaryings(ProgramId program, GLsizei count, const GLchar *const* varyings, TransformFeedbackBufferMode bufferMode);
-    // #318 (3.0+) Returns name, type, and size of a transform feedback varying by index
+    /// @brief Returns name, type, and size of a transform feedback varying by index (GL ES 3.0+)
     void glGetTransformFeedbackVarying(ProgramId program, GLuint index, GLsizei bufSize, GLsizei * length, GLsizei * size, UniformType * type, GLchar * name);
 
-    // Query Objects
-    // #319 (3.0+) Generates one or more query object names
+    /// @}
+    /// @name Query Objects
+    /// @{
+
+    /// @brief Generates one or more query object names (GL ES 3.0+)
     void glGenQueries(GLsizei n, QueryId * ids);
     inline void glGenQueries(std::span<QueryId> ids) { glGenQueries(static_cast<GLsizei>(ids.size()), ids.data()); }
-    // #320 (3.0+) Deletes query objects
+    /// @brief Deletes query objects (GL ES 3.0+)
     void glDeleteQueries(GLsizei n, const QueryId * ids);
     inline void glDeleteQueries(std::span<const QueryId> ids) { glDeleteQueries(static_cast<GLsizei>(ids.size()), ids.data()); }
-    // #321 (3.0+) Returns GL_TRUE if the name is a valid query object
+    /// @brief Returns GL_TRUE if the name is a valid query object (GL ES 3.0+)
     bool glIsQuery(QueryId id);
-    // #322 (3.0+) Begins recording a GPU query (occlusion, primitives written, etc.)
+    /// @brief Begins recording a GPU query (occlusion, primitives written, etc.) (GL ES 3.0+)
     void glBeginQuery(QueryTarget target, QueryId id);
-    // #323 (3.0+) Ends a query; result becomes available asynchronously
+    /// @brief Ends a query; result becomes available asynchronously (GL ES 3.0+)
     void glEndQuery(QueryTarget target);
-    // #324 (3.0+) Returns info about a query target (active query name, counter bits)
+    /// @brief Returns info about a query target (active query name, counter bits) (GL ES 3.0+)
     void glGetQueryiv(QueryTarget target, QueryParameter pname, GLint * params);
-    // #325 (3.0+) Returns the result of a completed query as an unsigned integer
+    /// @brief Returns the result of a completed query as an unsigned integer (GL ES 3.0+)
     void glGetQueryObjectuiv(QueryId id, QueryObjectParameter pname, GLuint * params);
 
-    // Sync Objects
-    // #326 (3.0+) Creates a sync object and inserts a fence into the GL command stream
+    /// @}
+    /// @name Sync Objects
+    /// @{
+
+    /// @brief Creates a sync object and inserts a fence into the GL command stream (GL ES 3.0+)
     GLsync glFenceSync(SyncCondition condition, SyncFlag flags);
-    // #327 (3.0+) Deletes a sync object
+    /// @brief Deletes a sync object (GL ES 3.0+)
     void glDeleteSync(GLsync sync);
-    // #328 (3.0+) Returns GL_TRUE if the object is a valid sync
+    /// @brief Returns GL_TRUE if the object is a valid sync (GL ES 3.0+)
     bool glIsSync(GLsync sync);
-    // #329 (3.0+) Blocks the CPU until a sync is signaled or the timeout expires
+    /// @brief Blocks the CPU until a sync is signaled or the timeout expires (GL ES 3.0+)
     SyncWaitResult glClientWaitSync(GLsync sync, SyncFlushMask flags, GLuint64 timeout);
-    // #330 (3.0+) Blocks the GPU command processor until a sync is signaled (CPU not blocked)
+    /// @brief Blocks the GPU command processor until a sync is signaled (CPU not blocked) (GL ES 3.0+)
     void glWaitSync(GLsync sync, SyncFlag flags, GLuint64 timeout);
-    // #331 (3.0+) Returns the status or type of a sync object (signaled / unsignaled)
+    /// @brief Returns the status or type of a sync object (signaled / unsignaled) (GL ES 3.0+)
     void glGetSynciv(GLsync sync, SyncParameter pname, GLsizei count, GLsizei * length, GLint * values);
 
-    // Compute Shaders
-    // #332 (3.1+) Launches a compute shader with a 3D grid of work groups
+    /// @}
+    /// @name Compute Shaders
+    /// @{
+
+    /// @brief Launches a compute shader with a 3D grid of work groups (GL ES 3.1+)
     void glDispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z);
-    // #333 (3.1+) Launches compute; work group dimensions read from GL_DISPATCH_INDIRECT_BUFFER
+    /// @brief Launches compute; work group dimensions read from GL_DISPATCH_INDIRECT_BUFFER (GL ES 3.1+)
     void glDispatchComputeIndirect(GLintptr indirect);
-    // #334 (3.1+) Inserts a memory barrier ensuring visibility of image/SSBO/atomic writes
+    /// @brief Inserts a memory barrier ensuring visibility of image/SSBO/atomic writes (GL ES 3.1+)
     void glMemoryBarrier(MemoryBarrierMask barriers);
-    // #335 (3.1+) Tile-friendly memory barrier guaranteeing visibility within the current region
+    /// @brief Tile-friendly memory barrier guaranteeing visibility within the current region (GL ES 3.1+)
     void glMemoryBarrierByRegion(MemoryBarrierMask barriers);
 
-    // Program Pipelines
-    // #336 (3.1+) Generates one or more program pipeline object names
+    /// @}
+    /// @name Program Pipelines
+    /// @{
+
+    /// @brief Generates one or more program pipeline object names (GL ES 3.1+)
     void glGenProgramPipelines(GLsizei n, ProgramPipelineId * pipelines);
     inline void glGenProgramPipelines(std::span<ProgramPipelineId> pipelines) { glGenProgramPipelines(static_cast<GLsizei>(pipelines.size()), pipelines.data()); }
-    // #337 (3.1+) Deletes program pipeline objects
+    /// @brief Deletes program pipeline objects (GL ES 3.1+)
     void glDeleteProgramPipelines(GLsizei n, const ProgramPipelineId * pipelines);
     inline void glDeleteProgramPipelines(std::span<const ProgramPipelineId> pipelines) { glDeleteProgramPipelines(static_cast<GLsizei>(pipelines.size()), pipelines.data()); }
-    // #338 (3.1+) Binds a program pipeline for rendering
+    /// @brief Binds a program pipeline for rendering (GL ES 3.1+)
     void glBindProgramPipeline(ProgramPipelineId pipeline);
-    // #339 (3.1+) Returns GL_TRUE if the name is a valid program pipeline object
+    /// @brief Returns GL_TRUE if the name is a valid program pipeline object (GL ES 3.1+)
     bool glIsProgramPipeline(ProgramPipelineId pipeline);
-    // #340 (3.1+) Installs shader stages from a separable program into a pipeline
+    /// @brief Installs shader stages from a separable program into a pipeline (GL ES 3.1+)
     void glUseProgramStages(ProgramPipelineId pipeline, ShaderStageMask stages, ProgramId program);
-    // #341 (3.1+) Sets the active program in a pipeline for direct uniform calls
+    /// @brief Sets the active program in a pipeline for direct uniform calls (GL ES 3.1+)
     void glActiveShaderProgram(ProgramPipelineId pipeline, ProgramId program);
-    // #342 (3.1+) Compiles, links, and creates a separable program in one step
+    /// @brief Compiles, links, and creates a separable program in one step (GL ES 3.1+)
     ProgramId glCreateShaderProgramv(ShaderType type, GLsizei count, const GLchar *const* strings);
-    // #343 (3.1+) Validates a pipeline can execute given current GL state
+    /// @brief Validates a pipeline can execute given current GL state (GL ES 3.1+)
     void glValidateProgramPipeline(ProgramPipelineId pipeline);
-    // #344 (3.1+) Returns parameters of a program pipeline (installed stages, validate status)
+    /// @brief Returns parameters of a program pipeline (installed stages, validate status) (GL ES 3.1+)
     void glGetProgramPipelineiv(ProgramPipelineId pipeline, ProgramPipelineParameter pname, GLint * params);
-    // #345 (3.1+) Returns the info log for a pipeline (validation results, linker messages)
+    /// @brief Returns the info log for a pipeline (validation results, linker messages) (GL ES 3.1+)
     void glGetProgramPipelineInfoLog(ProgramPipelineId pipeline, GLsizei bufSize, GLsizei * length, GLchar * infoLog);
 
-    // Geometry / Tessellation
-    // #346 (3.2+) Sets the number of vertices per patch for tessellation (GL_PATCH_VERTICES)
+    /// @}
+    /// @name Geometry and Tessellation
+    /// @{
+
+    /// @brief Sets the number of vertices per patch for tessellation (GL_PATCH_VERTICES) (GL ES 3.2+)
     void glPatchParameteri(TessellationParameter pname, GLint value);
-    // #347 (3.2+) Provides a bounding box hint for tessellated/geometry-shader geometry
+    /// @brief Provides a bounding box hint for tessellated/geometry-shader geometry (GL ES 3.2+)
     void glPrimitiveBoundingBox(GLfloat minX, GLfloat minY, GLfloat minZ, GLfloat minW, GLfloat maxX, GLfloat maxY, GLfloat maxZ, GLfloat maxW);
 
-    // Debug
-    // #348 (3.2+) Registers a callback invoked when the GL generates a debug message
+    /// @}
+    /// @name Debug Output
+    /// @{
+
+    /// @brief Registers a callback invoked when the GL generates a debug message (GL ES 3.2+)
     void glDebugMessageCallback(GLDEBUGPROC callback, const void * userParam);
-    // #349 (3.2+) Filters which debug messages are generated by source, type, and severity
+    /// @brief Filters which debug messages are generated by source, type, and severity (GL ES 3.2+)
     void glDebugMessageControl(DebugSource source, DebugType type, DebugSeverity severity, GLsizei count, const GLuint * ids, GLboolean enabled);
     inline void glDebugMessageControl(DebugSource source, DebugType type, DebugSeverity severity, std::span<const GLuint> ids, GLboolean enabled) { glDebugMessageControl(source, type, severity, static_cast<GLsizei>(ids.size()), ids.data(), enabled); }
-    // #350 (3.2+) Inserts an application-generated message into the GL debug stream
+    /// @brief Inserts an application-generated message into the GL debug stream (GL ES 3.2+)
     void glDebugMessageInsert(DebugSource source, DebugType type, GLuint id, DebugSeverity severity, GLsizei length, const GLchar * buf);
-    // #351 (3.2+) Retrieves queued debug messages from the GL internal message log
+    /// @brief Retrieves queued debug messages from the GL internal message log (GL ES 3.2+)
     GLuint glGetDebugMessageLog(GLuint count, GLsizei bufSize, DebugSource * sources, DebugType * types, GLuint * ids, DebugSeverity * severities, GLsizei * lengths, GLchar * messageLog);
-    // #352 (3.2+) Pushes a named debug group onto the stack (visible in GPU debuggers)
+    /// @brief Pushes a named debug group onto the stack (visible in GPU debuggers) (GL ES 3.2+)
     void glPushDebugGroup(DebugSource source, GLuint id, GLsizei length, const GLchar * message);
-    // #353 (3.2+) Pops the innermost debug group from the stack
+    /// @brief Pops the innermost debug group from the stack (GL ES 3.2+)
     void glPopDebugGroup(void);
-    // #354 (3.2+) Assigns a human-readable label to any GL object for GPU debugger tools.
+    /// @brief Assigns a human-readable label to any GL object for GPU debugger tools. (GL ES 3.2+)
     // `name` is a raw GLuint intentionally: the identifier parameter selects the object type
     // (GL_TEXTURE, GL_BUFFER, GL_PROGRAM, …) at runtime, so a single typed overload per handle
     // type would require a separate function for each — adding no safety benefit over the GL API.
     void glObjectLabel(DebugObjectLabel identifier, GLuint name, GLsizei length, const GLchar * label);
-    // #355 (3.2+) Assigns a label to a sync object (identified by pointer)
+    /// @brief Assigns a label to a sync object (identified by pointer) (GL ES 3.2+)
     void glObjectPtrLabel(const void * ptr, GLsizei length, const GLchar * label);
-    // #356 (3.2+) Returns the label previously assigned to a GL object (same rationale as #354)
+    /// @brief Returns the label previously assigned to a GL object (same rationale as #354) (GL ES 3.2+)
     void glGetObjectLabel(DebugObjectLabel identifier, GLuint name, GLsizei bufSize, GLsizei * length, GLchar * label);
-    // #357 (3.2+) Returns the label previously assigned to a sync object
+    /// @brief Returns the label previously assigned to a sync object (GL ES 3.2+)
     void glGetObjectPtrLabel(const void * ptr, GLsizei bufSize, GLsizei * length, GLchar * label);
 
-    // Robustness
-    // #358 (3.2+) Returns the graphics reset status for robustness/error recovery
+    /// @}
+    /// @name Robustness
+    /// @{
+
+    /// @brief Returns the graphics reset status for robustness/error recovery (GL ES 3.2+)
     GraphicsResetStatus glGetGraphicsResetStatus(void);
 
+    /// @}
     // -------------------------------------------------------------------------
-    // Convenience dispatch API
+    /// @name Convenience Dispatch API
+    /// @{
+    // These helpers keep the 358 gl* wrappers above one-to-one with OpenGL_ES.md,
     // -------------------------------------------------------------------------
     // These helpers keep the 358 gl* wrappers above one-to-one with OpenGL_ES.md,
     // while providing a smaller C++ API on top. They use concepts and if constexpr,

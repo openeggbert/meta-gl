@@ -1568,9 +1568,9 @@ namespace metagl
     }
 
     // #35
-    void glSampleMaski(GLuint maskNumber, GLbitfield mask)
+    void glSampleMaski(GLuint maskNumber, SampleMaskValue mask)
     {
-        detail::g_gl.SampleMaski(maskNumber, mask);
+        detail::g_gl.SampleMaski(maskNumber, static_cast<GLbitfield>(mask));
         METAGL_DEBUG_LOG_VOID("glSampleMaski", maskNumber, mask);
     }
 

@@ -138,6 +138,13 @@ namespace metagl
         return "?";
     }
 
+    inline std::string_view to_string(SampleMaskValue v)
+    {
+        if (v == SampleMaskValue::None) return "None";
+        else if (v == SampleMaskValue::All) return "All";
+        return "?";
+    }
+
     inline std::string_view to_string(Capability v)
     {
         if (v == Capability::Blend) return "Blend";

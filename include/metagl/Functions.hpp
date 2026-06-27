@@ -82,7 +82,7 @@ namespace metagl
     // #34 (2.0+) Sets a sample coverage mask used in multisampled rendering
     void glSampleCoverage(GLfloat value, GLboolean invert);
     // #35 (3.1+) Sets a bitmask qualifying which samples are written during MSAA
-    void glSampleMaski(GLuint maskNumber, GLbitfield mask);
+    void glSampleMaski(GLuint maskNumber, SampleMaskValue mask);
     // #36 (3.2+) Sets the minimum fraction of samples for which per-sample shading runs
     void glMinSampleShading(GLfloat value);
     // #37 (2.0+) Provides a quality/performance trade-off hint for certain operations

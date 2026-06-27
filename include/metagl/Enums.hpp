@@ -187,6 +187,32 @@ namespace metagl
     }
 
     // -------------------------------------------------------------------------
+    // Per-word sample coverage mask for glSampleMaski() (ES 3.1+).
+    // Each bit position corresponds to one sample index within the word.
+    // Use operator| to combine individual sample bits.
+    // -------------------------------------------------------------------------
+    enum class SampleMaskValue : GLbitfield
+    {
+        None = 0,
+        All  = 0xFFFFFFFFu
+    };
+
+    inline SampleMaskValue operator|(SampleMaskValue a, SampleMaskValue b)
+    {
+        return static_cast<SampleMaskValue>(
+            static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
+    }
+    inline SampleMaskValue operator&(SampleMaskValue a, SampleMaskValue b)
+    {
+        return static_cast<SampleMaskValue>(
+            static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b));
+    }
+    inline SampleMaskValue operator~(SampleMaskValue a)
+    {
+        return static_cast<SampleMaskValue>(~static_cast<GLbitfield>(a));
+    }
+
+    // -------------------------------------------------------------------------
     // Server-side capabilities toggled with glEnable / glDisable.
     // -------------------------------------------------------------------------
     enum class Capability : GLenum

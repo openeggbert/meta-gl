@@ -249,6 +249,7 @@ namespace metagl
     void glDrawElementsIndirect(PrimitiveType mode, DataType type, const void * indirect);
     // #108 (3.0+) Specifies the list of color buffers that fragment outputs are written to
     void glDrawBuffers(GLsizei n, const DrawBuffer * bufs);
+    inline void glDrawBuffers(std::span<const DrawBuffer> bufs) { glDrawBuffers(static_cast<GLsizei>(bufs.size()), bufs.data()); }
     // #109 (3.0+) Selects a color buffer as the source for glReadPixels and copy operations
     void glReadBuffer(ReadBuffer src);
     // #110 (2.0+) Reads a rectangular block of pixels from the framebuffer into CPU memory

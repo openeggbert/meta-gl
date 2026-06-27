@@ -119,6 +119,7 @@ namespace metagl
     // Buffer Objects
     // #52 (2.0+) Generates one or more buffer object names
     void glGenBuffers(GLsizei n, BufferId * buffers);
+    inline void glGenBuffers(std::span<BufferId> buffers) { glGenBuffers(static_cast<GLsizei>(buffers.size()), buffers.data()); }
     // #53 (2.0+) Deletes buffer objects and frees their GPU memory
     void glDeleteBuffers(GLsizei n, const BufferId * buffers);
     // #54 (2.0+) Binds a buffer to a target (ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER, etc.)
@@ -151,6 +152,7 @@ namespace metagl
     // Vertex Arrays
     // #67 (3.0+) Generates one or more Vertex Array Object (VAO) names
     void glGenVertexArrays(GLsizei n, VertexArrayId * arrays);
+    inline void glGenVertexArrays(std::span<VertexArrayId> arrays) { glGenVertexArrays(static_cast<GLsizei>(arrays.size()), arrays.data()); }
     // #68 (3.0+) Deletes VAOs
     void glDeleteVertexArrays(GLsizei n, const VertexArrayId * arrays);
     // #69 (3.0+) Binds a VAO; all subsequent attribute state is recorded into it
@@ -493,6 +495,7 @@ namespace metagl
     // Textures
     // #234 (2.0+) Generates one or more texture object names
     void glGenTextures(GLsizei n, TextureId * textures);
+    inline void glGenTextures(std::span<TextureId> textures) { glGenTextures(static_cast<GLsizei>(textures.size()), textures.data()); }
     // #235 (2.0+) Deletes texture objects and frees their GPU memory
     void glDeleteTextures(GLsizei n, const TextureId * textures);
     // #236 (2.0+) Binds a texture to a target in the active texture unit
@@ -573,6 +576,7 @@ namespace metagl
     // Samplers
     // #273 (3.0+) Generates one or more sampler object names
     void glGenSamplers(GLsizei count, SamplerId * samplers);
+    inline void glGenSamplers(std::span<SamplerId> samplers) { glGenSamplers(static_cast<GLsizei>(samplers.size()), samplers.data()); }
     // #274 (3.0+) Deletes sampler objects
     void glDeleteSamplers(GLsizei count, const SamplerId * samplers);
     // #275 (3.0+) Binds a sampler to a texture unit, overriding the texture's own sampling state
@@ -603,6 +607,7 @@ namespace metagl
     // Framebuffers
     // #287 (2.0+) Generates one or more framebuffer object names
     void glGenFramebuffers(GLsizei n, FramebufferId * framebuffers);
+    inline void glGenFramebuffers(std::span<FramebufferId> framebuffers) { glGenFramebuffers(static_cast<GLsizei>(framebuffers.size()), framebuffers.data()); }
     // #288 (2.0+) Deletes framebuffer objects
     void glDeleteFramebuffers(GLsizei n, const FramebufferId * framebuffers);
     // #289 (2.0+) Binds a framebuffer to GL_FRAMEBUFFER, GL_READ_FRAMEBUFFER, or GL_DRAW_FRAMEBUFFER
@@ -635,6 +640,7 @@ namespace metagl
     // Renderbuffers
     // #302 (2.0+) Generates one or more renderbuffer object names
     void glGenRenderbuffers(GLsizei n, RenderbufferId * renderbuffers);
+    inline void glGenRenderbuffers(std::span<RenderbufferId> renderbuffers) { glGenRenderbuffers(static_cast<GLsizei>(renderbuffers.size()), renderbuffers.data()); }
     // #303 (2.0+) Deletes renderbuffer objects and frees their GPU memory
     void glDeleteRenderbuffers(GLsizei n, const RenderbufferId * renderbuffers);
     // #304 (2.0+) Binds a renderbuffer to the GL_RENDERBUFFER target
@@ -651,6 +657,7 @@ namespace metagl
     // Transform Feedback
     // #309 (3.0+) Generates one or more transform feedback object names
     void glGenTransformFeedbacks(GLsizei n, TransformFeedbackId * ids);
+    inline void glGenTransformFeedbacks(std::span<TransformFeedbackId> ids) { glGenTransformFeedbacks(static_cast<GLsizei>(ids.size()), ids.data()); }
     // #310 (3.0+) Deletes transform feedback objects
     void glDeleteTransformFeedbacks(GLsizei n, const TransformFeedbackId * ids);
     // #311 (3.0+) Binds a transform feedback object to capture its output buffer state
@@ -673,6 +680,7 @@ namespace metagl
     // Query Objects
     // #319 (3.0+) Generates one or more query object names
     void glGenQueries(GLsizei n, QueryId * ids);
+    inline void glGenQueries(std::span<QueryId> ids) { glGenQueries(static_cast<GLsizei>(ids.size()), ids.data()); }
     // #320 (3.0+) Deletes query objects
     void glDeleteQueries(GLsizei n, const QueryId * ids);
     // #321 (3.0+) Returns GL_TRUE if the name is a valid query object
@@ -713,6 +721,7 @@ namespace metagl
     // Program Pipelines
     // #336 (3.1+) Generates one or more program pipeline object names
     void glGenProgramPipelines(GLsizei n, ProgramPipelineId * pipelines);
+    inline void glGenProgramPipelines(std::span<ProgramPipelineId> pipelines) { glGenProgramPipelines(static_cast<GLsizei>(pipelines.size()), pipelines.data()); }
     // #337 (3.1+) Deletes program pipeline objects
     void glDeleteProgramPipelines(GLsizei n, const ProgramPipelineId * pipelines);
     // #338 (3.1+) Binds a program pipeline for rendering

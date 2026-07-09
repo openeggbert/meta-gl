@@ -749,6 +749,7 @@ namespace metagl
         else if (v == SamplerParameter::CompareMode) return "CompareMode";
         else if (v == SamplerParameter::CompareFunc) return "CompareFunc";
         else if (v == SamplerParameter::BorderColor) return "BorderColor";
+        else if (v == SamplerParameter::MaxAnisotropy) return "MaxAnisotropy";
         return "?";
     }
 
@@ -1335,6 +1336,7 @@ namespace metagl
         else if (v == GetParameter::MaxArrayTextureLayers) return "MaxArrayTextureLayers";
         else if (v == GetParameter::MaxTextureBufferSize) return "MaxTextureBufferSize";
         else if (v == GetParameter::MaxTextureLodBias) return "MaxTextureLodBias";
+        else if (v == GetParameter::MaxTextureMaxAnisotropy) return "MaxTextureMaxAnisotropy";
         else if (v == GetParameter::TextureBinding2D) return "TextureBinding2D";
         else if (v == GetParameter::TextureBindingCubeMap) return "TextureBindingCubeMap";
         else if (v == GetParameter::TextureBinding3D) return "TextureBinding3D";

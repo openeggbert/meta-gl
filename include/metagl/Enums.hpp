@@ -21,6 +21,15 @@
 // Types.hpp includes <GLES3/gl32.h> which defines all GL_* constants used below.
 #include "Types.hpp"
 
+// GL_EXT_texture_filter_anisotropic is not part of core GLES/GL and is not defined by
+// <GLES3/gl32.h>; guard against redefinition in case a platform GL header already provides it.
+#ifndef GL_TEXTURE_MAX_ANISOTROPY_EXT
+#define GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
+#endif
+#ifndef GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT
+#define GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 0x84FF
+#endif
+
 namespace metagl
 {
     /**
@@ -813,7 +822,8 @@ namespace metagl
         MaxLod       = GL_TEXTURE_MAX_LOD,       ///< Maximum LOD level. ES 3.0+
         CompareMode  = GL_TEXTURE_COMPARE_MODE,  ///< Shadow comparison mode. ES 3.0+
         CompareFunc  = GL_TEXTURE_COMPARE_FUNC,  ///< Shadow comparison function. ES 3.0+
-        BorderColor  = GL_TEXTURE_BORDER_COLOR   ///< Border color for clamp-to-border. ES 3.2+
+        BorderColor  = GL_TEXTURE_BORDER_COLOR,  ///< Border color for clamp-to-border. ES 3.2+
+        MaxAnisotropy = GL_TEXTURE_MAX_ANISOTROPY_EXT ///< Max anisotropic filtering samples. GL_EXT_texture_filter_anisotropic
     };
 
     /**
@@ -1449,6 +1459,7 @@ namespace metagl
         MaxArrayTextureLayers        = GL_MAX_ARRAY_TEXTURE_LAYERS,     ///< ES 3.0+
         MaxTextureBufferSize         = GL_MAX_TEXTURE_BUFFER_SIZE,      ///< ES 3.2+
         MaxTextureLodBias            = GL_MAX_TEXTURE_LOD_BIAS,         ///< ES 3.0+
+        MaxTextureMaxAnisotropy      = GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, ///< GL_EXT_texture_filter_anisotropic
         TextureBinding2D             = GL_TEXTURE_BINDING_2D,
         TextureBindingCubeMap        = GL_TEXTURE_BINDING_CUBE_MAP,
         TextureBinding3D             = GL_TEXTURE_BINDING_3D,           ///< ES 3.0+

@@ -170,6 +170,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | J2 | ✅ Expanded `Emscripten.hpp` doc-comment: explains correct call order (`LoadCurrentContext` → `NotifyContextRestored`), warns about listener rendering relying on valid pointers, and includes code example for manual callbacks |
 | J3 | ✅ Add `CMakePresets.json` with `default`, `release`, `sanitize`, and `emscripten` presets; `emscripten` sets toolchain via `$env{EMSDK}`; documented in README.md |
 | J4 | Add ANGLE (Almost Native Graphics Layer Engine) support — detect an ANGLE-backed GLES context (`GL_RENDERER`/`GL_VERSION` contain `"ANGLE"`), document known ANGLE quirks/extension gaps vs. native GLES and desktop GL drivers, and expose an `IsAngle()` capability flag in `Capabilities.hpp` so callers can branch around them |
+| J5 | Add desktop OpenGL support — README.md currently states only OpenGL ES 2.0+ is targeted and plain OpenGL is unsupported; add function-loading support for desktop GL contexts (`wglGetProcAddress`/`glXGetProcAddress` in addition to `eglGetProcAddress`), verify enum/function compatibility across desktop GL 3.3+/4.x profiles, extend `Capabilities.hpp` version parsing to desktop GL version strings (which differ from the `OpenGL ES X.Y` format), and update README.md's supported-API claim once it lands |
 
 ---
 
@@ -186,5 +187,5 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | G — Debug & error handling | 8 |
 | H — Code quality & naming | 12 |
 | I — Tests | 10 |
-| J — Emscripten / platform | 4 |
-| **Total** | **91** |
+| J — Emscripten / platform | 5 |
+| **Total** | **92** |

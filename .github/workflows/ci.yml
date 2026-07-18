@@ -36,7 +36,7 @@ jobs:
       CXX: ${{ matrix.cxx }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Mesa development packages
         if: runner.os == 'Linux'
@@ -52,7 +52,25 @@ jobs:
           -DMETAGL_ENABLE_DEBUG_LOGGING=ON
 
       - name: Build
+        if: runner.os != 'Windows'
         run: cmake --build build --config Debug --parallel
+
+      - name: Build
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cmake --build build --config Debug --parallel 2>&1 |
+            Tee-Object -FilePath build.log
+          $buildExitCode = $LASTEXITCODE
+          if ($buildExitCode -ne 0) {
+            Get-Content build.log |
+              Select-String -Pattern 'error (C|LNK)[0-9]+|fatal error' |
+              ForEach-Object {
+                $message = $_.Line.Replace('%', '%25')
+                Write-Output "::error::$message"
+              }
+            exit $buildExitCode
+          }
 
       - name: Test
         run: ctest --test-dir build -C Debug --output-on-failure
@@ -62,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Mesa development packages
         run: sudo apt-get update && sudo apt-get install -y libegl1-mesa-dev libgles2-mesa-dev

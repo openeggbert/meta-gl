@@ -196,6 +196,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | K16 | ✅ Enable MSVC's conforming preprocessor for the C++23 `__VA_OPT__` debug macros |
 | K17 | ✅ Remove the extension mock loader's incompatible `glGetError` function-pointer call |
 | K18 | ✅ Add explicit debug-log flushing and avoid Windows DLL teardown I/O under the loader lock |
+| K19 | ✅ Stage the Windows shared-library runtime beside in-tree tests and examples |
 
 ---
 
@@ -213,5 +214,5 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | H — Code quality & naming | 12 |
 | I — Tests | 10 |
 | J — Emscripten / platform | 5 |
-| K — 2026 comprehensive audit | 18 |
-| **Total** | **111** |
+| K — 2026 comprehensive audit | 19 |
+| **Total** | **112** |

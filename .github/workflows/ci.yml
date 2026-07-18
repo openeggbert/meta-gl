@@ -81,17 +81,8 @@ jobs:
         run: ctest --test-dir build -C Debug --output-on-failure --timeout 120 -R '^metagl-compile-tests$'
 
       - name: Test mock loader and lifecycle
-        if: runner.os != 'Windows'
         timeout-minutes: 4
         run: ctest --test-dir build -C Debug --output-on-failure --timeout 120 -R '^metagl-mock-loader-test$'
-
-      - name: Test mock loader and lifecycle
-        if: runner.os == 'Windows'
-        timeout-minutes: 2
-        shell: pwsh
-        run: |
-          & build/tests/Debug/metagl-mock-tests.exe
-          exit $LASTEXITCODE
 
       - name: Test API consistency
         timeout-minutes: 4

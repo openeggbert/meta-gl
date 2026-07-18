@@ -80,6 +80,18 @@ function(metagl_apply_warnings target_name)
     )
 endfunction()
 
+function(metagl_stage_runtime target_name)
+    if(WIN32 AND BUILD_SHARED_LIBS)
+        add_custom_command(TARGET ${target_name} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:meta-gl>"
+                "$<TARGET_FILE_DIR:${target_name}>"
+            COMMENT "Staging the meta-gl runtime beside ${target_name}"
+            VERBATIM
+        )
+    endif()
+endfunction()
+
 metagl_apply_warnings(meta-gl)
 
 if(METAGL_ENABLE_DEBUG_LOGGING OR METAGL_DEBUG_IMMEDIATE)

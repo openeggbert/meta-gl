@@ -7,6 +7,7 @@ target_link_libraries(metagl-tests PRIVATE meta-gl::meta-gl)
 target_compile_features(metagl-tests PRIVATE cxx_std_23)
 set_target_properties(metagl-tests PROPERTIES CXX_EXTENSIONS NO)
 metagl_apply_warnings(metagl-tests)
+metagl_stage_runtime(metagl-tests)
 add_test(NAME metagl-compile-tests COMMAND metagl-tests)
 
 add_executable(metagl-mock-tests
@@ -16,6 +17,7 @@ target_link_libraries(metagl-mock-tests PRIVATE meta-gl::meta-gl)
 target_compile_features(metagl-mock-tests PRIVATE cxx_std_23)
 set_target_properties(metagl-mock-tests PROPERTIES CXX_EXTENSIONS NO)
 metagl_apply_warnings(metagl-mock-tests)
+metagl_stage_runtime(metagl-mock-tests)
 add_test(NAME metagl-mock-loader-test COMMAND metagl-mock-tests)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
@@ -48,6 +50,7 @@ if(METAGL_BUILD_GPU_TESTS)
     target_compile_features(metagl-egl-smoke-tests PRIVATE cxx_std_23)
     set_target_properties(metagl-egl-smoke-tests PROPERTIES CXX_EXTENSIONS NO)
     metagl_apply_warnings(metagl-egl-smoke-tests)
+    metagl_stage_runtime(metagl-egl-smoke-tests)
 
     add_test(NAME metagl-egl-smoke-test COMMAND metagl-egl-smoke-tests)
     set_tests_properties(metagl-egl-smoke-test PROPERTIES

@@ -52,6 +52,8 @@ All notable changes to meta-gl will be documented here.
   function pointer.
 - Added `FlushDebugLog()` and avoided iostream flushing from Windows DLL
   static teardown, where the loader lock can deadlock the process.
+- Windows shared-library tests and examples now stage `meta-gl` beside their
+  executables, so the runtime loader can find the DLL.
 - README support claims, context-restore sequence, and handle example now match
   the implementation.
 

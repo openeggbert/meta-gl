@@ -117,10 +117,19 @@ int main()
             ++failed;
         }
     };
+    auto milestone = [](const char* label)
+    {
+#ifdef _WIN32
+        std::cerr << "[METAGL TEST] " << label << '\n';
+#else
+        (void)label;
+#endif
+    };
 
     // --- Initialize with mock loader -----------------------------------------
     check("Initialize returns true",
           metagl::Initialize(mock_proc_address));
+    milestone("initial loader");
 
     // --- Loader state ---------------------------------------------------------
     check("IsInitialized() == true",
@@ -285,6 +294,7 @@ int main()
           && metagl::GetCapabilities().version_string.empty());
     check("Recovery after failed loader succeeds",
           metagl::RestoreCurrentContext(mock_proc_address));
+    milestone("context lifecycle");
 
     // ==========================================================================
     // I7 — HasExtension / GetCapabilities with fake extension string
@@ -341,6 +351,7 @@ int main()
     check("SupportsGLES30() == true",  metagl::SupportsGLES30());
     check("SupportsGLES31() == false", !metagl::SupportsGLES31());
     check("SupportsGLES32() == false", !metagl::SupportsGLES32());
+    milestone("extension loader");
 
     // Desktop OpenGL uses double-precision depth entry points and does not
     // require the GLES-only shader compiler query functions.
@@ -374,6 +385,7 @@ int main()
     metagl::glClearDepthf(1.0f);
     check("Desktop glDepthRange adapter called", desktop_depth_range_calls == 1);
     check("Desktop glClearDepth adapter called", desktop_clear_depth_calls == 1);
+    milestone("desktop loader");
 
     auto angle_loader = [](const char* name) -> void*
     {
@@ -385,10 +397,13 @@ int main()
     check("ANGLE backend detected", metagl::IsAngle());
     check("ANGLE mock remains OpenGL ES",
           metagl::GetContextInfo().api == metagl::ApiKind::OpenGLES);
+    milestone("angle loader");
 
     // Flush while the process and any shared library are fully operational.
     // Windows DLL teardown runs under the loader lock and must not perform I/O.
+    milestone("before debug flush");
     metagl::FlushDebugLog();
+    milestone("after debug flush");
 
     if (failed > 0)
         std::cerr << failed << " mock-loader test(s) failed.\n";

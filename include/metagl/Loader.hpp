@@ -71,7 +71,7 @@ namespace metagl
      *         OpenGL 3.3+ common subset, loaded successfully. `false` if a
      *         required function is missing.
      */
-    [[nodiscard]] bool Initialize(GlGetProcAddressFn loader);
+    bool Initialize(GlGetProcAddressFn loader);
 
     /**
      * @brief Convenience alias for @ref Initialize; provided for API consistency.
@@ -91,7 +91,7 @@ namespace metagl
      * @param getProcAddress  Platform `GetProcAddress` function.
      * @return `true` on success; same semantics as @ref Initialize.
      */
-    [[nodiscard]] inline bool LoadCurrentContext(GlGetProcAddressFn getProcAddress)
+    inline bool LoadCurrentContext(GlGetProcAddressFn getProcAddress)
     {
         return Initialize(getProcAddress);
     }

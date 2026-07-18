@@ -71,6 +71,7 @@ namespace metagl
             // OpenGL ES requires GL_FALSE. The portable convenience API keeps
             // that rule even when the active context happens to be desktop GL.
             assert(transpose == GL_FALSE);
+            (void)transpose;
             return checked_element_count(size, elements_per_matrix);
         }
     }

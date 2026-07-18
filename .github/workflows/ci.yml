@@ -90,18 +90,8 @@ jobs:
         timeout-minutes: 2
         shell: pwsh
         run: |
-          ctest --test-dir build -C Debug --output-on-failure --timeout 20 -R '^metagl-mock-loader-test$' 2>&1 |
-            Tee-Object -FilePath mock-test.log
-          $testExitCode = $LASTEXITCODE
-          if ($testExitCode -ne 0) {
-            Get-Content mock-test.log |
-              Select-String -Pattern 'METAGL TEST|Timeout|FAILED' |
-              ForEach-Object {
-                $message = $_.Line.Replace('%', '%25')
-                Write-Output "::error::$message"
-              }
-            exit $testExitCode
-          }
+          & build/tests/Debug/metagl-mock-tests.exe
+          exit $LASTEXITCODE
 
       - name: Test API consistency
         timeout-minutes: 4

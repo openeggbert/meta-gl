@@ -120,7 +120,8 @@ int main()
     auto milestone = [](const char* label)
     {
 #ifdef _WIN32
-        std::cerr << "[METAGL TEST] " << label << '\n';
+        std::cerr << "::notice title=METAGL TEST::" << label << '\n';
+        std::cerr.flush();
 #else
         (void)label;
 #endif

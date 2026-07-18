@@ -7,6 +7,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: ${{ matrix.name }}
@@ -72,8 +76,26 @@ jobs:
             exit $buildExitCode
           }
 
-      - name: Test
-        run: ctest --test-dir build -C Debug --output-on-failure
+      - name: Test compile surface
+        timeout-minutes: 4
+        run: ctest --test-dir build -C Debug --output-on-failure --timeout 120 -R '^metagl-compile-tests$'
+
+      - name: Test mock loader and lifecycle
+        timeout-minutes: 4
+        run: ctest --test-dir build -C Debug --output-on-failure --timeout 120 -R '^metagl-mock-loader-test$'
+
+      - name: Test API consistency
+        timeout-minutes: 4
+        run: ctest --test-dir build -C Debug --output-on-failure --timeout 120 -R '^metagl-api-consistency-test$'
+
+      - name: Test installed package
+        timeout-minutes: 4
+        run: ctest --test-dir build -C Debug --output-on-failure --timeout 180 -R '^metagl-installed-package-test$'
+
+      - name: Test headless EGL
+        if: runner.os == 'Linux'
+        timeout-minutes: 4
+        run: ctest --test-dir build -C Debug --output-on-failure --timeout 120 -R '^metagl-egl-smoke-test$'
 
   sanitizers:
     name: Linux Clang ASan and UBSan

@@ -197,6 +197,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | K17 | ✅ Remove the extension mock loader's incompatible `glGetError` function-pointer call |
 | K18 | ✅ Add explicit debug-log flushing and avoid Windows DLL teardown I/O under the loader lock |
 | K19 | ✅ Stage the Windows shared-library runtime beside in-tree tests and examples |
+| K20 | ✅ Prepare the 0.3.0 release metadata and replace the stale NEXT.md handoff |
 
 ---
 
@@ -214,5 +215,5 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | H — Code quality & naming | 12 |
 | I — Tests | 10 |
 | J — Emscripten / platform | 5 |
-| K — 2026 comprehensive audit | 19 |
-| **Total** | **112** |
+| K — 2026 comprehensive audit | 20 |
+| **Total** | **113** |

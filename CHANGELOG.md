@@ -4,6 +4,16 @@ All notable changes to meta-gl will be documented here.
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-07-18
+
+### Breaking changes
+- `AttribLocation` now stores the signed `GLint` returned by
+  `glGetAttribLocation`; code that directly depends on its former unsigned
+  representation must be updated.
+- Invalid `PrimitiveType::Quads` and `PixelFormat::Green/Blue` constants were
+  removed. They were not legal values for the wrapped OpenGL ES function
+  domains.
+
 ### Added
 - Atomic `RestoreCurrentContext()` lifecycle helper and automatic Emscripten
   entry-point reload before restored callbacks.

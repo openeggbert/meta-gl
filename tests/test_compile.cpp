@@ -49,6 +49,8 @@ static_assert(std::is_same_v<decltype(MapBufferAccessMask::Read | MapBufferAcces
 static_assert(std::is_same_v<decltype(ShaderStageMask::Vertex   | ShaderStageMask::Fragment),    ShaderStageMask>);
 static_assert(std::is_same_v<decltype(MemoryBarrierMask::VertexAttribArray | MemoryBarrierMask::ElementArray), MemoryBarrierMask>);
 static_assert(std::is_same_v<decltype(ContextFlagMask::Debug | ContextFlagMask::RobustAccess),   ContextFlagMask>);
+static_assert(static_cast<GLbitfield>(~ClearBufferBit::Color)
+              == (GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));
 
 // =============================================================================
 // I2 — Concept membership checks
@@ -70,6 +72,10 @@ static_assert(GlBitfield<ShaderStageMask>);
 static_assert(GlBitfield<MemoryBarrierMask>);
 static_assert(GlBitfield<ContextFlagMask>);
 static_assert(!GlBitfield<int>);
+static_assert(!GlBitfield<TextureTarget>);
+static_assert(!GlBitfield<PrimitiveType>);
+static_assert(GlEnum<TextureTarget>);
+static_assert(!GlEnum<ClearBufferBit>);
 
 // SpanCompatible: trivially copyable + standard layout
 static_assert(SpanCompatible<float>);
@@ -94,9 +100,19 @@ static_assert(!std::is_constructible_v<ShaderId,   ProgramId>);
 static_assert(!std::is_constructible_v<TextureId,  BufferId>);
 static_assert(!std::is_constructible_v<FramebufferId, RenderbufferId>);
 
-// UniformLocation (GLint) and AttribLocation (GLuint) are distinct structs
+// UniformLocation and AttribLocation are distinct signed-location structs.
 static_assert(!std::is_convertible_v<UniformLocation, AttribLocation>);
 static_assert(!std::is_convertible_v<AttribLocation,  UniformLocation>);
+static_assert(std::is_constructible_v<AttribLocation, GLint>);
+static_assert(std::is_constructible_v<AttribLocation, GLuint>);
+
+// The safe indexed-draw path exposes only the three valid GL index types.
+static_assert(requires {
+    glDrawElements(PrimitiveType::Triangles, 3, IndexType::UnsignedShort, nullptr);
+});
+static_assert(requires(char* name, GLsizei* length, GLint* size, UniformType* type) {
+    glGetActiveAttrib(ProgramId{}, ActiveAttribIndex{}, 1, length, size, type, name);
+});
 
 // Plain GLuint does not satisfy GlHandle — it has no .value member
 static_assert(!GlHandle<GLuint>);
@@ -145,6 +161,7 @@ int main()
     check("HintTarget::GenerateMipmap",                  to_string(HintTarget::GenerateMipmap));
     check("HintMode::DontCare",                          to_string(HintMode::DontCare));
     check("DataType::Float",                             to_string(DataType::Float));
+    check("IndexType::UnsignedShort",                    to_string(IndexType::UnsignedShort));
     check("PixelFormat::Rgba",                           to_string(PixelFormat::Rgba));
     check("PixelType::UnsignedByte",                     to_string(PixelType::UnsignedByte));
     check("InternalFormat::Rgba8",                       to_string(InternalFormat::Rgba8));
@@ -234,7 +251,14 @@ int main()
     check("ProgramPipelineId{10}",   to_string(ProgramPipelineId{10}));
     check("UniformLocation{0}",      to_string(UniformLocation{0}));
     check("AttribLocation{0}",       to_string(AttribLocation{0}));
+    check("ActiveAttribIndex{0}",    to_string(ActiveAttribIndex{0}));
     check("ImageUnit{0}",            to_string(ImageUnit{0}));
+
+    if (AttribLocation{}.value != -1)
+    {
+        std::cerr << "FAIL: default AttribLocation must be -1\n";
+        ++failed;
+    }
 
     if (failed > 0)
         std::cerr << failed << " to_string test(s) failed.\n";

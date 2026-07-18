@@ -57,7 +57,6 @@ namespace metagl
         else if (v == PrimitiveType::TrianglesAdjacency) return "TrianglesAdjacency";
         else if (v == PrimitiveType::TriangleStripAdjacency) return "TriangleStripAdjacency";
         else if (v == PrimitiveType::Patches) return "Patches";
-        else if (v == PrimitiveType::Quads) return "Quads";
         return "?";
     }
 
@@ -268,6 +267,15 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of an @ref IndexType value.
+    inline std::string_view to_string(IndexType v)
+    {
+        if (v == IndexType::UnsignedByte) return "UnsignedByte";
+        else if (v == IndexType::UnsignedShort) return "UnsignedShort";
+        else if (v == IndexType::UnsignedInt) return "UnsignedInt";
+        return "?";
+    }
+
     /// @brief Returns the enumerator name of a @ref PixelFormat value, or `"?"` for unknown values.
     inline std::string_view to_string(PixelFormat v)
     {
@@ -285,8 +293,6 @@ namespace metagl
         else if (v == PixelFormat::RgbaInteger) return "RgbaInteger";
         else if (v == PixelFormat::DepthStencil) return "DepthStencil";
         else if (v == PixelFormat::StencilIndex) return "StencilIndex";
-        else if (v == PixelFormat::Green) return "Green";
-        else if (v == PixelFormat::Blue) return "Blue";
         else if (v == PixelFormat::Bgra) return "Bgra";
         return "?";
     }
@@ -1666,6 +1672,8 @@ namespace metagl
     inline std::string to_string(UniformLocation v)       { return "UniformLocation("      + std::to_string(v.value) + ")"; }
     /// @brief Formats a @ref AttribLocation handle as `"AttribLocation(value)"`.
     inline std::string to_string(AttribLocation v)        { return "AttribLocation("       + std::to_string(v.value) + ")"; }
+    /// @brief Formats an @ref ActiveAttribIndex as `"ActiveAttribIndex(value)"`.
+    inline std::string to_string(ActiveAttribIndex v)     { return "ActiveAttribIndex("    + std::to_string(v.value) + ")"; }
     /// @brief Formats a @ref ImageUnit handle as `"ImageUnit(value)"`.
     inline std::string to_string(ImageUnit v)             { return "ImageUnit("            + std::to_string(v.value) + ")"; }
 

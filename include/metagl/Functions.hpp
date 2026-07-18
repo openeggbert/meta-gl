@@ -269,18 +269,46 @@ namespace metagl
     void glDrawArraysIndirect(PrimitiveType mode, const void * indirect);
     /// @brief Renders indexed primitives from vertex arrays and an index buffer (GL ES 2.0+)
     void glDrawElements(PrimitiveType mode, GLsizei count, DataType type, const void * indices);
+    inline void glDrawElements(PrimitiveType mode, GLsizei count, IndexType type, const void* indices)
+    {
+        glDrawElements(mode, count, static_cast<DataType>(type), indices);
+    }
     /// @brief Renders multiple instances using indexed drawing (GL ES 3.0+)
     void glDrawElementsInstanced(PrimitiveType mode, GLsizei count, DataType type, const void * indices, GLsizei instancecount);
+    inline void glDrawElementsInstanced(PrimitiveType mode, GLsizei count, IndexType type, const void* indices, GLsizei instancecount)
+    {
+        glDrawElementsInstanced(mode, count, static_cast<DataType>(type), indices, instancecount);
+    }
     /// @brief Indexed draw with index range hints for driver prefetch optimization (GL ES 3.0+)
     void glDrawRangeElements(PrimitiveType mode, GLuint start, GLuint end, GLsizei count, DataType type, const void * indices);
+    inline void glDrawRangeElements(PrimitiveType mode, GLuint start, GLuint end, GLsizei count, IndexType type, const void* indices)
+    {
+        glDrawRangeElements(mode, start, end, count, static_cast<DataType>(type), indices);
+    }
     /// @brief Indexed draw with a constant base vertex offset added to each index (GL ES 3.2+)
     void glDrawElementsBaseVertex(PrimitiveType mode, GLsizei count, DataType type, const void * indices, GLint basevertex);
+    inline void glDrawElementsBaseVertex(PrimitiveType mode, GLsizei count, IndexType type, const void* indices, GLint basevertex)
+    {
+        glDrawElementsBaseVertex(mode, count, static_cast<DataType>(type), indices, basevertex);
+    }
     /// @brief Instanced indexed draw with a base vertex offset (GL ES 3.2+)
     void glDrawElementsInstancedBaseVertex(PrimitiveType mode, GLsizei count, DataType type, const void * indices, GLsizei instancecount, GLint basevertex);
+    inline void glDrawElementsInstancedBaseVertex(PrimitiveType mode, GLsizei count, IndexType type, const void* indices, GLsizei instancecount, GLint basevertex)
+    {
+        glDrawElementsInstancedBaseVertex(mode, count, static_cast<DataType>(type), indices, instancecount, basevertex);
+    }
     /// @brief Range-indexed draw with a base vertex offset (GL ES 3.2+)
     void glDrawRangeElementsBaseVertex(PrimitiveType mode, GLuint start, GLuint end, GLsizei count, DataType type, const void * indices, GLint basevertex);
+    inline void glDrawRangeElementsBaseVertex(PrimitiveType mode, GLuint start, GLuint end, GLsizei count, IndexType type, const void* indices, GLint basevertex)
+    {
+        glDrawRangeElementsBaseVertex(mode, start, end, count, static_cast<DataType>(type), indices, basevertex);
+    }
     /// @brief Indexed instanced draw; parameters read from GL_DRAW_INDIRECT_BUFFER (GL ES 3.1+)
     void glDrawElementsIndirect(PrimitiveType mode, DataType type, const void * indirect);
+    inline void glDrawElementsIndirect(PrimitiveType mode, IndexType type, const void* indirect)
+    {
+        glDrawElementsIndirect(mode, static_cast<DataType>(type), indirect);
+    }
     /// @brief Specifies the list of color buffers that fragment outputs are written to (GL ES 3.0+)
     void glDrawBuffers(GLsizei n, const DrawBuffer * bufs);
     inline void glDrawBuffers(std::span<const DrawBuffer> bufs) { glDrawBuffers(static_cast<GLsizei>(bufs.size()), bufs.data()); }
@@ -361,7 +389,13 @@ namespace metagl
     /// @brief Returns the attribute index of a named vertex shader input in a linked program (GL ES 2.0+)
     AttribLocation glGetAttribLocation(ProgramId program, const GLchar * name);
     /// @brief Returns name, type, and size of an active vertex attribute variable (GL ES 2.0+)
-    void glGetActiveAttrib(ProgramId program, AttribLocation index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name);
+    void glGetActiveAttrib(ProgramId program, ActiveAttribIndex index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name);
+    inline void glGetActiveAttrib(ProgramId program, AttribLocation index, GLsizei bufSize, GLsizei* length, GLint* size, UniformType* type, GLchar* name)
+    {
+        glGetActiveAttrib(program,
+            ActiveAttribIndex{static_cast<GLuint>(index.value)},
+            bufSize, length, size, type, name);
+    }
     /// @brief Returns the binary representation of a linked program for caching (GL ES 3.0+)
     void glGetProgramBinary(ProgramId program, GLsizei bufSize, GLsizei * length, ProgramBinaryFormat * binaryFormat, void * binary);
     /// @brief Loads a cached binary into a program, bypassing compilation and linking (GL ES 3.0+)

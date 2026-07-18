@@ -2511,13 +2511,13 @@ namespace metagl
     AttribLocation glGetAttribLocation(ProgramId program, const GLchar * name)
     {
         assert(detail::g_gl.GetAttribLocation != nullptr);
-        const AttribLocation _r{static_cast<GLuint>(detail::g_gl.GetAttribLocation(program.value, name))};
+        const AttribLocation _r{detail::g_gl.GetAttribLocation(program.value, name)};
         METAGL_DEBUG_LOG("glGetAttribLocation", _r.value, program.value, name);
         return _r;
     }
 
     // #144
-    void glGetActiveAttrib(ProgramId program, AttribLocation index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name)
+    void glGetActiveAttrib(ProgramId program, ActiveAttribIndex index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name)
     {
         assert(detail::g_gl.GetActiveAttrib != nullptr);
         detail::g_gl.GetActiveAttrib(program.value, index.value, bufSize, length, size, reinterpret_cast<GLenum *>(type), name);

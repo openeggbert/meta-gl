@@ -139,7 +139,29 @@ namespace metagl
      *
      * Wraps the `GLuint` returned by `glGetAttribLocation` / bound via `glBindAttribLocation`.
      */
-    struct AttribLocation       { GLuint value{}; };
+    struct AttribLocation
+    {
+        GLint value{-1};
+
+        constexpr AttribLocation() noexcept = default;
+        constexpr explicit AttribLocation(GLint location) noexcept : value(location) {}
+        constexpr explicit AttribLocation(GLuint location) noexcept
+            : value(static_cast<GLint>(location)) {}
+
+        [[nodiscard]] constexpr bool valid() const noexcept { return value >= 0; }
+        [[nodiscard]] constexpr explicit operator bool() const noexcept { return valid(); }
+    };
+
+    /**
+     * @brief Enumeration index used by glGetActiveAttrib.
+     *
+     * Unlike @ref AttribLocation, this is an ordinal in the program's active
+     * attribute list and is never the signed `-1` location sentinel.
+     */
+    struct ActiveAttribIndex
+    {
+        GLuint value{};
+    };
 
     /**
      * @brief Index of an image unit used with `glBindImageTexture`.
@@ -168,20 +190,42 @@ namespace metagl
     };
 
     /**
-     * @brief Concept satisfied by any `enum class` whose underlying type is `GLenum`.
+     * @brief Opt-in traits for enum classes that represent GL bit masks.
+     *
+     * `GLenum` and `GLbitfield` are commonly aliases of the same C++ type, so
+     * their underlying type cannot distinguish domains. Enums.hpp explicitly
+     * specializes this trait for real bitfield domains.
+     */
+    template<typename T>
+    struct GlBitfieldTraits
+    {
+        static constexpr bool enabled = false;
+        static constexpr GLbitfield all_bits = 0;
+    };
+
+    /**
+     * @brief Concept satisfied only by explicitly registered GL bitfield enums.
+     */
+    template<typename T>
+    concept GlBitfield =
+        std::is_enum_v<T> &&
+        GlBitfieldTraits<T>::enabled;
+
+    /**
+     * @brief Concept satisfied by non-bitfield `GLenum` enum classes.
      *
      * Used internally to constrain template parameters to typed GL enumerations.
      *
      * @tparam T  Enum type to check.
      *
-     * @note On most platforms `GLenum` and `GLbitfield` both alias `unsigned int`, so
-     *       `GlEnum` and `GlBitfield` (defined in Enums.hpp) cannot distinguish between
-     *       each other at the type-system level.
+     * Bitfield domains are excluded through the explicit @ref GlBitfieldTraits
+     * opt-in even when `GLenum` and `GLbitfield` are the same C++ type.
      */
     template<typename T>
     concept GlEnum =
         std::is_enum_v<T> &&
-        std::same_as<std::underlying_type_t<T>, GLenum>;
+        std::same_as<std::underlying_type_t<T>, GLenum> &&
+        !GlBitfield<T>;
 
     /**
      * @brief Concept satisfied by types safe for use in `std::span<const T>` GL data uploads.

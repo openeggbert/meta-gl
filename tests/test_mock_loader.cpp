@@ -48,6 +48,11 @@ namespace
         return GL_NO_ERROR;
     }
 
+    GLint GL_APIENTRY stub_GetAttribLocation(GLuint, const GLchar*)
+    {
+        return -1;
+    }
+
     // No-op for all other functions (never actually called after Initialize)
     void GL_APIENTRY stub_noop() {}
 
@@ -61,6 +66,8 @@ namespace
             return reinterpret_cast<void*>(stub_GetStringi);
         if (std::strcmp(name, "glGetError")    == 0)
             return reinterpret_cast<void*>(stub_GetError);
+        if (std::strcmp(name, "glGetAttribLocation") == 0)
+            return reinterpret_cast<void*>(stub_GetAttribLocation);
         return reinterpret_cast<void*>(stub_noop);
     }
 }
@@ -115,6 +122,8 @@ int main()
     check("Capabilities.vendor non-empty", !caps.vendor.empty());
     check("Capabilities.version_string contains 'OpenGL ES 3.0'",
           caps.version_string.find("OpenGL ES 3.0") != std::string::npos);
+    check("glGetAttribLocation preserves -1",
+          metagl::glGetAttribLocation(metagl::ProgramId{1}, "missing").value == -1);
 
     // ==========================================================================
     // I5 — Context lifecycle state transitions

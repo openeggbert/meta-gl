@@ -32,22 +32,26 @@
 
 namespace metagl
 {
-    /**
-     * @brief Concept satisfied by any `enum class` whose underlying type is `GLbitfield`.
-     *
-     * Enables the generic @ref operator| , @ref operator& , and @ref operator~
-     * overloads defined below.  Bitfield enums in this file all satisfy this concept.
-     *
-     * @tparam T  Enum type to check.
-     */
-    template<typename T>
-    concept GlBitfield =
-        std::is_enum_v<T> &&
-        std::same_as<std::underlying_type_t<T>, GLbitfield>;
+    template<GlBitfield T>
+    [[nodiscard]] constexpr T operator|(T a, T b) noexcept
+    {
+        return static_cast<T>(
+            static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b));
+    }
 
-    template<GlBitfield T> inline T operator|(T a, T b) { return static_cast<T>(static_cast<GLbitfield>(a) | static_cast<GLbitfield>(b)); }
-    template<GlBitfield T> inline T operator&(T a, T b) { return static_cast<T>(static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b)); }
-    template<GlBitfield T> inline T operator~(T a)      { return static_cast<T>(~static_cast<GLbitfield>(a)); }
+    template<GlBitfield T>
+    [[nodiscard]] constexpr T operator&(T a, T b) noexcept
+    {
+        return static_cast<T>(
+            static_cast<GLbitfield>(a) & static_cast<GLbitfield>(b));
+    }
+
+    template<GlBitfield T>
+    [[nodiscard]] constexpr T operator~(T a) noexcept
+    {
+        return static_cast<T>(
+            (~static_cast<GLbitfield>(a)) & GlBitfieldTraits<T>::all_bits);
+    }
 
     /**
      * @brief Clear buffer mask — bitfield passed to glClear().
@@ -75,8 +79,7 @@ namespace metagl
         LineStripAdjacency     = GL_LINE_STRIP_ADJACENCY,     ///< ES 3.2 geometry shader.
         TrianglesAdjacency     = GL_TRIANGLES_ADJACENCY,      ///< ES 3.2 geometry shader.
         TriangleStripAdjacency = GL_TRIANGLE_STRIP_ADJACENCY, ///< ES 3.2 geometry shader.
-        Patches                = GL_PATCHES,                  ///< ES 3.2 tessellation.
-        Quads                  = GL_QUADS                     ///< Tessellation gen mode only.
+        Patches                = GL_PATCHES                   ///< ES 3.2 tessellation.
     };
 
     /**
@@ -302,6 +305,16 @@ namespace metagl
     };
 
     /**
+     * @brief Valid element index types for glDrawElements* calls.
+     */
+    enum class IndexType : GLenum
+    {
+        UnsignedByte  = GL_UNSIGNED_BYTE,
+        UnsignedShort = GL_UNSIGNED_SHORT,
+        UnsignedInt   = GL_UNSIGNED_INT ///< ES 3.0+
+    };
+
+    /**
      * @brief Pixel transfer format (base format) used in glTexImage2D, glReadPixels, etc.
      */
     enum class PixelFormat : GLenum
@@ -320,8 +333,6 @@ namespace metagl
         RgbaInteger    = GL_RGBA_INTEGER,    ///< ES 3.0+
         DepthStencil   = GL_DEPTH_STENCIL,   ///< ES 3.0+
         StencilIndex   = GL_STENCIL_INDEX,   ///< ES 3.1+
-        Green          = GL_GREEN,           ///< Component swizzle value. ES 3.0+
-        Blue           = GL_BLUE,            ///< Component swizzle value. ES 3.0+
         // Extension value — not in core gl32.h; defined in GL_EXT_bgra.
         Bgra           = 0x80E1
     };
@@ -1805,6 +1816,61 @@ namespace metagl
     enum class SyncFlag : GLbitfield
     {
         None = 0
+    };
+
+    // GLbitfield and GLenum are aliases on common platforms. Explicit trait
+    // specializations are therefore the authoritative list of bitfield domains.
+    template<> struct GlBitfieldTraits<ClearBufferBit>
+    {
+        static constexpr bool enabled = true;
+        static constexpr GLbitfield all_bits =
+            GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
+    };
+
+    template<> struct GlBitfieldTraits<MapBufferAccessMask>
+    {
+        static constexpr bool enabled = true;
+        static constexpr GLbitfield all_bits =
+            GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT
+            | GL_MAP_INVALIDATE_BUFFER_BIT | GL_MAP_FLUSH_EXPLICIT_BIT
+            | GL_MAP_UNSYNCHRONIZED_BIT;
+    };
+
+    template<> struct GlBitfieldTraits<SampleMaskValue>
+    {
+        static constexpr bool enabled = true;
+        static constexpr GLbitfield all_bits = 0xFFFFFFFFu;
+    };
+
+    template<> struct GlBitfieldTraits<ShaderStageMask>
+    {
+        static constexpr bool enabled = true;
+        static constexpr GLbitfield all_bits = GL_ALL_SHADER_BITS;
+    };
+
+    template<> struct GlBitfieldTraits<SyncFlushMask>
+    {
+        static constexpr bool enabled = true;
+        static constexpr GLbitfield all_bits = GL_SYNC_FLUSH_COMMANDS_BIT;
+    };
+
+    template<> struct GlBitfieldTraits<MemoryBarrierMask>
+    {
+        static constexpr bool enabled = true;
+        static constexpr GLbitfield all_bits = GL_ALL_BARRIER_BITS;
+    };
+
+    template<> struct GlBitfieldTraits<ContextFlagMask>
+    {
+        static constexpr bool enabled = true;
+        static constexpr GLbitfield all_bits =
+            GL_CONTEXT_FLAG_DEBUG_BIT | GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT;
+    };
+
+    template<> struct GlBitfieldTraits<SyncFlag>
+    {
+        static constexpr bool enabled = true;
+        static constexpr GLbitfield all_bits = 0;
     };
 
 } // namespace metagl

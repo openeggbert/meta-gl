@@ -18,6 +18,12 @@ set_target_properties(metagl-mock-tests PROPERTIES CXX_EXTENSIONS NO)
 metagl_apply_warnings(metagl-mock-tests)
 add_test(NAME metagl-mock-loader-test COMMAND metagl-mock-tests)
 
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_test(
+    NAME metagl-api-consistency-test
+    COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tools/verify_api.py
+)
+
 add_test(
     NAME metagl-installed-package-test
     COMMAND ${CMAKE_COMMAND}
@@ -26,3 +32,24 @@ add_test(
         -DMETAGL_TEST_CONFIG=$<CONFIG>
         -P ${CMAKE_CURRENT_SOURCE_DIR}/test_installed_package.cmake
 )
+
+if(METAGL_BUILD_GPU_TESTS)
+    find_path(METAGL_EGL_INCLUDE_DIR EGL/egl.h REQUIRED)
+    find_library(METAGL_EGL_LIBRARY NAMES EGL REQUIRED)
+
+    add_executable(metagl-egl-smoke-tests egl_smoke.cpp)
+    target_link_libraries(metagl-egl-smoke-tests
+        PRIVATE
+            meta-gl::meta-gl
+            ${METAGL_EGL_LIBRARY}
+    )
+    target_include_directories(metagl-egl-smoke-tests
+        PRIVATE ${METAGL_EGL_INCLUDE_DIR})
+    target_compile_features(metagl-egl-smoke-tests PRIVATE cxx_std_23)
+    set_target_properties(metagl-egl-smoke-tests PROPERTIES CXX_EXTENSIONS NO)
+    metagl_apply_warnings(metagl-egl-smoke-tests)
+
+    add_test(NAME metagl-egl-smoke-test COMMAND metagl-egl-smoke-tests)
+    set_tests_properties(metagl-egl-smoke-test PROPERTIES
+        ENVIRONMENT "EGL_PLATFORM=surfaceless")
+endif()

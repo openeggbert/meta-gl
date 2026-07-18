@@ -4,7 +4,7 @@
  *
  * The loader fills the internal `detail::GlTable` with function pointers obtained
  * from the platform's `GetProcAddress`-equivalent.  After a successful
- * @ref Initialize call, all `metagl::gl*` wrapper functions are safe to call
+ * @ref metagl::Initialize call, all `metagl::gl*` wrapper functions are safe to call
  * from the same thread that owns the GL context.
  *
  * Typical usage:
@@ -28,7 +28,8 @@
  * #endif
  * @endcode
  *
- * Under Emscripten, prefer @ref InstallEmscriptenContextLossCallbacks (Emscripten.hpp)
+ * Under Emscripten, prefer
+ * @ref metagl::InstallEmscriptenContextLossCallbacks (Emscripten.hpp)
  * to automate context-loss / context-restore handling instead of calling Initialize directly.
  *
  * @note **Emscripten loader selection:** on WebGL builds the correct loader is

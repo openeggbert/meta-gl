@@ -16,7 +16,8 @@
  * vertex attribute, texture parameter, sampler parameter, clear-buffer,
  * and vertex attrib query families via `constexpr if` dispatch.
  *
- * @note All functions require a prior successful call to @ref Initialize.
+ * @note All functions require a prior successful call to
+ *       @ref metagl::Initialize.
  *       `assert(fn != nullptr)` guards are inserted in `src/Functions.cpp` for
  *       every wrapper in debug builds.
  */
@@ -26,9 +27,11 @@
 #include "Enums.hpp"
 
 #include <array>
+#include <cassert>
 #include <concepts>
 #include <cstddef>
 #include <initializer_list>
+#include <limits>
 #include <ranges>
 #include <span>
 #include <string_view>
@@ -36,6 +39,42 @@
 
 namespace metagl
 {
+    namespace detail
+    {
+        [[nodiscard]] inline GLsizei checked_glsizei(std::size_t value) noexcept
+        {
+            assert(value <= static_cast<std::size_t>(
+                std::numeric_limits<GLsizei>::max()));
+            return static_cast<GLsizei>(value);
+        }
+
+        [[nodiscard]] inline GLsizeiptr checked_glsizeiptr(
+            std::size_t value) noexcept
+        {
+            assert(value <= static_cast<std::size_t>(
+                std::numeric_limits<GLsizeiptr>::max()));
+            return static_cast<GLsizeiptr>(value);
+        }
+
+        [[nodiscard]] inline GLsizei checked_element_count(
+            std::size_t size, std::size_t elements_per_value) noexcept
+        {
+            assert(elements_per_value > 0);
+            assert(size % elements_per_value == 0);
+            return checked_glsizei(size / elements_per_value);
+        }
+
+        [[nodiscard]] inline GLsizei checked_matrix_count(
+            std::size_t size, std::size_t elements_per_matrix,
+            GLboolean transpose) noexcept
+        {
+            // OpenGL ES requires GL_FALSE. The portable convenience API keeps
+            // that rule even when the active context happens to be desktop GL.
+            assert(transpose == GL_FALSE);
+            return checked_element_count(size, elements_per_matrix);
+        }
+    }
+
     /// @name State Management
     /// @{
 
@@ -48,9 +87,9 @@ namespace metagl
     /// @brief Disables a capability for a specific indexed target (GL ES 3.2+)
     void glDisablei(Capability target, GLuint index);
     /// @brief Returns whether a capability is currently enabled (GL ES 2.0+)
-    bool glIsEnabled(Capability cap);
+    [[nodiscard]] bool glIsEnabled(Capability cap);
     /// @brief Returns whether an indexed capability is enabled (GL ES 3.2+)
-    bool glIsEnabledi(Capability target, GLuint index);
+    [[nodiscard]] bool glIsEnabledi(Capability target, GLuint index);
     /// @brief Sets blend source and destination factors for all draw buffers (GL ES 2.0+)
     void glBlendFunc(BlendFactor sfactor, BlendFactor dfactor);
     /// @brief Sets separate blend factors for RGB and alpha for all draw buffers (GL ES 2.0+)
@@ -136,9 +175,9 @@ namespace metagl
     /// @brief Queries an indexed GL state parameter as a boolean (GL ES 3.1+)
     void glGetBooleani_v(GetParameter target, GLuint index, GLboolean * data);
     /// @brief Returns a global implementation string (renderer, vendor, version, etc.) (GL ES 2.0+)
-    const GLubyte* glGetString(StringName name);
+    [[nodiscard]] const GLubyte* glGetString(StringName name);
     /// @brief Returns an indexed string (e.g. the nth supported extension) (GL ES 3.0+)
-    const GLubyte* glGetStringi(StringName name, GLuint index);
+    [[nodiscard]] const GLubyte* glGetStringi(StringName name, GLuint index);
     /// @brief Returns pointer-valued GL state such as debug callback pointers (GL ES 3.2+)
     void glGetPointerv(GetPointerParameter pname, void ** params);
 
@@ -148,10 +187,10 @@ namespace metagl
 
     /// @brief Generates one or more buffer object names (GL ES 2.0+)
     void glGenBuffers(GLsizei n, BufferId * buffers);
-    inline void glGenBuffers(std::span<BufferId> buffers) { glGenBuffers(static_cast<GLsizei>(buffers.size()), buffers.data()); }
+    inline void glGenBuffers(std::span<BufferId> buffers) { glGenBuffers(detail::checked_glsizei(buffers.size()), buffers.data()); }
     /// @brief Deletes buffer objects and frees their GPU memory (GL ES 2.0+)
     void glDeleteBuffers(GLsizei n, const BufferId * buffers);
-    inline void glDeleteBuffers(std::span<const BufferId> buffers) { glDeleteBuffers(static_cast<GLsizei>(buffers.size()), buffers.data()); }
+    inline void glDeleteBuffers(std::span<const BufferId> buffers) { glDeleteBuffers(detail::checked_glsizei(buffers.size()), buffers.data()); }
     /// @brief Binds a buffer to a target (ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER, etc.) (GL ES 2.0+)
     void glBindBuffer(BufferTarget target, BufferId buffer);
     /// @brief Binds a buffer to an indexed binding point (e.g. UBO slot N) (GL ES 3.0+)
@@ -163,25 +202,25 @@ namespace metagl
     template<SpanCompatible T>
     inline void glBufferData(BufferTarget target, std::span<const T> data, BufferUsage usage)
     {
-        glBufferData(target, static_cast<GLsizeiptr>(data.size_bytes()), data.data(), usage);
+        glBufferData(target, detail::checked_glsizeiptr(data.size_bytes()), data.data(), usage);
     }
     /// @brief Updates a sub-range of an existing buffer without reallocating (GL ES 2.0+)
     void glBufferSubData(BufferTarget target, GLintptr offset, GLsizeiptr size, const void * data);
     template<SpanCompatible T>
     inline void glBufferSubData(BufferTarget target, GLintptr offset, std::span<const T> data)
     {
-        glBufferSubData(target, offset, static_cast<GLsizeiptr>(data.size_bytes()), data.data());
+        glBufferSubData(target, offset, detail::checked_glsizeiptr(data.size_bytes()), data.data());
     }
     /// @brief Copies a region from one buffer to another entirely on the GPU (GL ES 3.0+)
     void glCopyBufferSubData(BufferTarget readTarget, BufferTarget writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size);
     /// @brief Maps a buffer sub-range into CPU address space for read/write (GL ES 3.0+)
-    void* glMapBufferRange(BufferTarget target, GLintptr offset, GLsizeiptr length, MapBufferAccessMask access);
+    [[nodiscard]] void* glMapBufferRange(BufferTarget target, GLintptr offset, GLsizeiptr length, MapBufferAccessMask access);
     /// @brief Flushes explicitly mapped writes when GL_MAP_FLUSH_EXPLICIT_BIT is set (GL ES 3.0+)
     void glFlushMappedBufferRange(BufferTarget target, GLintptr offset, GLsizeiptr length);
     /// @brief Releases a buffer mapping; returns GL_FALSE if data was corrupted (GL ES 3.0+)
-    GLboolean glUnmapBuffer(BufferTarget target);
+    [[nodiscard]] GLboolean glUnmapBuffer(BufferTarget target);
     /// @brief Returns GL_TRUE if the name is a valid buffer object (GL ES 2.0+)
-    bool glIsBuffer(BufferId buffer);
+    [[nodiscard]] bool glIsBuffer(BufferId buffer);
     /// @brief Queries buffer parameters (size, usage, map status) as 32-bit integer (GL ES 2.0+)
     void glGetBufferParameteriv(BufferTarget target, BufferParameter pname, GLint * params);
     /// @brief Queries buffer parameters (e.g. size on large buffers) as 64-bit integer (GL ES 3.0+)
@@ -195,14 +234,14 @@ namespace metagl
 
     /// @brief Generates one or more Vertex Array Object (VAO) names (GL ES 3.0+)
     void glGenVertexArrays(GLsizei n, VertexArrayId * arrays);
-    inline void glGenVertexArrays(std::span<VertexArrayId> arrays) { glGenVertexArrays(static_cast<GLsizei>(arrays.size()), arrays.data()); }
+    inline void glGenVertexArrays(std::span<VertexArrayId> arrays) { glGenVertexArrays(detail::checked_glsizei(arrays.size()), arrays.data()); }
     /// @brief Deletes VAOs (GL ES 3.0+)
     void glDeleteVertexArrays(GLsizei n, const VertexArrayId * arrays);
-    inline void glDeleteVertexArrays(std::span<const VertexArrayId> arrays) { glDeleteVertexArrays(static_cast<GLsizei>(arrays.size()), arrays.data()); }
+    inline void glDeleteVertexArrays(std::span<const VertexArrayId> arrays) { glDeleteVertexArrays(detail::checked_glsizei(arrays.size()), arrays.data()); }
     /// @brief Binds a VAO; all subsequent attribute state is recorded into it (GL ES 3.0+)
     void glBindVertexArray(VertexArrayId array);
     /// @brief Returns GL_TRUE if the name is a valid VAO (GL ES 3.0+)
-    bool glIsVertexArray(VertexArrayId array);
+    [[nodiscard]] bool glIsVertexArray(VertexArrayId array);
     /// @brief Enables a generic vertex attribute array at a given index (GL ES 2.0+)
     void glEnableVertexAttribArray(AttribLocation index);
     /// @brief Disables a generic vertex attribute array; attribute uses constant value (GL ES 2.0+)
@@ -312,7 +351,7 @@ namespace metagl
     }
     /// @brief Specifies the list of color buffers that fragment outputs are written to (GL ES 3.0+)
     void glDrawBuffers(GLsizei n, const DrawBuffer * bufs);
-    inline void glDrawBuffers(std::span<const DrawBuffer> bufs) { glDrawBuffers(static_cast<GLsizei>(bufs.size()), bufs.data()); }
+    inline void glDrawBuffers(std::span<const DrawBuffer> bufs) { glDrawBuffers(detail::checked_glsizei(bufs.size()), bufs.data()); }
     /// @brief Selects a color buffer as the source for glReadPixels and copy operations (GL ES 3.0+)
     void glReadBuffer(ReadBuffer src);
     /// @brief Reads a rectangular block of pixels from the framebuffer into CPU memory (GL ES 2.0+)
@@ -341,12 +380,12 @@ namespace metagl
     /// @{
 
     /// @brief Creates a shader object of the given type and returns its handle (GL ES 2.0+)
-    ShaderId glCreateShader(ShaderType type);
+    [[nodiscard]] ShaderId glCreateShader(ShaderType type);
     /// @brief Marks a shader for deletion (deferred until detached from all programs) (GL ES 2.0+)
     void glDeleteShader(ShaderId shader);
     /// @brief Loads GLSL source strings into a shader object (GL ES 2.0+)
     void glShaderSource(ShaderId shader, GLsizei count, const GLchar *const* string, const GLint * length);
-    inline void glShaderSource(ShaderId shader, std::string_view source) { const GLchar* ptr = source.data(); const GLint len = static_cast<GLint>(source.size()); glShaderSource(shader, 1, &ptr, &len); }
+    inline void glShaderSource(ShaderId shader, std::string_view source) { const GLchar* ptr = source.data(); const GLint len = detail::checked_glsizei(source.size()); glShaderSource(shader, 1, &ptr, &len); }
     /// @brief Compiles the GLSL source previously loaded into a shader object (GL ES 2.0+)
     void glCompileShader(ShaderId shader);
     /// @brief Loads pre-compiled binary shader code into one or more shader objects (GL ES 2.0+)
@@ -362,9 +401,9 @@ namespace metagl
     /// @brief Returns the precision range for lowp/mediump/highp in vertex/fragment shaders (GL ES 2.0+)
     void glGetShaderPrecisionFormat(ShaderType shadertype, PrecisionType precisiontype, GLint * range, GLint * precision);
     /// @brief Returns GL_TRUE if the name is a valid shader object (GL ES 2.0+)
-    bool glIsShader(ShaderId shader);
+    [[nodiscard]] bool glIsShader(ShaderId shader);
     /// @brief Creates a program object and returns its handle (GL ES 2.0+)
-    ProgramId glCreateProgram(void);
+    [[nodiscard]] ProgramId glCreateProgram(void);
     /// @brief Deletes a program object (deferred until no longer in use) (GL ES 2.0+)
     void glDeleteProgram(ProgramId program);
     /// @brief Attaches a compiled shader to a program for the next link operation (GL ES 2.0+)
@@ -382,13 +421,13 @@ namespace metagl
     /// @brief Returns the linker info log for a program (errors and warnings) (GL ES 2.0+)
     void glGetProgramInfoLog(ProgramId program, GLsizei bufSize, GLsizei * length, GLchar * infoLog);
     /// @brief Returns GL_TRUE if the name is a valid program object (GL ES 2.0+)
-    bool glIsProgram(ProgramId program);
+    [[nodiscard]] bool glIsProgram(ProgramId program);
     /// @brief Returns the shader objects currently attached to a program (GL ES 2.0+)
     void glGetAttachedShaders(ProgramId program, GLsizei maxCount, GLsizei * count, ShaderId * shaders);
     /// @brief Associates a vertex shader input variable with an attribute index before link (GL ES 2.0+)
     void glBindAttribLocation(ProgramId program, AttribLocation index, const GLchar * name);
     /// @brief Returns the attribute index of a named vertex shader input in a linked program (GL ES 2.0+)
-    AttribLocation glGetAttribLocation(ProgramId program, const GLchar * name);
+    [[nodiscard]] AttribLocation glGetAttribLocation(ProgramId program, const GLchar * name);
     /// @brief Returns name, type, and size of an active vertex attribute variable (GL ES 2.0+)
     void glGetActiveAttrib(ProgramId program, ActiveAttribIndex index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name);
     inline void glGetActiveAttrib(ProgramId program, AttribLocation index, GLsizei bufSize, GLsizei* length, GLint* size, UniformType* type, GLchar* name)
@@ -404,25 +443,25 @@ namespace metagl
     /// @brief Sets program parameters (binary retrievable hint, separable flag) (GL ES 3.0+)
     void glProgramParameteri(ProgramId program, ProgramParameter pname, GLint value);
     /// @brief Returns the fragment output location for a named output variable (GL ES 3.0+)
-    GLint glGetFragDataLocation(ProgramId program, const GLchar * name);
+    [[nodiscard]] GLint glGetFragDataLocation(ProgramId program, const GLchar * name);
     /// @brief Queries properties of a program interface (e.g. number of active uniforms) (GL ES 3.1+)
     void glGetProgramInterfaceiv(ProgramId program, ProgramInterface programInterface, ProgramInterfaceParameter pname, GLint * params);
     /// @brief Returns the index of a named resource within a program interface (GL ES 3.1+)
-    GLuint glGetProgramResourceIndex(ProgramId program, ProgramInterface programInterface, const GLchar * name);
+    [[nodiscard]] GLuint glGetProgramResourceIndex(ProgramId program, ProgramInterface programInterface, const GLchar * name);
     /// @brief Returns the name of a resource at a given index in a program interface (GL ES 3.1+)
     void glGetProgramResourceName(ProgramId program, ProgramInterface programInterface, GLuint index, GLsizei bufSize, GLsizei * length, GLchar * name);
     /// @brief Returns multiple properties of a program interface resource in one call (GL ES 3.1+)
     void glGetProgramResourceiv(ProgramId program, ProgramInterface programInterface, GLuint index, GLsizei propCount, const ProgramResourceProperty * props, GLsizei count, GLsizei * length, GLint * params);
-    inline void glGetProgramResourceiv(ProgramId program, ProgramInterface programInterface, GLuint index, std::span<const ProgramResourceProperty> props, GLsizei count, GLsizei * length, GLint * params) { glGetProgramResourceiv(program, programInterface, index, static_cast<GLsizei>(props.size()), props.data(), count, length, params); }
+    inline void glGetProgramResourceiv(ProgramId program, ProgramInterface programInterface, GLuint index, std::span<const ProgramResourceProperty> props, GLsizei count, GLsizei * length, GLint * params) { glGetProgramResourceiv(program, programInterface, index, detail::checked_glsizei(props.size()), props.data(), count, length, params); }
     /// @brief Returns the location of a named resource within a program interface (GL ES 3.1+)
-    GLint glGetProgramResourceLocation(ProgramId program, ProgramInterface programInterface, const GLchar * name);
+    [[nodiscard]] GLint glGetProgramResourceLocation(ProgramId program, ProgramInterface programInterface, const GLchar * name);
 
     /// @}
     /// @name Uniform Variables
     /// @{
 
     /// @brief Returns the integer location of a named uniform in a linked program (GL ES 2.0+)
-    UniformLocation glGetUniformLocation(ProgramId program, const GLchar * name);
+    [[nodiscard]] UniformLocation glGetUniformLocation(ProgramId program, const GLchar * name);
     /// @brief Returns the name, type, and size of an active uniform variable (GL ES 2.0+)
     void glGetActiveUniform(ProgramId program, GLuint index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name);
     /// @brief Queries parameters for multiple uniforms by index in one call (GL ES 3.0+)
@@ -430,7 +469,7 @@ namespace metagl
     /// @brief Returns the indices of multiple named uniform variables (GL ES 3.0+)
     void glGetUniformIndices(ProgramId program, GLsizei uniformCount, const GLchar *const* uniformNames, GLuint * uniformIndices);
     /// @brief Returns the index of a named uniform block in a linked program (GL ES 3.0+)
-    GLuint glGetUniformBlockIndex(ProgramId program, const GLchar * uniformBlockName);
+    [[nodiscard]] GLuint glGetUniformBlockIndex(ProgramId program, const GLchar * uniformBlockName);
     /// @brief Queries parameters of a uniform block (size, binding, member count) (GL ES 3.0+)
     void glGetActiveUniformBlockiv(ProgramId program, GLuint uniformBlockIndex, UniformBlockParameter pname, GLint * params);
     /// @brief Returns the name string of a uniform block at a given index (GL ES 3.0+)
@@ -588,16 +627,20 @@ namespace metagl
 
     /// @brief Generates one or more texture object names (GL ES 2.0+)
     void glGenTextures(GLsizei n, TextureId * textures);
-    inline void glGenTextures(std::span<TextureId> textures) { glGenTextures(static_cast<GLsizei>(textures.size()), textures.data()); }
+    inline void glGenTextures(std::span<TextureId> textures) { glGenTextures(detail::checked_glsizei(textures.size()), textures.data()); }
     /// @brief Deletes texture objects and frees their GPU memory (GL ES 2.0+)
     void glDeleteTextures(GLsizei n, const TextureId * textures);
-    inline void glDeleteTextures(std::span<const TextureId> textures) { glDeleteTextures(static_cast<GLsizei>(textures.size()), textures.data()); }
+    inline void glDeleteTextures(std::span<const TextureId> textures) { glDeleteTextures(detail::checked_glsizei(textures.size()), textures.data()); }
     /// @brief Binds a texture to a target in the active texture unit (GL ES 2.0+)
     void glBindTexture(TextureTarget target, TextureId texture);
+    inline void glBindTexture(TextureBindingTarget target, TextureId texture)
+    {
+        glBindTexture(static_cast<TextureTarget>(target), texture);
+    }
     /// @brief Selects the active texture unit for subsequent texture operations (GL ES 2.0+)
     void glActiveTexture(TextureUnit texture);
     /// @brief Returns GL_TRUE if the name is a valid texture object (GL ES 2.0+)
-    bool glIsTexture(TextureId texture);
+    [[nodiscard]] bool glIsTexture(TextureId texture);
     /// @brief Specifies a 2D texture image and allocates GPU storage (GL ES 2.0+)
     void glTexImage2D(TextureTarget target, GLint level, InternalFormat internalformat, GLsizei width, GLsizei height, GLint border, PixelFormat format, PixelType type, const void * pixels);
     /// @brief Specifies a 3D or 2D-array texture image and allocates GPU storage (GL ES 3.0+)
@@ -676,14 +719,14 @@ namespace metagl
 
     /// @brief Generates one or more sampler object names (GL ES 3.0+)
     void glGenSamplers(GLsizei count, SamplerId * samplers);
-    inline void glGenSamplers(std::span<SamplerId> samplers) { glGenSamplers(static_cast<GLsizei>(samplers.size()), samplers.data()); }
+    inline void glGenSamplers(std::span<SamplerId> samplers) { glGenSamplers(detail::checked_glsizei(samplers.size()), samplers.data()); }
     /// @brief Deletes sampler objects (GL ES 3.0+)
     void glDeleteSamplers(GLsizei count, const SamplerId * samplers);
-    inline void glDeleteSamplers(std::span<const SamplerId> samplers) { glDeleteSamplers(static_cast<GLsizei>(samplers.size()), samplers.data()); }
+    inline void glDeleteSamplers(std::span<const SamplerId> samplers) { glDeleteSamplers(detail::checked_glsizei(samplers.size()), samplers.data()); }
     /// @brief Binds a sampler to a texture unit, overriding the texture's own sampling state (GL ES 3.0+)
     void glBindSampler(GLuint unit, SamplerId sampler);
     /// @brief Returns GL_TRUE if the name is a valid sampler object (GL ES 3.0+)
-    bool glIsSampler(SamplerId sampler);
+    [[nodiscard]] bool glIsSampler(SamplerId sampler);
     /// @brief Sets a float sampling parameter on a sampler object (GL ES 3.0+)
     void glSamplerParameterf(SamplerId sampler, SamplerParameter pname, GLfloat param);
     /// @brief Sets an integer sampling parameter on a sampler object (GL ES 3.0+)
@@ -711,16 +754,16 @@ namespace metagl
 
     /// @brief Generates one or more framebuffer object names (GL ES 2.0+)
     void glGenFramebuffers(GLsizei n, FramebufferId * framebuffers);
-    inline void glGenFramebuffers(std::span<FramebufferId> framebuffers) { glGenFramebuffers(static_cast<GLsizei>(framebuffers.size()), framebuffers.data()); }
+    inline void glGenFramebuffers(std::span<FramebufferId> framebuffers) { glGenFramebuffers(detail::checked_glsizei(framebuffers.size()), framebuffers.data()); }
     /// @brief Deletes framebuffer objects (GL ES 2.0+)
     void glDeleteFramebuffers(GLsizei n, const FramebufferId * framebuffers);
-    inline void glDeleteFramebuffers(std::span<const FramebufferId> framebuffers) { glDeleteFramebuffers(static_cast<GLsizei>(framebuffers.size()), framebuffers.data()); }
+    inline void glDeleteFramebuffers(std::span<const FramebufferId> framebuffers) { glDeleteFramebuffers(detail::checked_glsizei(framebuffers.size()), framebuffers.data()); }
     /// @brief Binds a framebuffer to GL_FRAMEBUFFER, GL_READ_FRAMEBUFFER, or GL_DRAW_FRAMEBUFFER (GL ES 2.0+)
     void glBindFramebuffer(FramebufferTarget target, FramebufferId framebuffer);
     /// @brief Returns GL_TRUE if the name is a valid framebuffer object (GL ES 2.0+)
-    bool glIsFramebuffer(FramebufferId framebuffer);
+    [[nodiscard]] bool glIsFramebuffer(FramebufferId framebuffer);
     /// @brief Returns the completeness status of the bound framebuffer (GL ES 2.0+)
-    FramebufferStatus glCheckFramebufferStatus(FramebufferTarget target);
+    [[nodiscard]] FramebufferStatus glCheckFramebufferStatus(FramebufferTarget target);
     /// @brief Attaches a 2D texture level as a framebuffer color/depth/stencil attachment (GL ES 2.0+)
     void glFramebufferTexture2D(FramebufferTarget target, FramebufferAttachment attachment, TextureTarget textarget, TextureId texture, GLint level);
     /// @brief Attaches a single layer of a layered texture to a framebuffer attachment point (GL ES 3.0+)
@@ -739,10 +782,10 @@ namespace metagl
     void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, ClearBufferBit mask, BlitFilter filter);
     /// @brief Hints that attachment contents are no longer needed (bandwidth optimization) (GL ES 3.0+)
     void glInvalidateFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments);
-    inline void glInvalidateFramebuffer(FramebufferTarget target, std::span<const FramebufferAttachment> attachments) { glInvalidateFramebuffer(target, static_cast<GLsizei>(attachments.size()), attachments.data()); }
+    inline void glInvalidateFramebuffer(FramebufferTarget target, std::span<const FramebufferAttachment> attachments) { glInvalidateFramebuffer(target, detail::checked_glsizei(attachments.size()), attachments.data()); }
     /// @brief Invalidates a sub-rectangle of framebuffer attachments (GL ES 3.0+)
     void glInvalidateSubFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments, GLint x, GLint y, GLsizei width, GLsizei height);
-    inline void glInvalidateSubFramebuffer(FramebufferTarget target, std::span<const FramebufferAttachment> attachments, GLint x, GLint y, GLsizei width, GLsizei height) { glInvalidateSubFramebuffer(target, static_cast<GLsizei>(attachments.size()), attachments.data(), x, y, width, height); }
+    inline void glInvalidateSubFramebuffer(FramebufferTarget target, std::span<const FramebufferAttachment> attachments, GLint x, GLint y, GLsizei width, GLsizei height) { glInvalidateSubFramebuffer(target, detail::checked_glsizei(attachments.size()), attachments.data(), x, y, width, height); }
 
     /// @}
     /// @name Renderbuffer Objects
@@ -750,14 +793,14 @@ namespace metagl
 
     /// @brief Generates one or more renderbuffer object names (GL ES 2.0+)
     void glGenRenderbuffers(GLsizei n, RenderbufferId * renderbuffers);
-    inline void glGenRenderbuffers(std::span<RenderbufferId> renderbuffers) { glGenRenderbuffers(static_cast<GLsizei>(renderbuffers.size()), renderbuffers.data()); }
+    inline void glGenRenderbuffers(std::span<RenderbufferId> renderbuffers) { glGenRenderbuffers(detail::checked_glsizei(renderbuffers.size()), renderbuffers.data()); }
     /// @brief Deletes renderbuffer objects and frees their GPU memory (GL ES 2.0+)
     void glDeleteRenderbuffers(GLsizei n, const RenderbufferId * renderbuffers);
-    inline void glDeleteRenderbuffers(std::span<const RenderbufferId> renderbuffers) { glDeleteRenderbuffers(static_cast<GLsizei>(renderbuffers.size()), renderbuffers.data()); }
+    inline void glDeleteRenderbuffers(std::span<const RenderbufferId> renderbuffers) { glDeleteRenderbuffers(detail::checked_glsizei(renderbuffers.size()), renderbuffers.data()); }
     /// @brief Binds a renderbuffer to the GL_RENDERBUFFER target (GL ES 2.0+)
     void glBindRenderbuffer(RenderbufferTarget target, RenderbufferId renderbuffer);
     /// @brief Returns GL_TRUE if the name is a valid renderbuffer object (GL ES 2.0+)
-    bool glIsRenderbuffer(RenderbufferId renderbuffer);
+    [[nodiscard]] bool glIsRenderbuffer(RenderbufferId renderbuffer);
     /// @brief Allocates single-sample GPU storage for a renderbuffer (GL ES 2.0+)
     void glRenderbufferStorage(RenderbufferTarget target, InternalFormat internalformat, GLsizei width, GLsizei height);
     /// @brief Allocates multisample GPU storage for a renderbuffer (for MSAA) (GL ES 3.0+)
@@ -771,14 +814,14 @@ namespace metagl
 
     /// @brief Generates one or more transform feedback object names (GL ES 3.0+)
     void glGenTransformFeedbacks(GLsizei n, TransformFeedbackId * ids);
-    inline void glGenTransformFeedbacks(std::span<TransformFeedbackId> ids) { glGenTransformFeedbacks(static_cast<GLsizei>(ids.size()), ids.data()); }
+    inline void glGenTransformFeedbacks(std::span<TransformFeedbackId> ids) { glGenTransformFeedbacks(detail::checked_glsizei(ids.size()), ids.data()); }
     /// @brief Deletes transform feedback objects (GL ES 3.0+)
     void glDeleteTransformFeedbacks(GLsizei n, const TransformFeedbackId * ids);
-    inline void glDeleteTransformFeedbacks(std::span<const TransformFeedbackId> ids) { glDeleteTransformFeedbacks(static_cast<GLsizei>(ids.size()), ids.data()); }
+    inline void glDeleteTransformFeedbacks(std::span<const TransformFeedbackId> ids) { glDeleteTransformFeedbacks(detail::checked_glsizei(ids.size()), ids.data()); }
     /// @brief Binds a transform feedback object to capture its output buffer state (GL ES 3.0+)
     void glBindTransformFeedback(TransformFeedbackTarget target, TransformFeedbackId id);
     /// @brief Returns GL_TRUE if the name is a valid transform feedback object (GL ES 3.0+)
-    bool glIsTransformFeedback(TransformFeedbackId id);
+    [[nodiscard]] bool glIsTransformFeedback(TransformFeedbackId id);
     /// @brief Starts capturing vertex shader outputs into transform feedback buffers (GL ES 3.0+)
     void glBeginTransformFeedback(PrimitiveType primitiveMode);
     /// @brief Ends the current transform feedback capture session (GL ES 3.0+)
@@ -798,12 +841,12 @@ namespace metagl
 
     /// @brief Generates one or more query object names (GL ES 3.0+)
     void glGenQueries(GLsizei n, QueryId * ids);
-    inline void glGenQueries(std::span<QueryId> ids) { glGenQueries(static_cast<GLsizei>(ids.size()), ids.data()); }
+    inline void glGenQueries(std::span<QueryId> ids) { glGenQueries(detail::checked_glsizei(ids.size()), ids.data()); }
     /// @brief Deletes query objects (GL ES 3.0+)
     void glDeleteQueries(GLsizei n, const QueryId * ids);
-    inline void glDeleteQueries(std::span<const QueryId> ids) { glDeleteQueries(static_cast<GLsizei>(ids.size()), ids.data()); }
+    inline void glDeleteQueries(std::span<const QueryId> ids) { glDeleteQueries(detail::checked_glsizei(ids.size()), ids.data()); }
     /// @brief Returns GL_TRUE if the name is a valid query object (GL ES 3.0+)
-    bool glIsQuery(QueryId id);
+    [[nodiscard]] bool glIsQuery(QueryId id);
     /// @brief Begins recording a GPU query (occlusion, primitives written, etc.) (GL ES 3.0+)
     void glBeginQuery(QueryTarget target, QueryId id);
     /// @brief Ends a query; result becomes available asynchronously (GL ES 3.0+)
@@ -818,13 +861,13 @@ namespace metagl
     /// @{
 
     /// @brief Creates a sync object and inserts a fence into the GL command stream (GL ES 3.0+)
-    GLsync glFenceSync(SyncCondition condition, SyncFlag flags);
+    [[nodiscard]] GLsync glFenceSync(SyncCondition condition, SyncFlag flags);
     /// @brief Deletes a sync object (GL ES 3.0+)
     void glDeleteSync(GLsync sync);
     /// @brief Returns GL_TRUE if the object is a valid sync (GL ES 3.0+)
-    bool glIsSync(GLsync sync);
+    [[nodiscard]] bool glIsSync(GLsync sync);
     /// @brief Blocks the CPU until a sync is signaled or the timeout expires (GL ES 3.0+)
-    SyncWaitResult glClientWaitSync(GLsync sync, SyncFlushMask flags, GLuint64 timeout);
+    [[nodiscard]] SyncWaitResult glClientWaitSync(GLsync sync, SyncFlushMask flags, GLuint64 timeout);
     /// @brief Blocks the GPU command processor until a sync is signaled (CPU not blocked) (GL ES 3.0+)
     void glWaitSync(GLsync sync, SyncFlag flags, GLuint64 timeout);
     /// @brief Returns the status or type of a sync object (signaled / unsignaled) (GL ES 3.0+)
@@ -849,20 +892,20 @@ namespace metagl
 
     /// @brief Generates one or more program pipeline object names (GL ES 3.1+)
     void glGenProgramPipelines(GLsizei n, ProgramPipelineId * pipelines);
-    inline void glGenProgramPipelines(std::span<ProgramPipelineId> pipelines) { glGenProgramPipelines(static_cast<GLsizei>(pipelines.size()), pipelines.data()); }
+    inline void glGenProgramPipelines(std::span<ProgramPipelineId> pipelines) { glGenProgramPipelines(detail::checked_glsizei(pipelines.size()), pipelines.data()); }
     /// @brief Deletes program pipeline objects (GL ES 3.1+)
     void glDeleteProgramPipelines(GLsizei n, const ProgramPipelineId * pipelines);
-    inline void glDeleteProgramPipelines(std::span<const ProgramPipelineId> pipelines) { glDeleteProgramPipelines(static_cast<GLsizei>(pipelines.size()), pipelines.data()); }
+    inline void glDeleteProgramPipelines(std::span<const ProgramPipelineId> pipelines) { glDeleteProgramPipelines(detail::checked_glsizei(pipelines.size()), pipelines.data()); }
     /// @brief Binds a program pipeline for rendering (GL ES 3.1+)
     void glBindProgramPipeline(ProgramPipelineId pipeline);
     /// @brief Returns GL_TRUE if the name is a valid program pipeline object (GL ES 3.1+)
-    bool glIsProgramPipeline(ProgramPipelineId pipeline);
+    [[nodiscard]] bool glIsProgramPipeline(ProgramPipelineId pipeline);
     /// @brief Installs shader stages from a separable program into a pipeline (GL ES 3.1+)
     void glUseProgramStages(ProgramPipelineId pipeline, ShaderStageMask stages, ProgramId program);
     /// @brief Sets the active program in a pipeline for direct uniform calls (GL ES 3.1+)
     void glActiveShaderProgram(ProgramPipelineId pipeline, ProgramId program);
     /// @brief Compiles, links, and creates a separable program in one step (GL ES 3.1+)
-    ProgramId glCreateShaderProgramv(ShaderType type, GLsizei count, const GLchar *const* strings);
+    [[nodiscard]] ProgramId glCreateShaderProgramv(ShaderType type, GLsizei count, const GLchar *const* strings);
     /// @brief Validates a pipeline can execute given current GL state (GL ES 3.1+)
     void glValidateProgramPipeline(ProgramPipelineId pipeline);
     /// @brief Returns parameters of a program pipeline (installed stages, validate status) (GL ES 3.1+)
@@ -887,11 +930,11 @@ namespace metagl
     void glDebugMessageCallback(GLDEBUGPROC callback, const void * userParam);
     /// @brief Filters which debug messages are generated by source, type, and severity (GL ES 3.2+)
     void glDebugMessageControl(DebugSource source, DebugType type, DebugSeverity severity, GLsizei count, const GLuint * ids, GLboolean enabled);
-    inline void glDebugMessageControl(DebugSource source, DebugType type, DebugSeverity severity, std::span<const GLuint> ids, GLboolean enabled) { glDebugMessageControl(source, type, severity, static_cast<GLsizei>(ids.size()), ids.data(), enabled); }
+    inline void glDebugMessageControl(DebugSource source, DebugType type, DebugSeverity severity, std::span<const GLuint> ids, GLboolean enabled) { glDebugMessageControl(source, type, severity, detail::checked_glsizei(ids.size()), ids.data(), enabled); }
     /// @brief Inserts an application-generated message into the GL debug stream (GL ES 3.2+)
     void glDebugMessageInsert(DebugSource source, DebugType type, GLuint id, DebugSeverity severity, GLsizei length, const GLchar * buf);
     /// @brief Retrieves queued debug messages from the GL internal message log (GL ES 3.2+)
-    GLuint glGetDebugMessageLog(GLuint count, GLsizei bufSize, DebugSource * sources, DebugType * types, GLuint * ids, DebugSeverity * severities, GLsizei * lengths, GLchar * messageLog);
+    [[nodiscard]] GLuint glGetDebugMessageLog(GLuint count, GLsizei bufSize, DebugSource * sources, DebugType * types, GLuint * ids, DebugSeverity * severities, GLsizei * lengths, GLchar * messageLog);
     /// @brief Pushes a named debug group onto the stack (visible in GPU debuggers) (GL ES 3.2+)
     void glPushDebugGroup(DebugSource source, GLuint id, GLsizei length, const GLchar * message);
     /// @brief Pops the innermost debug group from the stack (GL ES 3.2+)
@@ -913,7 +956,7 @@ namespace metagl
     /// @{
 
     /// @brief Returns the graphics reset status for robustness/error recovery (GL ES 3.2+)
-    GraphicsResetStatus glGetGraphicsResetStatus(void);
+    [[nodiscard]] GraphicsResetStatus glGetGraphicsResetStatus(void);
 
     /// @}
     // -------------------------------------------------------------------------
@@ -1137,7 +1180,8 @@ namespace metagl
         using Value = std::ranges::range_value_t<Vec>;
 
         const auto* data = std::ranges::data(values);
-        const auto count = static_cast<GLsizei>(std::ranges::size(values) / Components);
+        const auto count = detail::checked_element_count(
+            std::ranges::size(values), Components);
         detail::glUniformVectorDispatch<Components, Value>(location, count, data);
     }
 
@@ -1162,7 +1206,8 @@ namespace metagl
         requires detail::IsUniformComponentCount<Components>
     inline void glUniform(UniformLocation location, std::initializer_list<T> values)
     {
-        const auto count = static_cast<GLsizei>(values.size() / Components);
+        const auto count = detail::checked_element_count(
+            values.size(), Components);
         detail::glUniformVectorDispatch<Components, T>(location, count, values.begin());
     }
 
@@ -1172,7 +1217,8 @@ namespace metagl
     inline void glUniformMatrix(UniformLocation location, const Vec& values, GLboolean transpose = GL_FALSE)
     {
         const auto* data = std::ranges::data(values);
-        const auto count = static_cast<GLsizei>(std::ranges::size(values) / (Size * Size));
+        const auto count = detail::checked_matrix_count(
+            std::ranges::size(values), Size * Size, transpose);
         detail::glUniformMatrixDispatch<Size, Size>(location, count, transpose, data);
     }
 
@@ -1182,7 +1228,8 @@ namespace metagl
     inline void glUniformMatrix(UniformLocation location, const Vec& values, GLboolean transpose = GL_FALSE)
     {
         const auto* data = std::ranges::data(values);
-        const auto count = static_cast<GLsizei>(std::ranges::size(values) / (Columns * Rows));
+        const auto count = detail::checked_matrix_count(
+            std::ranges::size(values), Columns * Rows, transpose);
         detail::glUniformMatrixDispatch<Columns, Rows>(location, count, transpose, data);
     }
 
@@ -1191,7 +1238,8 @@ namespace metagl
         requires (Size >= 2 && Size <= 4)
     inline void glUniformMatrix(UniformLocation location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
     {
-        const auto count = static_cast<GLsizei>(values.size() / (Size * Size));
+        const auto count = detail::checked_matrix_count(
+            values.size(), Size * Size, transpose);
         detail::glUniformMatrixDispatch<Size, Size>(location, count, transpose, values.begin());
     }
 
@@ -1200,7 +1248,8 @@ namespace metagl
         requires detail::UniformMatrixShape<Columns, Rows>
     inline void glUniformMatrix(UniformLocation location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
     {
-        const auto count = static_cast<GLsizei>(values.size() / (Columns * Rows));
+        const auto count = detail::checked_matrix_count(
+            values.size(), Columns * Rows, transpose);
         detail::glUniformMatrixDispatch<Columns, Rows>(location, count, transpose, values.begin());
     }
 
@@ -1292,7 +1341,8 @@ namespace metagl
         using Value = std::ranges::range_value_t<Vec>;
 
         const auto* data = std::ranges::data(values);
-        const auto count = static_cast<GLsizei>(std::ranges::size(values) / Components);
+        const auto count = detail::checked_element_count(
+            std::ranges::size(values), Components);
         detail::glProgramUniformVectorDispatch<Components, Value>(program, location, count, data);
     }
 
@@ -1317,7 +1367,8 @@ namespace metagl
         requires detail::IsUniformComponentCount<Components>
     inline void glProgramUniform(ProgramId program, UniformLocation location, std::initializer_list<T> values)
     {
-        const auto count = static_cast<GLsizei>(values.size() / Components);
+        const auto count = detail::checked_element_count(
+            values.size(), Components);
         detail::glProgramUniformVectorDispatch<Components, T>(program, location, count, values.begin());
     }
 
@@ -1327,7 +1378,8 @@ namespace metagl
     inline void glProgramUniformMatrix(ProgramId program, UniformLocation location, const Vec& values, GLboolean transpose = GL_FALSE)
     {
         const auto* data = std::ranges::data(values);
-        const auto count = static_cast<GLsizei>(std::ranges::size(values) / (Size * Size));
+        const auto count = detail::checked_matrix_count(
+            std::ranges::size(values), Size * Size, transpose);
         detail::glProgramUniformMatrixDispatch<Size, Size>(program, location, count, transpose, data);
     }
 
@@ -1337,7 +1389,8 @@ namespace metagl
     inline void glProgramUniformMatrix(ProgramId program, UniformLocation location, const Vec& values, GLboolean transpose = GL_FALSE)
     {
         const auto* data = std::ranges::data(values);
-        const auto count = static_cast<GLsizei>(std::ranges::size(values) / (Columns * Rows));
+        const auto count = detail::checked_matrix_count(
+            std::ranges::size(values), Columns * Rows, transpose);
         detail::glProgramUniformMatrixDispatch<Columns, Rows>(program, location, count, transpose, data);
     }
 
@@ -1346,7 +1399,8 @@ namespace metagl
         requires (Size >= 2 && Size <= 4)
     inline void glProgramUniformMatrix(ProgramId program, UniformLocation location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
     {
-        const auto count = static_cast<GLsizei>(values.size() / (Size * Size));
+        const auto count = detail::checked_matrix_count(
+            values.size(), Size * Size, transpose);
         detail::glProgramUniformMatrixDispatch<Size, Size>(program, location, count, transpose, values.begin());
     }
 
@@ -1355,7 +1409,8 @@ namespace metagl
         requires detail::UniformMatrixShape<Columns, Rows>
     inline void glProgramUniformMatrix(ProgramId program, UniformLocation location, std::initializer_list<GLfloat> values, GLboolean transpose = GL_FALSE)
     {
-        const auto count = static_cast<GLsizei>(values.size() / (Columns * Rows));
+        const auto count = detail::checked_matrix_count(
+            values.size(), Columns * Rows, transpose);
         detail::glProgramUniformMatrixDispatch<Columns, Rows>(program, location, count, transpose, values.begin());
     }
 
@@ -1538,6 +1593,44 @@ namespace metagl
         else                                         { glTexParameteri(target, pname, param); }
     }
 
+    inline void glTexParameter(TextureTarget target, TextureMinFilter value)
+    {
+        glTexParameteri(target, TextureParameter::MinFilter,
+            static_cast<GLint>(value));
+    }
+
+    inline void glTexParameter(TextureTarget target, TextureMagFilter value)
+    {
+        glTexParameteri(target, TextureParameter::MagFilter,
+            static_cast<GLint>(value));
+    }
+
+    inline void glTexParameter(TextureTarget target,
+        TextureWrapParameter pname, TextureWrapMode value)
+    {
+        glTexParameteri(target, static_cast<TextureParameter>(pname),
+            static_cast<GLint>(value));
+    }
+
+    inline void glTexParameter(TextureTarget target, TextureCompareMode value)
+    {
+        glTexParameteri(target, TextureParameter::CompareMode,
+            static_cast<GLint>(value));
+    }
+
+    inline void glTexParameter(TextureTarget target, CompareFunc value)
+    {
+        glTexParameteri(target, TextureParameter::CompareFunc,
+            static_cast<GLint>(value));
+    }
+
+    inline void glTexParameter(TextureTarget target,
+        TextureSwizzleParameter pname, TextureSwizzle value)
+    {
+        glTexParameteri(target, static_cast<TextureParameter>(pname),
+            static_cast<GLint>(value));
+    }
+
     // #277-#278 - typed dispatch: glSamplerParameter<float/int>(sampler, pname, param)
     template<typename T>
         requires std::same_as<std::remove_cvref_t<T>, GLfloat> || std::same_as<std::remove_cvref_t<T>, GLint>
@@ -1546,6 +1639,37 @@ namespace metagl
         using Value = std::remove_cvref_t<T>;
         if constexpr (std::same_as<Value, GLfloat>) { glSamplerParameterf(sampler, pname, param); }
         else                                         { glSamplerParameteri(sampler, pname, param); }
+    }
+
+    inline void glSamplerParameter(SamplerId sampler, TextureMinFilter value)
+    {
+        glSamplerParameteri(sampler, SamplerParameter::MinFilter,
+            static_cast<GLint>(value));
+    }
+
+    inline void glSamplerParameter(SamplerId sampler, TextureMagFilter value)
+    {
+        glSamplerParameteri(sampler, SamplerParameter::MagFilter,
+            static_cast<GLint>(value));
+    }
+
+    inline void glSamplerParameter(SamplerId sampler,
+        SamplerWrapParameter pname, TextureWrapMode value)
+    {
+        glSamplerParameteri(sampler, static_cast<SamplerParameter>(pname),
+            static_cast<GLint>(value));
+    }
+
+    inline void glSamplerParameter(SamplerId sampler, TextureCompareMode value)
+    {
+        glSamplerParameteri(sampler, SamplerParameter::CompareMode,
+            static_cast<GLint>(value));
+    }
+
+    inline void glSamplerParameter(SamplerId sampler, CompareFunc value)
+    {
+        glSamplerParameteri(sampler, SamplerParameter::CompareFunc,
+            static_cast<GLint>(value));
     }
 
     // #116-#118 - typed dispatch: glClearBuffer<float/int/unsigned int>(buffer, drawbuffer, value)
@@ -1620,7 +1744,7 @@ namespace metagl
         std::span<const T> pixels)
     {
         glCompressedTexImage2D(target, level, internalformat, width, height, border,
-            static_cast<GLsizei>(pixels.size_bytes()), pixels.data());
+            detail::checked_glsizei(pixels.size_bytes()), pixels.data());
     }
 
     template<SpanCompatible T>
@@ -1630,7 +1754,7 @@ namespace metagl
         std::span<const T> pixels)
     {
         glCompressedTexImage3D(target, level, internalformat, width, height, depth, border,
-            static_cast<GLsizei>(pixels.size_bytes()), pixels.data());
+            detail::checked_glsizei(pixels.size_bytes()), pixels.data());
     }
 
     template<SpanCompatible T>
@@ -1639,7 +1763,7 @@ namespace metagl
         CompressedInternalFormat format, std::span<const T> pixels)
     {
         glCompressedTexSubImage2D(target, level, xoffset, yoffset, width, height,
-            format, static_cast<GLsizei>(pixels.size_bytes()), pixels.data());
+            format, detail::checked_glsizei(pixels.size_bytes()), pixels.data());
     }
 
     template<SpanCompatible T>
@@ -1650,7 +1774,7 @@ namespace metagl
     {
         glCompressedTexSubImage3D(target, level, xoffset, yoffset, zoffset,
             width, height, depth, format,
-            static_cast<GLsizei>(pixels.size_bytes()), pixels.data());
+            detail::checked_glsizei(pixels.size_bytes()), pixels.data());
     }
 
 }

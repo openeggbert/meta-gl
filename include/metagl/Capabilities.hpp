@@ -2,7 +2,8 @@
  * @file Capabilities.hpp
  * @brief GL capabilities and extension detection after context initialisation.
  *
- * `Capabilities` is populated by @ref Initialize / @ref LoadCurrentContext and
+ * `Capabilities` is populated by @ref metagl::Initialize /
+ * @ref metagl::LoadCurrentContext and
  * is available immediately after either returns `true`.
  *
  * @code

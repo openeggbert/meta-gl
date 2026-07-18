@@ -60,7 +60,9 @@ Project-specific options do not modify similarly named parent-project options:
 | Option | Default | Purpose |
 |---|---:|---|
 | `METAGL_BUILD_TESTS` | `OFF` | Build and register meta-gl tests |
+| `METAGL_BUILD_GPU_TESTS` | `OFF` | Add a headless EGL test using a real GL implementation |
 | `METAGL_BUILD_EXAMPLES` | `OFF` | Build the no-GPU example |
+| `METAGL_BUILD_DOCS` | `OFF` | Add the `metagl-docs` Doxygen target |
 | `METAGL_SANITIZE` | `OFF` | Enable ASan and UBSan with GCC/Clang |
 | `METAGL_ENABLE_DEBUG_LOGGING` | `OFF` | Compile per-call logging and `glGetError` checks |
 | `METAGL_DEBUG_IMMEDIATE` | `OFF` | Flush every debug record immediately |
@@ -86,6 +88,34 @@ target_link_libraries(my-target PRIVATE meta-gl::meta-gl)
 
 For `0.x` releases, package compatibility is limited to the same minor
 version because a minor bump may contain breaking API changes.
+
+### Tests and documentation
+
+```bash
+cmake -S . -B build -DMETAGL_BUILD_TESTS=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+The default tests include mock lifecycle/platform coverage, a fresh installed
+package consumer, and an API consistency check for all 358 wrappers and the
+142-function GLES 2.0 minimum. To exercise a real headless context when EGL
+and Mesa (or another EGL implementation) are installed:
+
+```bash
+cmake -S . -B build-gpu \
+  -DMETAGL_BUILD_TESTS=ON \
+  -DMETAGL_BUILD_GPU_TESTS=ON
+cmake --build build-gpu
+ctest --test-dir build-gpu --output-on-failure
+```
+
+API documentation is generated with:
+
+```bash
+cmake -S . -B build-docs -DMETAGL_BUILD_DOCS=ON
+cmake --build build-docs --target metagl-docs
+```
 
 ### CMake presets
 

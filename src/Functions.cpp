@@ -2,6 +2,7 @@
 #include "metagl/Debug.hpp"
 
 #include <cassert>
+#include <functional>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -404,8 +405,21 @@ namespace metagl::detail
 #endif
     }
 
+    struct TransparentStringHash
+    {
+        using is_transparent = void;
+
+        [[nodiscard]] std::size_t operator()(std::string_view value) const noexcept
+        {
+            return std::hash<std::string_view>{}(value);
+        }
+    };
+
     // Maps each GL function name to whether it was successfully loaded.
-    std::unordered_map<std::string, bool> g_function_availability;
+    // Transparent lookup keeps IsFunctionAvailable noexcept without creating
+    // an allocating std::string temporary.
+    std::unordered_map<std::string, bool,
+        TransparentStringHash, std::equal_to<>> g_function_availability;
 
     template <typename T>
     static T load(GlGetProcAddressFn loader, const char* name)
@@ -1373,7 +1387,7 @@ namespace metagl
 
     bool IsFunctionAvailable(std::string_view name) noexcept
     {
-        auto it = detail::g_function_availability.find(std::string(name));
+        const auto it = detail::g_function_availability.find(name);
         if (it == detail::g_function_availability.end()) return false;
         return it->second;
     }
@@ -1869,7 +1883,11 @@ namespace metagl
     void* glMapBufferRange(BufferTarget target, GLintptr offset, GLsizeiptr length, MapBufferAccessMask access)
     {
         assert(detail::g_gl.MapBufferRange != nullptr);
-        return detail::g_gl.MapBufferRange(detail::to_gl_enum(target), offset, length, detail::to_gl_bitfield(access));
+        void* const _r = detail::g_gl.MapBufferRange(
+            detail::to_gl_enum(target), offset, length,
+            detail::to_gl_bitfield(access));
+        METAGL_DEBUG_LOG("glMapBufferRange", _r, target, offset, length, access);
+        return _r;
     }
 
     // #61
@@ -3746,7 +3764,10 @@ namespace metagl
     FramebufferStatus glCheckFramebufferStatus(FramebufferTarget target)
     {
         assert(detail::g_gl.CheckFramebufferStatus != nullptr);
-        return static_cast<FramebufferStatus>(detail::g_gl.CheckFramebufferStatus(detail::to_gl_enum(target)));
+        const auto _r = static_cast<FramebufferStatus>(
+            detail::g_gl.CheckFramebufferStatus(detail::to_gl_enum(target)));
+        METAGL_DEBUG_LOG("glCheckFramebufferStatus", _r, target);
+        return _r;
     }
 
     // #292
@@ -4060,7 +4081,11 @@ namespace metagl
     SyncWaitResult glClientWaitSync(GLsync sync, SyncFlushMask flags, GLuint64 timeout)
     {
         assert(detail::g_gl.ClientWaitSync != nullptr);
-        return static_cast<SyncWaitResult>(detail::g_gl.ClientWaitSync(sync, detail::to_gl_bitfield(flags), timeout));
+        const auto _r = static_cast<SyncWaitResult>(
+            detail::g_gl.ClientWaitSync(
+                sync, detail::to_gl_bitfield(flags), timeout));
+        METAGL_DEBUG_LOG("glClientWaitSync", _r, sync, flags, timeout);
+        return _r;
     }
 
     // #330
@@ -4296,7 +4321,10 @@ namespace metagl
     GraphicsResetStatus glGetGraphicsResetStatus(void)
     {
         assert(detail::g_gl.GetGraphicsResetStatus != nullptr);
-        return static_cast<GraphicsResetStatus>(detail::g_gl.GetGraphicsResetStatus());
+        const auto _r = static_cast<GraphicsResetStatus>(
+            detail::g_gl.GetGraphicsResetStatus());
+        METAGL_DEBUG_LOG("glGetGraphicsResetStatus", _r);
+        return _r;
     }
 
 }

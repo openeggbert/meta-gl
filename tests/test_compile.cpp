@@ -22,10 +22,17 @@ static_assert(requires(unsigned int* p) { glGetnUniform(ProgramId{}, UniformLoca
 // glTexParameter<T>
 static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureParameter::MinFilter, 0.0f); });
 static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureParameter::MinFilter, 0); });
+static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureMinFilter::Linear); });
+static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureMagFilter::Linear); });
+static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureWrapParameter::WrapS, TextureWrapMode::Repeat); });
+static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureCompareMode::None); });
+static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureSwizzleParameter::SwizzleR, TextureSwizzle::Red); });
 
 // glSamplerParameter<T>
 static_assert(requires { glSamplerParameter(SamplerId{}, SamplerParameter::MinFilter, 0.0f); });
 static_assert(requires { glSamplerParameter(SamplerId{}, SamplerParameter::MinFilter, 0); });
+static_assert(requires { glSamplerParameter(SamplerId{}, TextureMinFilter::Linear); });
+static_assert(requires { glSamplerParameter(SamplerId{}, SamplerWrapParameter::WrapS, TextureWrapMode::Repeat); });
 
 // glClearBuffer<T>
 static_assert(requires(float* v)        { glClearBuffer(ClearBuffer::Color, 0, v); });
@@ -99,6 +106,8 @@ static_assert(!std::is_convertible_v<QueryId,    TransformFeedbackId>);
 static_assert(!std::is_constructible_v<ShaderId,   ProgramId>);
 static_assert(!std::is_constructible_v<TextureId,  BufferId>);
 static_assert(!std::is_constructible_v<FramebufferId, RenderbufferId>);
+static_assert(TextureId{7} == TextureId{7});
+static_assert(!(TextureId{7} == TextureId{8}));
 
 // UniformLocation and AttribLocation are distinct signed-location structs.
 static_assert(!std::is_convertible_v<UniformLocation, AttribLocation>);
@@ -180,8 +189,12 @@ int main()
     check("UniformBlockParameter::Binding",              to_string(UniformBlockParameter::Binding));
     check("UniformParameter::Type",                      to_string(UniformParameter::Type));
     check("TextureTarget::Texture2D",                    to_string(TextureTarget::Texture2D));
+    check("TextureBindingTarget::Texture2D",             to_string(TextureBindingTarget::Texture2D));
     check("TextureParameter::MinFilter",                 to_string(TextureParameter::MinFilter));
+    check("TextureWrapParameter::WrapS",                 to_string(TextureWrapParameter::WrapS));
+    check("TextureSwizzleParameter::SwizzleR",           to_string(TextureSwizzleParameter::SwizzleR));
     check("SamplerParameter::MinFilter",                 to_string(SamplerParameter::MinFilter));
+    check("SamplerWrapParameter::WrapS",                 to_string(SamplerWrapParameter::WrapS));
     check("TextureMinFilter::Nearest",                   to_string(TextureMinFilter::Nearest));
     check("TextureMagFilter::Nearest",                   to_string(TextureMagFilter::Nearest));
     check("BlitFilter::Nearest",                         to_string(BlitFilter::Nearest));

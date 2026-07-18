@@ -12,6 +12,9 @@ All notable changes to meta-gl will be documented here.
 - Desktop OpenGL 3.3+ detection with `glDepthRange`/`glClearDepth` adapters,
   plus `SupportsDesktopOpenGL()` and ANGLE detection via `IsAngle()`.
 - Project-scoped CMake options and a supported CMake switch for debug logging.
+- Typed texture binding/parameter overloads, checked range-size conversions,
+  an API-consistency verifier, optional headless EGL smoke testing, and a
+  Doxygen build target.
 
 ### Changed
 - `AttribLocation` stores the signed `GLint` returned by
@@ -20,6 +23,8 @@ All notable changes to meta-gl will be documented here.
 - Package compatibility for `0.x` releases is limited to the same minor
   version.
 - Khronos GLES/KHR headers and license files are installed with the package.
+- Query/create results are marked `[[nodiscard]]`; lightweight GL wrappers
+  support same-type equality comparisons.
 
 ### Fixed
 - Failed reloads no longer expose stale context status or capabilities.
@@ -32,6 +37,12 @@ All notable changes to meta-gl will be documented here.
 - Mock loaders use a correctly typed `glGetError` stub under function-type
   sanitizers.
 - Installed packages no longer depend on uninstalled Khronos headers.
+- The vendored `KHR/khrplatform.h` now provides the public Khronos platform
+  contract required when system EGL headers are included beside meta-gl.
+- Uniform vector/matrix helpers reject incomplete ranges instead of silently
+  truncating them, and all span length conversions check the GL target type.
+- `IsFunctionAvailable()` no longer allocates inside its `noexcept` lookup.
+- The canonical name is used for aliased framebuffer-binding query tokens.
 - README support claims, context-restore sequence, and handle example now match
   the implementation.
 

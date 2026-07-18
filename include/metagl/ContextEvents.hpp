@@ -2,8 +2,10 @@
  * @file ContextEvents.hpp
  * @brief Observer interface for GL context-lost and context-restored lifecycle events.
  *
- * Implement @ref ContextListener, override @ref ContextListener::OnContextLost and/or
- * @ref ContextListener::OnContextRestored, and register with @ref AddContextListener.
+ * Implement @ref metagl::ContextListener, override
+ * @ref metagl::ContextListener::OnContextLost and/or
+ * @ref metagl::ContextListener::OnContextRestored, and register with
+ * @ref metagl::AddContextListener.
  *
  * @code
  * class MyRenderer : public metagl::ContextListener

@@ -174,6 +174,27 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 
 ---
 
+## K — 2026 Comprehensive Audit
+
+| # | Task |
+|---|------|
+| K1 | ✅ Add atomic `RestoreCurrentContext`, reload Emscripten entry points before callbacks, and finish restored dispatch in `Current` |
+| K2 | ✅ Clear stale status/capabilities after loader failure; deduplicate listeners and snapshot dispatch to support self-removal |
+| K3 | ✅ Replace underlying-type bitfield detection with explicit traits and clamp `operator~` to each mask's valid bits |
+| K4 | ✅ Remove invalid draw/pixel enum values; add `IndexType`, signed `AttribLocation`, and `ActiveAttribIndex` compatibility APIs |
+| K5 | ✅ Add precise texture binding and typed filter/wrap/compare/swizzle parameter overloads while preserving low-level signatures |
+| K6 | ✅ Add checked span/range conversions and reject incomplete uniform vectors/matrices instead of truncating |
+| K7 | ✅ Make `IsFunctionAvailable` use non-allocating heterogeneous lookup and canonicalize duplicate query-token names |
+| K8 | ✅ Install GLES/KHR headers and licenses; complete `khrplatform.h` so installed headers coexist with EGL |
+| K9 | ✅ Scope CMake options, preserve standalone aliases, export Windows shared symbols, and use same-minor `0.x` package compatibility |
+| K10 | ✅ Add a real debug-logging option and type-correct mock functions; compile tests/examples with warnings and standard C++ mode |
+| K11 | ✅ Add CI plus an API verifier covering 358 wrappers, 360 loader names (including desktop fallbacks), and 142 GLES 2.0 minimum functions |
+| K12 | ✅ Add installed-package and optional real headless EGL/Mesa smoke tests |
+| K13 | ✅ Correct README/changelog claims and add a buildable Doxygen target |
+| K14 | ✅ Compile all of easy-gl against the audit branch and compare its existing resource-test failure against the baseline |
+
+---
+
 ## Summary counts
 
 | Theme | Tasks |
@@ -188,4 +209,5 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | H — Code quality & naming | 12 |
 | I — Tests | 10 |
 | J — Emscripten / platform | 5 |
-| **Total** | **93** |
+| K — 2026 comprehensive audit | 14 |
+| **Total** | **107** |

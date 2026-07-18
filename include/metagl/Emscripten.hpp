@@ -28,8 +28,9 @@
  *         emscripten_webgl_get_proc_address));
  * @endcode
  *
- * @note @ref RestoreCurrentContext reloads entry points before it notifies
- *       listeners. @ref InstallEmscriptenContextLossCallbacks uses this helper.
+ * @note @ref metagl::RestoreCurrentContext reloads entry points before it
+ *       notifies listeners.
+ *       @ref metagl::InstallEmscriptenContextLossCallbacks uses this helper.
  */
 #pragma once
 

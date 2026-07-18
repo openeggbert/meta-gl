@@ -4,11 +4,13 @@
  *
  * This header defines the primitive building blocks used throughout meta-gl:
  *
- * - `GlGetProcAddressFn` — the function-pointer loader signature accepted by @ref Initialize.
+ * - `GlGetProcAddressFn` — the function-pointer loader signature accepted by
+ *   @ref metagl::Initialize.
  * - Typed handle structs (`ShaderId`, `TextureId`, …) that wrap a single `GLuint`/`GLint`
  *   without owning the underlying GL resource.  Lifetime management is the caller's
  *   responsibility, exactly as with raw `GLuint` names.
- * - Three C++23 concepts: @ref GlHandle, @ref GlEnum, @ref SpanCompatible.
+ * - Three C++23 concepts: @ref metagl::GlHandle, @ref metagl::GlEnum,
+ *   @ref metagl::SpanCompatible.
  * - `using` declarations that import all GL scalar type aliases into the `metagl` namespace.
  */
 #pragma once
@@ -18,7 +20,9 @@
 #endif
 #include <GLES3/gl32.h>
 
+#include <cassert>
 #include <concepts>
+#include <limits>
 #include <type_traits>
 
 namespace metagl
@@ -137,7 +141,9 @@ namespace metagl
     /**
      * @brief Location (index) of a generic vertex attribute within a program object.
      *
-     * Wraps the `GLuint` returned by `glGetAttribLocation` / bound via `glBindAttribLocation`.
+     * Wraps the signed `GLint` returned by `glGetAttribLocation`; `-1`
+     * represents an inactive or missing attribute. The unsigned constructor
+     * keeps vertex-index call sites concise.
      */
     struct AttribLocation
     {
@@ -146,7 +152,11 @@ namespace metagl
         constexpr AttribLocation() noexcept = default;
         constexpr explicit AttribLocation(GLint location) noexcept : value(location) {}
         constexpr explicit AttribLocation(GLuint location) noexcept
-            : value(static_cast<GLint>(location)) {}
+            : value(static_cast<GLint>(location))
+        {
+            assert(location <= static_cast<GLuint>(
+                std::numeric_limits<GLint>::max()));
+        }
 
         [[nodiscard]] constexpr bool valid() const noexcept { return value >= 0; }
         [[nodiscard]] constexpr explicit operator bool() const noexcept { return valid(); }
@@ -171,7 +181,8 @@ namespace metagl
     struct ImageUnit            { GLuint value{}; };
 
     /**
-     * @brief Concept satisfied by any lightweight handle struct exposing a `GLuint value` member.
+     * @brief Concept satisfied by a lightweight GL wrapper exposing a scalar
+     *        `.value` convertible to `GLuint`.
      *
      * All handle structs defined in this header satisfy this concept.
      * It can be used to write generic functions that accept any meta-gl handle type.
@@ -188,6 +199,12 @@ namespace metagl
     concept GlHandle = requires(T h) {
         { h.value } -> std::convertible_to<GLuint>;
     };
+
+    template<GlHandle T>
+    [[nodiscard]] constexpr bool operator==(T lhs, T rhs) noexcept
+    {
+        return lhs.value == rhs.value;
+    }
 
     /**
      * @brief Opt-in traits for enum classes that represent GL bit masks.
@@ -218,7 +235,8 @@ namespace metagl
      *
      * @tparam T  Enum type to check.
      *
-     * Bitfield domains are excluded through the explicit @ref GlBitfieldTraits
+     * Bitfield domains are excluded through the explicit
+     * @ref metagl::GlBitfieldTraits
      * opt-in even when `GLenum` and `GLbitfield` are the same C++ type.
      */
     template<typename T>

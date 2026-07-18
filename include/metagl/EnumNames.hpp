@@ -711,6 +711,20 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TextureBindingTarget value.
+    inline std::string_view to_string(TextureBindingTarget v)
+    {
+        if (v == TextureBindingTarget::Texture2D) return "Texture2D";
+        else if (v == TextureBindingTarget::TextureCubeMap) return "TextureCubeMap";
+        else if (v == TextureBindingTarget::Texture3D) return "Texture3D";
+        else if (v == TextureBindingTarget::Texture2DArray) return "Texture2DArray";
+        else if (v == TextureBindingTarget::Texture2DMultisample) return "Texture2DMultisample";
+        else if (v == TextureBindingTarget::TextureBuffer) return "TextureBuffer";
+        else if (v == TextureBindingTarget::TextureCubeMapArray) return "TextureCubeMapArray";
+        else if (v == TextureBindingTarget::Texture2DMultisampleArray) return "Texture2DMultisampleArray";
+        return "?";
+    }
+
     /// @brief Returns the enumerator name of a @ref TextureParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(TextureParameter v)
     {
@@ -742,6 +756,23 @@ namespace metagl
         return "?";
     }
 
+    inline std::string_view to_string(TextureWrapParameter v)
+    {
+        if (v == TextureWrapParameter::WrapS) return "WrapS";
+        else if (v == TextureWrapParameter::WrapT) return "WrapT";
+        else if (v == TextureWrapParameter::WrapR) return "WrapR";
+        return "?";
+    }
+
+    inline std::string_view to_string(TextureSwizzleParameter v)
+    {
+        if (v == TextureSwizzleParameter::SwizzleR) return "SwizzleR";
+        else if (v == TextureSwizzleParameter::SwizzleG) return "SwizzleG";
+        else if (v == TextureSwizzleParameter::SwizzleB) return "SwizzleB";
+        else if (v == TextureSwizzleParameter::SwizzleA) return "SwizzleA";
+        return "?";
+    }
+
     /// @brief Returns the enumerator name of a @ref SamplerParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(SamplerParameter v)
     {
@@ -756,6 +787,14 @@ namespace metagl
         else if (v == SamplerParameter::CompareFunc) return "CompareFunc";
         else if (v == SamplerParameter::BorderColor) return "BorderColor";
         else if (v == SamplerParameter::MaxAnisotropy) return "MaxAnisotropy";
+        return "?";
+    }
+
+    inline std::string_view to_string(SamplerWrapParameter v)
+    {
+        if (v == SamplerWrapParameter::WrapS) return "WrapS";
+        else if (v == SamplerWrapParameter::WrapT) return "WrapT";
+        else if (v == SamplerWrapParameter::WrapR) return "WrapR";
         return "?";
     }
 
@@ -1392,7 +1431,6 @@ namespace metagl
         else if (v == GetParameter::MaxVertexAttribBindings) return "MaxVertexAttribBindings";
         else if (v == GetParameter::MaxVertexAttribStride) return "MaxVertexAttribStride";
         else if (v == GetParameter::FramebufferBinding) return "FramebufferBinding";
-        else if (v == GetParameter::DrawFramebufferBinding) return "DrawFramebufferBinding";
         else if (v == GetParameter::ReadFramebufferBinding) return "ReadFramebufferBinding";
         else if (v == GetParameter::RenderbufferBinding) return "RenderbufferBinding";
         else if (v == GetParameter::MaxRenderbufferSize) return "MaxRenderbufferSize";

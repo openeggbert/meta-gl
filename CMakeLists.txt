@@ -24,7 +24,9 @@ endif()
 
 option(METAGL_SANITIZE "Enable AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
 option(METAGL_BUILD_TESTS "Build the meta-gl test suite" OFF)
+option(METAGL_BUILD_GPU_TESTS "Build EGL tests that require a real GL implementation" OFF)
 option(METAGL_BUILD_EXAMPLES "Build the meta-gl examples" OFF)
+option(METAGL_BUILD_DOCS "Build Doxygen API documentation" OFF)
 option(METAGL_ENABLE_DEBUG_LOGGING "Compile per-call GL debug logging into meta-gl" OFF)
 option(METAGL_DEBUG_IMMEDIATE "Flush debug logging after every GL call" OFF)
 
@@ -96,6 +98,10 @@ if(METAGL_SANITIZE)
     )
 endif()
 
+if(METAGL_BUILD_GPU_TESTS AND NOT METAGL_BUILD_TESTS)
+    message(FATAL_ERROR "METAGL_BUILD_GPU_TESTS requires METAGL_BUILD_TESTS=ON")
+endif()
+
 if(METAGL_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
@@ -103,6 +109,21 @@ endif()
 
 if(METAGL_BUILD_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+if(METAGL_BUILD_DOCS)
+    find_package(Doxygen REQUIRED)
+    configure_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Doxyfile.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
+        @ONLY
+    )
+    add_custom_target(metagl-docs
+        COMMAND Doxygen::doxygen "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMENT "Generating meta-gl API documentation"
+        VERBATIM
+    )
 endif()
 
 include(GNUInstallDirs)

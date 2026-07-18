@@ -6,11 +6,12 @@
  * cannot be accidentally mixed.  All enumerators map 1-to-1 to the
  * corresponding `GL_*` constant from `<GLES3/gl32.h>`.
  *
- * Bitfield enums (e.g. @ref ClearBufferBit, @ref MapBufferAccessMask) derive
- * from `GLbitfield` and satisfy the @ref GlBitfield concept, which enables
+ * Bitfield enums (e.g. @ref metagl::ClearBufferBit,
+ * @ref metagl::MapBufferAccessMask) derive from `GLbitfield` and satisfy the
+ * @ref metagl::GlBitfield concept, which enables
  * generic `operator|`, `operator&`, and `operator~` for them.
  *
- * Domain enums derive from `GLenum` and satisfy the @ref GlEnum concept
+ * Domain enums derive from `GLenum` and satisfy the @ref metagl::GlEnum concept
  * defined in @ref Types.hpp.
  *
  * Availability annotations in enumerator comments (`ES 3.0+`, `ES 3.1+`,
@@ -788,6 +789,21 @@ namespace metagl
     };
 
     /**
+     * @brief Targets valid for glBindTexture (cube-map faces are excluded).
+     */
+    enum class TextureBindingTarget : GLenum
+    {
+        Texture2D                 = GL_TEXTURE_2D,
+        TextureCubeMap            = GL_TEXTURE_CUBE_MAP,
+        Texture3D                 = GL_TEXTURE_3D,
+        Texture2DArray            = GL_TEXTURE_2D_ARRAY,
+        Texture2DMultisample      = GL_TEXTURE_2D_MULTISAMPLE,
+        TextureBuffer             = GL_TEXTURE_BUFFER,
+        TextureCubeMapArray       = GL_TEXTURE_CUBE_MAP_ARRAY,
+        Texture2DMultisampleArray = GL_TEXTURE_2D_MULTISAMPLE_ARRAY
+    };
+
+    /**
      * @brief Texture parameter names for glTexParameteri / glTexParameterf.
      */
     enum class TextureParameter : GLenum
@@ -819,6 +835,23 @@ namespace metagl
         BufferSize             = GL_TEXTURE_BUFFER_SIZE           ///< ES 3.2+
     };
 
+    /** @brief Texture coordinate selector for a wrap-mode parameter. */
+    enum class TextureWrapParameter : GLenum
+    {
+        WrapS = GL_TEXTURE_WRAP_S,
+        WrapT = GL_TEXTURE_WRAP_T,
+        WrapR = GL_TEXTURE_WRAP_R
+    };
+
+    /** @brief Texture component selector for a swizzle parameter. */
+    enum class TextureSwizzleParameter : GLenum
+    {
+        SwizzleR = GL_TEXTURE_SWIZZLE_R,
+        SwizzleG = GL_TEXTURE_SWIZZLE_G,
+        SwizzleB = GL_TEXTURE_SWIZZLE_B,
+        SwizzleA = GL_TEXTURE_SWIZZLE_A
+    };
+
     /**
      * @brief Sampler parameter names for glSamplerParameter* / glGetSamplerParameter*. Only the subset of texture parameters valid for sampler objects is included. GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_MAX_LEVEL, swizzle, etc. are excluded because the GL ES spec does not allow them on sampler objects.
      */
@@ -835,6 +868,14 @@ namespace metagl
         CompareFunc  = GL_TEXTURE_COMPARE_FUNC,  ///< Shadow comparison function. ES 3.0+
         BorderColor  = GL_TEXTURE_BORDER_COLOR,  ///< Border color for clamp-to-border. ES 3.2+
         MaxAnisotropy = GL_TEXTURE_MAX_ANISOTROPY_EXT ///< Max anisotropic filtering samples. GL_EXT_texture_filter_anisotropic
+    };
+
+    /** @brief Sampler coordinate selector for a wrap-mode parameter. */
+    enum class SamplerWrapParameter : GLenum
+    {
+        WrapS = GL_TEXTURE_WRAP_S,
+        WrapT = GL_TEXTURE_WRAP_T,
+        WrapR = GL_TEXTURE_WRAP_R
     };
 
     /**
@@ -1530,7 +1571,7 @@ namespace metagl
 
         // Framebuffer
         FramebufferBinding         = GL_FRAMEBUFFER_BINDING,
-        DrawFramebufferBinding     = GL_DRAW_FRAMEBUFFER_BINDING,          ///< ES 3.0+
+        DrawFramebufferBinding     = GL_DRAW_FRAMEBUFFER_BINDING,          ///< Alias of FramebufferBinding in GLES; to_string() returns the canonical name.
         ReadFramebufferBinding     = GL_READ_FRAMEBUFFER_BINDING,          ///< ES 3.0+
         RenderbufferBinding        = GL_RENDERBUFFER_BINDING,
         MaxRenderbufferSize        = GL_MAX_RENDERBUFFER_SIZE,

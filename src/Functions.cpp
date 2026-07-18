@@ -23,6 +23,9 @@ namespace metagl::detail
 
     struct GlTable
     {
+        using DesktopDepthRangeProc = void (GL_APIENTRY *)(double, double);
+        using DesktopClearDepthProc = void (GL_APIENTRY *)(double);
+
         bool initialized = false;
 
         PFNGLENABLEPROC Enable = nullptr;
@@ -46,6 +49,7 @@ namespace metagl::detail
         PFNGLDEPTHFUNCPROC DepthFunc = nullptr;
         PFNGLDEPTHMASKPROC DepthMask = nullptr;
         PFNGLDEPTHRANGEFPROC DepthRangef = nullptr;
+        DesktopDepthRangeProc DesktopDepthRange = nullptr;
         PFNGLSTENCILFUNCPROC StencilFunc = nullptr;
         PFNGLSTENCILFUNCSEPARATEPROC StencilFuncSeparate = nullptr;
         PFNGLSTENCILOPPROC StencilOp = nullptr;
@@ -139,6 +143,7 @@ namespace metagl::detail
         PFNGLCLEARPROC Clear = nullptr;
         PFNGLCLEARCOLORPROC ClearColor = nullptr;
         PFNGLCLEARDEPTHFPROC ClearDepthf = nullptr;
+        DesktopClearDepthProc DesktopClearDepth = nullptr;
         PFNGLCLEARSTENCILPROC ClearStencil = nullptr;
         PFNGLCLEARBUFFERFVPROC ClearBufferfv = nullptr;
         PFNGLCLEARBUFFERIVPROC ClearBufferiv = nullptr;
@@ -417,8 +422,19 @@ namespace metagl::detail
     // Missing higher-level functions do NOT prevent successful initialization.
     // ---------------------------------------------------------------------------
 
-    /// GLES 2.0 core — the absolute minimum required for any GLES/WebGL context.
-    static bool gles2_minimum_loaded(const GlTable& gl)
+    static bool is_desktop_context(const GlTable& gl)
+    {
+        if (!gl.GetString) return false;
+        const auto* raw = gl.GetString(GL_VERSION);
+        if (!raw) return false;
+        const std::string_view version(
+            reinterpret_cast<const char*>(raw));
+        return version.find("OpenGL ES") == std::string_view::npos
+            && version.find("WebGL") == std::string_view::npos;
+    }
+
+    /// Core common subset required for GLES 2.0 or desktop OpenGL 3.3+.
+    static bool minimum_loaded(const GlTable& gl, bool desktop)
     {
         return
             // State management
@@ -429,7 +445,8 @@ namespace metagl::detail
             gl.ColorMask != nullptr &&
             gl.DepthFunc != nullptr &&
             gl.DepthMask != nullptr &&
-            gl.DepthRangef != nullptr &&
+            (gl.DepthRangef != nullptr
+                || (desktop && gl.DesktopDepthRange != nullptr)) &&
             gl.StencilFunc != nullptr &&
             gl.StencilFuncSeparate != nullptr &&
             gl.StencilOp != nullptr &&
@@ -483,7 +500,8 @@ namespace metagl::detail
             // Clear
             gl.Clear != nullptr &&
             gl.ClearColor != nullptr &&
-            gl.ClearDepthf != nullptr &&
+            (gl.ClearDepthf != nullptr
+                || (desktop && gl.DesktopClearDepth != nullptr)) &&
             gl.ClearStencil != nullptr &&
             // State queries
             gl.IsEnabled != nullptr &&
@@ -499,10 +517,10 @@ namespace metagl::detail
             gl.GetShaderiv != nullptr &&
             gl.GetShaderInfoLog != nullptr &&
             gl.GetShaderSource != nullptr &&
-            gl.GetShaderPrecisionFormat != nullptr &&
+            (desktop || gl.GetShaderPrecisionFormat != nullptr) &&
             gl.IsShader != nullptr &&
-            gl.ShaderBinary != nullptr &&
-            gl.ReleaseShaderCompiler != nullptr &&
+            (desktop || gl.ShaderBinary != nullptr) &&
+            (desktop || gl.ReleaseShaderCompiler != nullptr) &&
             // Programs
             gl.CreateProgram != nullptr &&
             gl.DeleteProgram != nullptr &&
@@ -975,6 +993,10 @@ namespace metagl
         gl.DepthFunc = detail::load<PFNGLDEPTHFUNCPROC>(loader, "glDepthFunc");
         gl.DepthMask = detail::load<PFNGLDEPTHMASKPROC>(loader, "glDepthMask");
         gl.DepthRangef = detail::load<PFNGLDEPTHRANGEFPROC>(loader, "glDepthRangef");
+        gl.DesktopDepthRange = gl.DepthRangef
+            ? nullptr
+            : detail::load<detail::GlTable::DesktopDepthRangeProc>(
+                loader, "glDepthRange");
         gl.StencilFunc = detail::load<PFNGLSTENCILFUNCPROC>(loader, "glStencilFunc");
         gl.StencilFuncSeparate = detail::load<PFNGLSTENCILFUNCSEPARATEPROC>(loader, "glStencilFuncSeparate");
         gl.StencilOp = detail::load<PFNGLSTENCILOPPROC>(loader, "glStencilOp");
@@ -1068,6 +1090,10 @@ namespace metagl
         gl.Clear = detail::load<PFNGLCLEARPROC>(loader, "glClear");
         gl.ClearColor = detail::load<PFNGLCLEARCOLORPROC>(loader, "glClearColor");
         gl.ClearDepthf = detail::load<PFNGLCLEARDEPTHFPROC>(loader, "glClearDepthf");
+        gl.DesktopClearDepth = gl.ClearDepthf
+            ? nullptr
+            : detail::load<detail::GlTable::DesktopClearDepthProc>(
+                loader, "glClearDepth");
         gl.ClearStencil = detail::load<PFNGLCLEARSTENCILPROC>(loader, "glClearStencil");
         gl.ClearBufferfv = detail::load<PFNGLCLEARBUFFERFVPROC>(loader, "glClearBufferfv");
         gl.ClearBufferiv = detail::load<PFNGLCLEARBUFFERIVPROC>(loader, "glClearBufferiv");
@@ -1316,7 +1342,8 @@ namespace metagl
         // Initialization succeeds when the GLES 2.0 minimum set is available.
         // Higher-level functions (GLES 3.0/3.1/3.2) may be absent on
         // WebGL 1, WebGL 2, or older Android devices — that is not an error.
-        gl.initialized = detail::gles2_minimum_loaded(gl);
+        gl.initialized = detail::minimum_loaded(
+            gl, detail::is_desktop_context(gl));
 
         if (gl.initialized)
         {
@@ -1521,8 +1548,13 @@ namespace metagl
     // #21
     void glDepthRangef(GLfloat n, GLfloat f)
     {
-        assert(detail::g_gl.DepthRangef != nullptr);
-        detail::g_gl.DepthRangef(n, f);
+        assert(detail::g_gl.DepthRangef != nullptr
+            || detail::g_gl.DesktopDepthRange != nullptr);
+        if (detail::g_gl.DepthRangef)
+            detail::g_gl.DepthRangef(n, f);
+        else
+            detail::g_gl.DesktopDepthRange(
+                static_cast<double>(n), static_cast<double>(f));
         METAGL_DEBUG_LOG_VOID("glDepthRangef", n, f);
     }
 
@@ -2272,8 +2304,12 @@ namespace metagl
     // #114
     void glClearDepthf(GLfloat d)
     {
-        assert(detail::g_gl.ClearDepthf != nullptr);
-        detail::g_gl.ClearDepthf(d);
+        assert(detail::g_gl.ClearDepthf != nullptr
+            || detail::g_gl.DesktopClearDepth != nullptr);
+        if (detail::g_gl.ClearDepthf)
+            detail::g_gl.ClearDepthf(d);
+        else
+            detail::g_gl.DesktopClearDepth(static_cast<double>(d));
         METAGL_DEBUG_LOG_VOID("glClearDepthf", d);
     }
 

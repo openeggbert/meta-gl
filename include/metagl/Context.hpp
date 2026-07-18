@@ -27,7 +27,8 @@ namespace metagl
     {
         Unknown,   ///< API not yet detected or unrecognised version string.
         OpenGLES,  ///< Desktop or mobile OpenGL ES context.
-        WebGL      ///< Emscripten/WebGL context (detected via `__EMSCRIPTEN__` and version string).
+        WebGL,     ///< Emscripten/WebGL context (detected via `__EMSCRIPTEN__` and version string).
+        OpenGL     ///< Desktop OpenGL context.
     };
 
     /**

@@ -49,6 +49,14 @@ namespace metagl::detail
         caps.renderer                 = to_str(metagl::glGetString(metagl::StringName::Renderer));
         caps.shading_language_version = to_str(metagl::glGetString(metagl::StringName::ShadingLanguageVersion));
 
+        const auto contains_angle = [](const std::string& value)
+        {
+            return value.find("ANGLE") != std::string::npos;
+        };
+        caps.angle = contains_angle(caps.version_string)
+            || contains_angle(caps.vendor)
+            || contains_angle(caps.renderer);
+
 #ifdef __EMSCRIPTEN__
         info.api = ApiKind::WebGL;
         if (caps.version_string.find("WebGL 2") != std::string::npos ||
@@ -76,19 +84,24 @@ namespace metagl::detail
         }
         else
         {
-            info.api = ApiKind::OpenGLES;
-            metagl::glGetIntegerv(metagl::GetParameter::MajorVersion, &info.major);
-            metagl::glGetIntegerv(metagl::GetParameter::MinorVersion, &info.minor);
-            if (info.major == 0)
-                parse_version(caps.version_string.c_str(), info.major, info.minor);
+            info.api = ApiKind::OpenGL;
+            caps.desktop_gl = true;
+            if (!parse_version(caps.version_string.c_str(), info.major, info.minor))
+            {
+                metagl::glGetIntegerv(metagl::GetParameter::MajorVersion, &info.major);
+                metagl::glGetIntegerv(metagl::GetParameter::MinorVersion, &info.minor);
+            }
         }
 #endif
 
         // GLES version flags — single source of truth in Capabilities
-        if (info.major >= 2)                    { caps.gles20 = true; }
-        if (info.major >= 3)                    { caps.gles30 = true; }
-        if (info.major == 3 && info.minor >= 1) { caps.gles31 = true; }
-        if (info.major == 3 && info.minor >= 2) { caps.gles32 = true; }
+        if (info.api == ApiKind::OpenGLES || info.api == ApiKind::WebGL)
+        {
+            if (info.major >= 2)                    { caps.gles20 = true; }
+            if (info.major >= 3)                    { caps.gles30 = true; }
+            if (info.major == 3 && info.minor >= 1) { caps.gles31 = true; }
+            if (info.major == 3 && info.minor >= 2) { caps.gles32 = true; }
+        }
 
         // Extensions
         if (info.major >= 3)
@@ -193,6 +206,8 @@ namespace metagl
     bool SupportsGLES31() noexcept { return detail::g_capabilities.gles31; }
     bool SupportsGLES32() noexcept { return detail::g_capabilities.gles32; }
     bool SupportsWebGL2() noexcept { return detail::g_capabilities.webgl2; }
+    bool SupportsDesktopOpenGL() noexcept { return detail::g_capabilities.desktop_gl; }
+    bool IsAngle() noexcept { return detail::g_capabilities.angle; }
 
     bool HasExtension(std::string_view extensionName) noexcept
     {

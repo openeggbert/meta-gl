@@ -30,6 +30,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <ranges>
+#include <span>
 #include <string_view>
 #include <type_traits>
 

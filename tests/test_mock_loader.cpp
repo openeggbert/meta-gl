@@ -53,6 +53,41 @@ namespace
         return -1;
     }
 
+    const GLubyte* GL_APIENTRY stub_DesktopGetString(GLenum name)
+    {
+        static const GLubyte version[]  = "4.6.0 Mock Desktop";
+        static const GLubyte vendor[]   = "MockVendor";
+        static const GLubyte renderer[] = "Mock Desktop Renderer";
+        static const GLubyte glsl[]     = "4.60 Mock";
+        static const GLubyte empty[]    = "";
+        if (name == GL_VERSION)                  return version;
+        if (name == GL_VENDOR)                   return vendor;
+        if (name == GL_RENDERER)                 return renderer;
+        if (name == GL_SHADING_LANGUAGE_VERSION) return glsl;
+        return empty;
+    }
+
+    const GLubyte* GL_APIENTRY stub_AngleGetString(GLenum name)
+    {
+        static const GLubyte renderer[] =
+            "ANGLE (Mock GPU, Vulkan 1.3)";
+        if (name == GL_RENDERER) return renderer;
+        return stub_GetString(name);
+    }
+
+    int desktop_depth_range_calls = 0;
+    int desktop_clear_depth_calls = 0;
+
+    void GL_APIENTRY stub_DesktopDepthRange(double, double)
+    {
+        ++desktop_depth_range_calls;
+    }
+
+    void GL_APIENTRY stub_DesktopClearDepth(double)
+    {
+        ++desktop_clear_depth_calls;
+    }
+
     // No-op for all other functions (never actually called after Initialize)
     void GL_APIENTRY stub_noop() {}
 
@@ -263,8 +298,6 @@ int main()
 
     // Re-initialize with a stub that advertises one extension via glGetStringi
     {
-        static const char* ext_name = "GL_EXT_texture_filter_anisotropic";
-
         static auto ext_GetIntegerv = [](GLenum pname, GLint* params)
         {
             if (!params) return;
@@ -308,6 +341,50 @@ int main()
     check("SupportsGLES30() == true",  metagl::SupportsGLES30());
     check("SupportsGLES31() == false", !metagl::SupportsGLES31());
     check("SupportsGLES32() == false", !metagl::SupportsGLES32());
+
+    // Desktop OpenGL uses double-precision depth entry points and does not
+    // require the GLES-only shader compiler query functions.
+    auto desktop_loader = [](const char* name) -> void*
+    {
+        if (std::strcmp(name, "glGetString") == 0)
+            return reinterpret_cast<void*>(stub_DesktopGetString);
+        if (std::strcmp(name, "glDepthRange") == 0)
+            return reinterpret_cast<void*>(stub_DesktopDepthRange);
+        if (std::strcmp(name, "glClearDepth") == 0)
+            return reinterpret_cast<void*>(stub_DesktopClearDepth);
+        if (std::strcmp(name, "glDepthRangef") == 0
+            || std::strcmp(name, "glClearDepthf") == 0
+            || std::strcmp(name, "glGetShaderPrecisionFormat") == 0
+            || std::strcmp(name, "glShaderBinary") == 0
+            || std::strcmp(name, "glReleaseShaderCompiler") == 0)
+            return nullptr;
+        return mock_proc_address(name);
+    };
+
+    check("Desktop OpenGL loader succeeds",
+          metagl::Initialize(desktop_loader));
+    check("Desktop API kind detected",
+          metagl::GetContextInfo().api == metagl::ApiKind::OpenGL);
+    check("Desktop version parsed",
+          metagl::GetContextInfo().major == 4
+          && metagl::GetContextInfo().minor == 6);
+    check("Desktop capability exposed", metagl::SupportsDesktopOpenGL());
+    check("Desktop context does not claim GLES", !metagl::SupportsGLES20());
+    metagl::glDepthRangef(0.0f, 1.0f);
+    metagl::glClearDepthf(1.0f);
+    check("Desktop glDepthRange adapter called", desktop_depth_range_calls == 1);
+    check("Desktop glClearDepth adapter called", desktop_clear_depth_calls == 1);
+
+    auto angle_loader = [](const char* name) -> void*
+    {
+        if (std::strcmp(name, "glGetString") == 0)
+            return reinterpret_cast<void*>(stub_AngleGetString);
+        return mock_proc_address(name);
+    };
+    check("ANGLE loader succeeds", metagl::Initialize(angle_loader));
+    check("ANGLE backend detected", metagl::IsAngle());
+    check("ANGLE mock remains OpenGL ES",
+          metagl::GetContextInfo().api == metagl::ApiKind::OpenGLES);
 
     if (failed > 0)
         std::cerr << failed << " mock-loader test(s) failed.\n";

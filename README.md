@@ -1,8 +1,9 @@
 # meta-gl
 
-`meta-gl` is a low-level, type-safe C++23 wrapper targeting **OpenGL ES 2.0 or higher**.
+`meta-gl` is a low-level, type-safe C++23 wrapper targeting **OpenGL ES
+2.0–3.2** and the common programmable subset of **desktop OpenGL 3.3+**.
 
-OpenGL or OpenGL ES older than 2.0 are not supported.
+OpenGL ES older than 2.0 and desktop OpenGL older than 3.3 are not supported.
 
 It is the foundation layer used by [easy-gl](../easy-gl) and provides:
 
@@ -27,6 +28,10 @@ Host application
 - CMake `3.23+`
 - A host-side GL context (provided externally)
 
+The public API uses Khronos GLES scalar and function-pointer types. The
+required Khronos headers are vendored for source builds and installed with the
+package, so consumers do not need a separate GLES development-header package.
+
 ## Build
 
 `meta-gl` is intended to be consumed as a CMake subdirectory dependency:
@@ -49,6 +54,38 @@ By default a **static** library is produced. Pass `-DBUILD_SHARED_LIBS=ON` to bu
 cmake -S . -B build -DBUILD_SHARED_LIBS=ON
 cmake --build build
 ```
+
+Project-specific options do not modify similarly named parent-project options:
+
+| Option | Default | Purpose |
+|---|---:|---|
+| `METAGL_BUILD_TESTS` | `OFF` | Build and register meta-gl tests |
+| `METAGL_BUILD_EXAMPLES` | `OFF` | Build the no-GPU example |
+| `METAGL_SANITIZE` | `OFF` | Enable ASan and UBSan with GCC/Clang |
+| `METAGL_ENABLE_DEBUG_LOGGING` | `OFF` | Compile per-call logging and `glGetError` checks |
+| `METAGL_DEBUG_IMMEDIATE` | `OFF` | Flush every debug record immediately |
+
+The old standalone `BUILD_TESTING`, `BUILD_EXAMPLES`, and `SANITIZE` cache
+variables remain accepted as compatibility aliases when meta-gl is the
+top-level project.
+
+### Install and `find_package`
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+cmake --install build --prefix /path/to/prefix
+```
+
+Consumers can then use:
+
+```cmake
+find_package(meta-gl 0.2 CONFIG REQUIRED)
+target_link_libraries(my-target PRIVATE meta-gl::meta-gl)
+```
+
+For `0.x` releases, package compatibility is limited to the same minor
+version because a minor bump may contain breaking API changes.
 
 ### CMake presets
 
@@ -91,17 +128,45 @@ can track `webglcontextlost` / `webglcontextrestored` browser events:
 ```cpp
 #include <metagl/metagl.hpp>  // includes Emscripten.hpp automatically
 
-metagl::Initialize(emscripten_webgl_get_proc_address);
+const bool initialized = metagl::Initialize(
+    reinterpret_cast<metagl::GlGetProcAddressFn>(
+        emscripten_webgl_get_proc_address));
 metagl::InstallEmscriptenContextLossCallbacks("#canvas");
 ```
 
-When context is restored, reload function pointers before notifying listeners:
+If you manage browser callbacks yourself, use the atomic restore helper:
 
 ```cpp
 // Inside your webglcontextrestored handler:
-metagl::LoadCurrentContext(emscripten_webgl_get_proc_address);
-metagl::NotifyContextRestored();
+const bool restored = metagl::RestoreCurrentContext(
+    reinterpret_cast<metagl::GlGetProcAddressFn>(
+        emscripten_webgl_get_proc_address));
 ```
+
+### Desktop OpenGL
+
+Pass the same host-supplied loader callback used by the rest of your
+application (`SDL_GL_GetProcAddress`, `glfwGetProcAddress`,
+`wglGetProcAddress`, or `glXGetProcAddress`). `ContextInfo::api` is reported
+as `ApiKind::OpenGL`, and `SupportsDesktopOpenGL()` returns `true`.
+
+Desktop GL exposes `glDepthRange` and `glClearDepth` with `double`
+parameters instead of the GLES `*f` variants. Meta-gl adapts
+`glDepthRangef()` and `glClearDepthf()` automatically. GLES-only
+`glShaderBinary`, `glReleaseShaderCompiler`, and
+`glGetShaderPrecisionFormat` are optional on desktop; check
+`IsFunctionAvailable()` before calling wrappers without a desktop equivalent.
+
+The enum surface remains GLES-oriented. APIs shared by GLES 2.0 and desktop
+GL 3.3+ are supported; entry points from newer versions still require the
+corresponding driver support.
+
+### ANGLE
+
+ANGLE-backed contexts are detected from the GL version, vendor, and renderer
+strings. Use `metagl::IsAngle()` to select workarounds, but continue to use
+`HasExtension()` and `IsFunctionAvailable()` as the source of truth: ANGLE
+capabilities depend on its backend and host driver.
 
 ## Initialization
 
@@ -129,12 +194,12 @@ All symbols live in the `metagl` namespace under `include/metagl/`:
 | `metagl/Types.hpp` | Primitive GL type aliases, handle structs (`ShaderId`, `BufferId`, …), concepts (`GlHandle`, `GlEnum`, `GlBitfield`, `SpanCompatible`) |
 | `metagl/Enums.hpp` | Type-safe `enum class` wrappers for all GL constants |
 | `metagl/Functions.hpp` | All 358 `metagl::gl*` wrapper functions plus typed template dispatch helpers |
-| `metagl/Loader.hpp` | `Initialize()`, `IsInitialized()`, `AllFunctionsLoaded()`, `IsFunctionAvailable()` |
+| `metagl/Loader.hpp` | `Initialize()`, `RestoreCurrentContext()`, `IsInitialized()`, `AllFunctionsLoaded()`, `IsFunctionAvailable()` |
 | `metagl/Context.hpp` | `ContextInfo` struct, `GetContextInfo()`, `GetContextStatus()`, `MarkContextLost/Restored()` |
-| `metagl/Capabilities.hpp` | `Capabilities` struct, `GetCapabilities()`, `SupportsGLES*()`, `HasExtension()` |
+| `metagl/Capabilities.hpp` | `Capabilities`, GLES/WebGL/desktop/ANGLE detection, `HasExtension()` |
 | `metagl/ContextEvents.hpp` | `ContextListener` interface, `AddContextListener()`, `NotifyContextLost/Restored()` |
 | `metagl/EnumNames.hpp` | `to_string()` overloads for all enum classes and handle types (opt-out: `METAGL_NO_ENUM_NAMES`) |
-| `metagl/Debug.hpp` | GL call logging infrastructure controlled by `METAGLDEBUG` (opt-out: `METAGL_NO_DEBUG`) |
+| `metagl/Debug.hpp` | GL call logging built with `METAGL_ENABLE_DEBUG_LOGGING` (header opt-out: `METAGL_NO_DEBUG`) |
 | `metagl/Emscripten.hpp` | `InstallEmscriptenContextLossCallbacks()` — included automatically when `__EMSCRIPTEN__` is defined |
 
 ### Example
@@ -147,7 +212,7 @@ metagl::glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 metagl::glClear(metagl::ClearBufferBit::Color | metagl::ClearBufferBit::Depth);
 
 metagl::VertexArrayId vao{};
-metagl::glGenVertexArrays(1, &vao.value);
+metagl::glGenVertexArrays(1, &vao);
 metagl::glBindVertexArray(vao);
 
 metagl::ShaderId shader = metagl::glCreateShader(metagl::ShaderType::Vertex);
@@ -157,5 +222,7 @@ metagl::ShaderId shader = metagl::glCreateShader(metagl::ShaderType::Vertex);
 
 - Raw OpenGL values (`GL_ARRAY_BUFFER`, `GL_VERTEX_SHADER`, …) stay **internal** to meta-gl.
 - Callers use `enum class` values; conversions to `GLenum` happen inside `metagl::detail`.
-- No OpenGL headers are exposed in public headers.
-- Only OpenGL ES 3.0 or higher is supported; plain OpenGL and OpenGL ES older than 3.0 are not supported.
+- Public headers expose Khronos GLES scalar types through `Types.hpp`; the
+  matching vendored headers are installed with meta-gl.
+- OpenGL ES 2.0–3.2 and the common desktop OpenGL 3.3+ programmable subset
+  are supported. Optional wrappers still require their entry points.

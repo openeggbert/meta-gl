@@ -17,10 +17,13 @@
  *     metagl::Initialize(
  *         reinterpret_cast<metagl::GlGetProcAddressFn>(emscripten_webgl_get_proc_address));
  * #else
- *     // Native OpenGL ES: any of these work depending on your windowing library:
+ *     // Native OpenGL ES or desktop OpenGL: use the callback supplied by
+ *     // your context/window library:
  *     //   SDL2:  SDL_GL_GetProcAddress
  *     //   GLFW:  glfwGetProcAddress
  *     //   EGL:   eglGetProcAddress
+ *     //   WGL:   wglGetProcAddress
+ *     //   GLX:   glXGetProcAddress
  *     metagl::Initialize(eglGetProcAddress);
  * #endif
  * @endcode
@@ -63,8 +66,9 @@ namespace metagl
      * hand off rendering to any thread.
      *
      * @param loader  Platform `GetProcAddress` function.  Must not be `nullptr`.
-     * @return `true` if the core ES 2.0 function set was loaded successfully.
-     *         `false` if the loader returned `nullptr` for one or more core functions.
+     * @return `true` if the core ES 2.0 set, or the corresponding desktop
+     *         OpenGL 3.3+ common subset, loaded successfully. `false` if a
+     *         required function is missing.
      */
     [[nodiscard]] bool Initialize(GlGetProcAddressFn loader);
 

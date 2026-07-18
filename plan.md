@@ -25,7 +25,7 @@ and is the single highest-impact safety improvement.
 | A10 | ✅ Add `struct TransformFeedbackId { GLuint value{}; };` and replace all transform-feedback `GLuint` parameters (`glGenTransformFeedbacks`, `glDeleteTransformFeedbacks`, `glBindTransformFeedback`, `glIsTransformFeedback`) |
 | A11 | ✅ Add `struct ProgramPipelineId { GLuint value{}; };` and replace all pipeline `GLuint` parameters (`glGenProgramPipelines`, `glDeleteProgramPipelines`, `glBindProgramPipeline`, `glIsProgramPipeline`, `glUseProgramStages`, `glActiveShaderProgram`, `glValidateProgramPipeline`, `glGetProgramPipelineiv`, `glGetProgramPipelineInfoLog`) |
 | A12 | ✅ Add `struct UniformLocation { GLint value{-1}; };` and replace the bare `GLint location` parameter in all 66+ `glUniform*` and `glProgramUniform*` functions, and the return type of `glGetUniformLocation` |
-| A13 | ✅ Add `struct AttribLocation { GLuint value{}; };` and replace `GLuint index` in vertex-attrib functions (`glBindAttribLocation`, `glGetAttribLocation`, `glEnableVertexAttribArray`, `glDisableVertexAttribArray`, `glVertexAttribPointer`, `glGetActiveAttrib`, `glGetVertexAttrib*`) |
+| A13 | ✅ Add signed `struct AttribLocation { GLint value{-1}; };`, preserving explicit construction from `GLint`/`GLuint`; use separate `ActiveAttribIndex` for `glGetActiveAttrib` enumeration |
 | A14 | ✅ Update `EnumNames.hpp` `to_string()` overloads to accept the new handle types and print their `.value` fields with a type prefix (e.g., `"TextureId(3)"`) |
 | A15 | ✅ Add `struct ImageUnit { GLuint value{}; };` and replace `GLuint unit` in `glBindImageTexture` — `TextureUnit` enum cannot be reused because it holds `GL_TEXTURE0`-style enum values, not zero-based unit indices |
 
@@ -90,8 +90,8 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | # | Task |
 |---|------|
 | E1 | ✅ Add `GlHandle` concept (requires `.value` of type `GLuint`) to constrain future template helpers that accept any handle type |
-| E2 | ✅ Add `GlBitfield` concept (enum class whose underlying type is `GLbitfield`) to enable a generic `operator|` / `operator&` / `operator~` implementation via one template and eliminate per-enum repetition |
-| E3 | ✅ Add `GlEnum` concept (enum class whose underlying type is `GLenum`) for documentation and potential generic `to_gl_enum` constraint |
+| E2 | ✅ Add explicit `GlBitfieldTraits` opt-in because `GLenum` and `GLbitfield` alias the same type; generic operators are limited to real masks and `~` is clamped to valid bits |
+| E3 | ✅ Add `GlEnum` concept for non-bitfield `GLenum` domains |
 | E4 | ✅ Add `SpanCompatible` concept (trivially copyable, standard layout) to constrain the buffer/texture `std::span<const T>` templates |
 | E5 | ✅ Promote `detail::IsUniformMatrixShape` (currently a bool trait) to a proper `UniformMatrixShape` concept for cleaner compiler diagnostics |
 
@@ -166,11 +166,11 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 
 | # | Task |
 |---|------|
-| J1 | Add `#ifdef __EMSCRIPTEN__` guards in `Loader.hpp` to select the correct function-pointer loading strategy (WebGL2 does not use `eglGetProcAddress`) |
-| J2 | ✅ Expanded `Emscripten.hpp` doc-comment: explains correct call order (`LoadCurrentContext` → `NotifyContextRestored`), warns about listener rendering relying on valid pointers, and includes code example for manual callbacks |
+| J1 | ✅ Document and use `emscripten_webgl_get_proc_address`; Emscripten callback now calls atomic `RestoreCurrentContext` rather than relying on caller reload |
+| J2 | ✅ Expanded `Emscripten.hpp` lifecycle documentation and enforced reload-before-listener order in the implementation |
 | J3 | ✅ Add `CMakePresets.json` with `default`, `release`, `sanitize`, and `emscripten` presets; `emscripten` sets toolchain via `$env{EMSDK}`; documented in README.md |
-| J4 | Add ANGLE (Almost Native Graphics Layer Engine) support — detect an ANGLE-backed GLES context (`GL_RENDERER`/`GL_VERSION` contain `"ANGLE"`), document known ANGLE quirks/extension gaps vs. native GLES and desktop GL drivers, and expose an `IsAngle()` capability flag in `Capabilities.hpp` so callers can branch around them |
-| J5 | Add desktop OpenGL support — README.md currently states only OpenGL ES 2.0+ is targeted and plain OpenGL is unsupported; add function-loading support for desktop GL contexts (`wglGetProcAddress`/`glXGetProcAddress` in addition to `eglGetProcAddress`), verify enum/function compatibility across desktop GL 3.3+/4.x profiles, extend `Capabilities.hpp` version parsing to desktop GL version strings (which differ from the `OpenGL ES X.Y` format), and update README.md's supported-API claim once it lands |
+| J4 | ✅ Detect ANGLE in version/vendor/renderer strings, expose `Capabilities::angle` / `IsAngle()`, document backend-dependent availability, and cover detection with a mock context |
+| J5 | ✅ Support host-provided WGL/GLX/SDL/GLFW loaders, detect and parse desktop GL 3.3+/4.x strings, keep GLES flags separate, adapt `glDepthRange`/`glClearDepth`, relax only GLES-specific shader entry points for desktop, and cover the path with a GL 4.6 mock |
 
 ---
 
@@ -178,7 +178,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 
 | Theme | Tasks |
 |-------|-------|
-| A — Typed handle types | 14 |
+| A — Typed handle types | 15 |
 | B — Enum cleanup | 14 |
 | C — std::span adoption | 11 |
 | D — Template dispatch | 6 |
@@ -188,4 +188,4 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | H — Code quality & naming | 12 |
 | I — Tests | 10 |
 | J — Emscripten / platform | 5 |
-| **Total** | **92** |
+| **Total** | **93** |

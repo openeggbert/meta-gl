@@ -45,6 +45,17 @@ namespace metagl
         bool webgl1 = false;
         /// @brief True when compiling with Emscripten and the runtime exposes WebGL 2.
         bool webgl2 = false;
+
+        /// @brief True for a desktop OpenGL context (rather than OpenGL ES/WebGL).
+        bool desktop_gl = false;
+
+        /**
+         * @brief True when GL_VERSION, GL_VENDOR, or GL_RENDERER identifies ANGLE.
+         *
+         * ANGLE exposes OpenGL ES through another graphics API. Function and
+         * extension availability must still be queried normally.
+         */
+        bool angle = false;
     };
 
     // -------------------------------------------------------------------------
@@ -91,6 +102,16 @@ namespace metagl
      * @note Always returns `false` on non-Emscripten builds.
      */
     [[nodiscard]] bool SupportsWebGL2() noexcept;
+
+    /**
+     * @brief Returns `true` when the loaded context is desktop OpenGL.
+     */
+    [[nodiscard]] bool SupportsDesktopOpenGL() noexcept;
+
+    /**
+     * @brief Returns `true` when the context strings identify an ANGLE backend.
+     */
+    [[nodiscard]] bool IsAngle() noexcept;
 
     /**
      * @brief Returns `true` if the named extension was present in the last @ref LoadCurrentContext call.

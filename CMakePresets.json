@@ -30,7 +30,8 @@
       "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "SANITIZE": "ON"
+        "METAGL_SANITIZE": "ON",
+        "METAGL_BUILD_TESTS": "ON"
       }
     },
     {

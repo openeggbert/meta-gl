@@ -2,6 +2,39 @@
 
 All notable changes to meta-gl will be documented here.
 
+## [Unreleased]
+
+### Added
+- Atomic `RestoreCurrentContext()` lifecycle helper and automatic Emscripten
+  entry-point reload before restored callbacks.
+- Explicit bitfield traits, safe `IndexType`, `ActiveAttribIndex`, and
+  installed-package consumer coverage.
+- Desktop OpenGL 3.3+ detection with `glDepthRange`/`glClearDepth` adapters,
+  plus `SupportsDesktopOpenGL()` and ANGLE detection via `IsAngle()`.
+- Project-scoped CMake options and a supported CMake switch for debug logging.
+
+### Changed
+- `AttribLocation` stores the signed `GLint` returned by
+  `glGetAttribLocation`; explicit signed and unsigned constructors preserve
+  existing call sites.
+- Package compatibility for `0.x` releases is limited to the same minor
+  version.
+- Khronos GLES/KHR headers and license files are installed with the package.
+
+### Fixed
+- Failed reloads no longer expose stale context status or capabilities.
+- Context listener registration ignores duplicates and event dispatch remains
+  stable when a listener removes itself.
+- `GlBitfield` no longer accepts every `GLenum`-backed enum, and `operator~`
+  no longer creates bits outside the selected mask domain.
+- Removed `PrimitiveType::Quads` and `PixelFormat::Green/Blue`, which are not
+  valid values for their advertised function domains.
+- Mock loaders use a correctly typed `glGetError` stub under function-type
+  sanitizers.
+- Installed packages no longer depend on uninstalled Khronos headers.
+- README support claims, context-restore sequence, and handle example now match
+  the implementation.
+
 ## [0.2.0] — 2026-06-27
 
 ### Breaking changes

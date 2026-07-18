@@ -2,8 +2,10 @@
  * @file Debug.hpp
  * @brief Optional compile-time GL call logging and `glGetError` checking.
  *
- * Define `METAGLDEBUG` before including any meta-gl header (or pass
- * `-DMETAGLDEBUG` to the compiler) to enable per-call logging.
+ * Configure meta-gl with `-DMETAGL_ENABLE_DEBUG_LOGGING=ON` to compile
+ * per-call logging into the library. Defining `METAGLDEBUG` only in a
+ * consuming target is not sufficient because wrappers are compiled in
+ * `src/Functions.cpp`.
  *
  * When active, each `metagl::gl*` wrapper records:
  * - the function name,
@@ -11,16 +13,18 @@
  * - and the return value (or `"void"`).
  *
  * Records are buffered and flushed to `stderr` every 5 seconds.
- * Define `METAGLDEBUG_IMMEDIATE` alongside `METAGLDEBUG` to flush after every
- * call — this trades throughput for crash-safety when debugging hard crashes.
+ * Configure `-DMETAGL_DEBUG_IMMEDIATE=ON` to flush after every call — this
+ * trades throughput for crash-safety when debugging hard crashes.
  *
  * When `METAGLDEBUG` is **not** defined, all macros expand to `do {} while(0)`,
  * resulting in exactly zero runtime overhead.
  *
  * Example output:
  * @code
- * [METAGL #1 2026-06-27T12:00:00] glClear(Color | Depth) -> void
- * [METAGL #2 2026-06-27T12:00:00] glDrawArrays(Triangles, 0, 3) -> void
+ * [METAGL DEBUG] --- 2 GL calls ---
+ *   #1 [0.100ms] glClear(16640)
+ *   #2 [0.140ms] glDrawArrays(Triangles, 0, 3)
+ * [METAGL DEBUG] ---
  * @endcode
  */
 #pragma once
@@ -40,6 +44,7 @@
 #include <sstream>
 #include <type_traits>
 #include <cstdint>
+#include <utility>
 #include "metagl/EnumNames.hpp"
 
 /**

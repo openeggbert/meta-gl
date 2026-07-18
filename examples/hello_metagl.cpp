@@ -47,6 +47,11 @@ static const GLubyte* GL_APIENTRY stub_GetStringi(GLenum, GLuint)
     return empty;
 }
 
+static GLenum GL_APIENTRY stub_GetError()
+{
+    return GL_NO_ERROR;
+}
+
 static void GL_APIENTRY stub_noop() {}
 
 static void* mock_proc_address(const char* name)
@@ -54,6 +59,7 @@ static void* mock_proc_address(const char* name)
     if (std::strcmp(name, "glGetString")   == 0) return reinterpret_cast<void*>(stub_GetString);
     if (std::strcmp(name, "glGetIntegerv") == 0) return reinterpret_cast<void*>(stub_GetIntegerv);
     if (std::strcmp(name, "glGetStringi")  == 0) return reinterpret_cast<void*>(stub_GetStringi);
+    if (std::strcmp(name, "glGetError")    == 0) return reinterpret_cast<void*>(stub_GetError);
     return reinterpret_cast<void*>(stub_noop);
 }
 
@@ -84,6 +90,7 @@ int main()
     {
         case metagl::ApiKind::OpenGLES: std::cout << "OpenGL ES"; break;
         case metagl::ApiKind::WebGL:    std::cout << "WebGL";     break;
+        case metagl::ApiKind::OpenGL:   std::cout << "OpenGL";    break;
         default:                        std::cout << "Unknown";   break;
     }
     std::cout << ' ' << info.major << '.' << info.minor << '\n';

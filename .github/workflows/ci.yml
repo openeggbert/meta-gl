@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux GCC static
+            os: ubuntu-latest
+            cc: gcc
+            cxx: g++
+            shared: "OFF"
+          - name: Linux Clang shared
+            os: ubuntu-latest
+            cc: clang
+            cxx: clang++
+            shared: "ON"
+          - name: Windows MSVC shared
+            os: windows-latest
+            cc: ""
+            cxx: ""
+            shared: "ON"
+
+    env:
+      CC: ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: >-
+          cmake -S . -B build
+          -DBUILD_SHARED_LIBS=${{ matrix.shared }}
+          -DMETAGL_BUILD_TESTS=ON
+          -DMETAGL_BUILD_EXAMPLES=ON
+          -DMETAGL_ENABLE_DEBUG_LOGGING=ON
+
+      - name: Build
+        run: cmake --build build --config Debug --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Debug --output-on-failure
+
+  sanitizers:
+    name: Linux Clang ASan and UBSan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        env:
+          CC: clang
+          CXX: clang++
+        run: >-
+          cmake -S . -B build-sanitize
+          -DCMAKE_BUILD_TYPE=Debug
+          -DMETAGL_BUILD_TESTS=ON
+          -DMETAGL_BUILD_EXAMPLES=ON
+          -DMETAGL_SANITIZE=ON
+          -DMETAGL_ENABLE_DEBUG_LOGGING=ON
+          -DMETAGL_DEBUG_IMMEDIATE=ON
+
+      - name: Build
+        run: cmake --build build-sanitize --parallel
+
+      - name: Test
+        env:
+          ASAN_OPTIONS: detect_leaks=0
+        run: ctest --test-dir build-sanitize --output-on-failure

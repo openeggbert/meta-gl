@@ -76,7 +76,7 @@ target_include_directories(meta-gl
 function(metagl_apply_warnings target_name)
     target_compile_options(${target_name} PRIVATE
         $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra -Wpedantic>
-        $<$<CXX_COMPILER_ID:MSVC>:/W4 /permissive->
+        $<$<CXX_COMPILER_ID:MSVC>:/W4 /permissive- /Zc:preprocessor>
     )
 endfunction()
 

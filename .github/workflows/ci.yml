@@ -51,11 +51,11 @@ jobs:
           -DMETAGL_BUILD_GPU_TESTS=${{ runner.os == 'Linux' && 'ON' || 'OFF' }}
           -DMETAGL_ENABLE_DEBUG_LOGGING=ON
 
-      - name: Build
+      - name: Build (Unix)
         if: runner.os != 'Windows'
         run: cmake --build build --config Debug --parallel
 
-      - name: Build
+      - name: Build (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |

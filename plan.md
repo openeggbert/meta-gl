@@ -192,6 +192,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | K12 | ✅ Add installed-package and optional real headless EGL/Mesa smoke tests |
 | K13 | ✅ Correct README/changelog claims and add a buildable Doxygen target |
 | K14 | ✅ Compile all of easy-gl against the audit branch and compare its existing resource-test failure against the baseline |
+| K15 | ✅ Flatten the `GetParameter` name lookup so MSVC does not exceed its nested-block compiler limit |
 
 ---
 
@@ -209,5 +210,5 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | H — Code quality & naming | 12 |
 | I — Tests | 10 |
 | J — Emscripten / platform | 5 |
-| K — 2026 comprehensive audit | 14 |
-| **Total** | **107** |
+| K — 2026 comprehensive audit | 15 |
+| **Total** | **108** |

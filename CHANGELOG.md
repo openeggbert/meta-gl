@@ -43,6 +43,8 @@ All notable changes to meta-gl will be documented here.
   truncating them, and all span length conversions check the GL target type.
 - `IsFunctionAvailable()` no longer allocates inside its `noexcept` lookup.
 - The canonical name is used for aliased framebuffer-binding query tokens.
+- `GetParameter` name lookup no longer exceeds MSVC's nested-block compiler
+  limit.
 - README support claims, context-restore sequence, and handle example now match
   the implementation.
 

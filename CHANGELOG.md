@@ -47,6 +47,9 @@ All notable changes to meta-gl will be documented here.
   limit.
 - MSVC builds use the conforming preprocessor required by the C++23
   `__VA_OPT__` debug macros.
+- The extension mock loader now returns a correctly typed `glGetError`
+  function instead of invoking a `void()` stub through an incompatible
+  function pointer.
 - README support claims, context-restore sequence, and handle example now match
   the implementation.
 

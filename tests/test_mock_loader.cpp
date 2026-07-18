@@ -322,7 +322,7 @@ int main()
                 return reinterpret_cast<void*>(+ext_GetIntegerv);
             if (std::strcmp(name, "glGetStringi")  == 0)
                 return reinterpret_cast<void*>(+ext_GetStringi);
-            return reinterpret_cast<void*>(stub_noop);
+            return mock_proc_address(name);
         };
 
         check("Re-Initialize with extension stub returns true",

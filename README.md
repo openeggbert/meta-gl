@@ -232,6 +232,11 @@ All symbols live in the `metagl` namespace under `include/metagl/`:
 | `metagl/Debug.hpp` | GL call logging built with `METAGL_ENABLE_DEBUG_LOGGING` (header opt-out: `METAGL_NO_DEBUG`) |
 | `metagl/Emscripten.hpp` | `InstallEmscriptenContextLossCallbacks()` — included automatically when `__EMSCRIPTEN__` is defined |
 
+Buffered debug logging is flushed automatically at normal process exit on
+non-Windows platforms. Windows applications should call
+`metagl::FlushDebugLog()` before shutdown, because DLL teardown executes under
+the Windows loader lock; `METAGL_DEBUG_IMMEDIATE=ON` is another safe option.
+
 ### Example
 
 ```cpp

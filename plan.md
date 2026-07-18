@@ -195,6 +195,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | K15 | ✅ Flatten the `GetParameter` name lookup so MSVC does not exceed its nested-block compiler limit |
 | K16 | ✅ Enable MSVC's conforming preprocessor for the C++23 `__VA_OPT__` debug macros |
 | K17 | ✅ Remove the extension mock loader's incompatible `glGetError` function-pointer call |
+| K18 | ✅ Add explicit debug-log flushing and avoid Windows DLL teardown I/O under the loader lock |
 
 ---
 
@@ -212,5 +213,5 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | H — Code quality & naming | 12 |
 | I — Tests | 10 |
 | J — Emscripten / platform | 5 |
-| K — 2026 comprehensive audit | 17 |
-| **Total** | **110** |
+| K — 2026 comprehensive audit | 18 |
+| **Total** | **111** |

@@ -29,6 +29,19 @@
  */
 #pragma once
 
+namespace metagl
+{
+    /**
+     * @brief Flushes buffered debug call records to `stderr`.
+     *
+     * This function is always available and is a no-op when meta-gl was built
+     * without `METAGL_ENABLE_DEBUG_LOGGING`. Call it before program shutdown
+     * when buffered logging is enabled. Windows DLL teardown intentionally
+     * avoids automatic I/O while the loader lock is held.
+     */
+    void FlushDebugLog() noexcept;
+}
+
 // Define METAGLDEBUG to enable per-call GL logging.
 // Each call records the function name, formatted parameters, and return value.
 // The buffer is printed to stderr and cleared every 5 seconds.

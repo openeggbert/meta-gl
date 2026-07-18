@@ -50,6 +50,8 @@ All notable changes to meta-gl will be documented here.
 - The extension mock loader now returns a correctly typed `glGetError`
   function instead of invoking a `void()` stub through an incompatible
   function pointer.
+- Added `FlushDebugLog()` and avoided iostream flushing from Windows DLL
+  static teardown, where the loader lock can deadlock the process.
 - README support claims, context-restore sequence, and handle example now match
   the implementation.
 

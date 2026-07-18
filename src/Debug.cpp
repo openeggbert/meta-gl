@@ -29,7 +29,7 @@ namespace metagl::debug
         Clock::time_point g_start      = Clock::now();
         Clock::time_point g_last_flush = Clock::now();
 
-        void flush()
+        void flush_buffer()
         {
             if (g_buf.empty()) return;
             std::cerr << "[METAGL DEBUG] --- " << g_buf.size() << " GL calls ---\n";
@@ -48,15 +48,30 @@ namespace metagl::debug
             g_buf.clear();
         }
 
-        // Destructor runs at static-storage teardown, after g_buf is still alive,
-        // ensuring buffered calls are not lost on normal program exit.
-        struct FlushOnExit { ~FlushOnExit() { flush(); } };
+        // Windows invokes DLL static destructors while holding the loader lock.
+        // Performing iostream I/O there can deadlock, so Windows callers use
+        // FlushDebugLog() explicitly (or METAGLDEBUG_IMMEDIATE).
+#ifndef _WIN32
+        struct FlushOnExit { ~FlushOnExit() { metagl::FlushDebugLog(); } };
         FlushOnExit g_flush_on_exit;
+#endif
 
         unsigned int (*g_get_error)() = nullptr;
     }
 
     void set_get_error_fn(unsigned int (*fn)()) noexcept { g_get_error = fn; }
+
+    void flush() noexcept
+    {
+        try
+        {
+            flush_buffer();
+        }
+        catch (...)
+        {
+            // Debug logging must never affect application control flow.
+        }
+    }
 
     void check_gl_error(std::string_view func) noexcept
     {
@@ -80,17 +95,32 @@ namespace metagl::debug
         });
 
 #ifdef METAGLDEBUG_IMMEDIATE
-        flush();
+        flush_buffer();
         g_last_flush = Clock::now();
 #else
         const auto now = Clock::now();
         if (now - g_last_flush >= std::chrono::seconds(5))
         {
-            flush();
+            flush_buffer();
             g_last_flush = now;
         }
 #endif
     }
+}
+
+namespace metagl
+{
+    void FlushDebugLog() noexcept
+    {
+        debug::flush();
+    }
+}
+
+#else
+
+namespace metagl
+{
+    void FlushDebugLog() noexcept {}
 }
 
 #endif // METAGLDEBUG

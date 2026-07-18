@@ -386,6 +386,10 @@ int main()
     check("ANGLE mock remains OpenGL ES",
           metagl::GetContextInfo().api == metagl::ApiKind::OpenGLES);
 
+    // Flush while the process and any shared library are fully operational.
+    // Windows DLL teardown runs under the loader lock and must not perform I/O.
+    metagl::FlushDebugLog();
+
     if (failed > 0)
         std::cerr << failed << " mock-loader test(s) failed.\n";
     return failed;

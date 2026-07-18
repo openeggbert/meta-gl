@@ -23,12 +23,13 @@
  * metagl::NotifyContextLost();
  *
  * // Context-restored handler:
- * metagl::LoadCurrentContext(emscripten_webgl_get_proc_address);
- * metagl::NotifyContextRestored();
+ * metagl::RestoreCurrentContext(
+ *     reinterpret_cast<metagl::GlGetProcAddressFn>(
+ *         emscripten_webgl_get_proc_address));
  * @endcode
  *
- * @note `LoadCurrentContext` MUST complete before `NotifyContextRestored` is
- *       called.  @ref InstallEmscriptenContextLossCallbacks enforces this order.
+ * @note @ref RestoreCurrentContext reloads entry points before it notifies
+ *       listeners. @ref InstallEmscriptenContextLossCallbacks uses this helper.
  */
 #pragma once
 
@@ -49,16 +50,13 @@ namespace metagl
      *   1. @ref NotifyContextLost — marks the context lost and dispatches
      *      @ref ContextListener::OnContextLost to all registered listeners.
      *
-     * - **Context-restored callback** calls:
-     *   1. @ref LoadCurrentContext `(emscripten_webgl_get_proc_address)` — reloads
-     *      all GL function pointers for the new WebGL context.
-     *   2. @ref NotifyContextRestored — marks the context restored and dispatches
-     *      @ref ContextListener::OnContextRestored to all registered listeners.
+     * - **Context-restored callback** calls @ref RestoreCurrentContext with
+     *   `emscripten_webgl_get_proc_address`. The helper reloads all GL function
+     *   pointers and only then dispatches @ref ContextListener::OnContextRestored.
      *
      * @par IMPORTANT — call order on context restore
-     * `LoadCurrentContext()` **must** complete before `NotifyContextRestored()` is
-     * called.  Listeners that call GL functions inside `OnContextRestored()` rely
-     * on valid function pointers.  This function already enforces the correct order.
+     * Listeners that call GL functions inside `OnContextRestored()` rely on valid
+     * function pointers. This function enforces the required reload ordering.
      *
      * @param canvasSelector  CSS selector for the target canvas element
      *                        (e.g. `"#canvas"`), or `nullptr` for the default canvas.

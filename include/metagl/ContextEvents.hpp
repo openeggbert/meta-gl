@@ -96,8 +96,8 @@ namespace metagl
     // -------------------------------------------------------------------------
 
     /**
-     * @brief Dispatches @ref ContextListener::OnContextLost to all registered listeners,
-     *        then marks the context as lost via @ref MarkContextLost.
+     * @brief Marks the context lost, then dispatches
+     *        @ref ContextListener::OnContextLost to registered listeners.
      *
      * Safe to call from a platform context-loss callback (e.g. Emscripten,
      * Android `onSurfaceDestroyed`).  Do not call any GL function after this
@@ -106,17 +106,23 @@ namespace metagl
     void NotifyContextLost();
 
     /**
-     * @brief Dispatches @ref ContextListener::OnContextRestored to all registered listeners,
-     *        then marks the context as restored via @ref MarkContextRestored.
+     * @brief Dispatches the restored event after a successful explicit reload.
      *
-     * **Required call order after a context-restore event:**
+     * Prefer the atomic @ref RestoreCurrentContext helper. The compatible manual
+     * call order after a context-restore event is:
      * 1. Call @ref LoadCurrentContext — reloads all GL function pointers and redetects
      *    capabilities.  No `metagl::gl*` call is safe before this step completes.
      * 2. Call @ref NotifyContextRestored — fires @ref ContextListener::OnContextRestored
      *    on all registered listeners so they can recreate GPU resources.
      *
-     * @warning Calling this function before @ref LoadCurrentContext is **undefined behaviour**:
-     *          listeners may invoke GL functions through stale or null function pointers.
+     * If no successful load has occurred since @ref NotifyContextLost, this
+     * function leaves the context lost and does not dispatch callbacks.
+     *
+     * During callbacks @ref GetContextStatus returns `ContextStatus::Restored`.
+     * After all callbacks return it is `ContextStatus::Current`.
+     *
+     * Listener registration is snapshotted before dispatch. A listener may safely
+     * add or remove itself during a callback; changes take effect on the next event.
      */
     void NotifyContextRestored();
 }

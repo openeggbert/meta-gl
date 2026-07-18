@@ -387,8 +387,17 @@ namespace metagl::detail
 
     GlTable g_gl;
 
-    // Forward declaration — implemented in Context.cpp.
+    // Forward declarations — implemented in Context.cpp.
     void UpdateContextAfterLoad();
+    void ResetContextAfterLoadFailure() noexcept;
+
+    void InvalidateFunctionsAfterContextLoss() noexcept
+    {
+        g_gl.initialized = false;
+#ifdef METAGLDEBUG
+        metagl::debug::set_get_error_fn(nullptr);
+#endif
+    }
 
     // Maps each GL function name to whether it was successfully loaded.
     std::unordered_map<std::string, bool> g_function_availability;
@@ -1314,19 +1323,23 @@ namespace metagl
             // Detect capabilities and update context state.
             detail::UpdateContextAfterLoad();
         }
+        else
+        {
+            detail::ResetContextAfterLoadFailure();
+        }
 
 #ifdef METAGLDEBUG
         // Register raw GetError pointer so the debug logger can check for GL
         // errors after each call without going through the wrapper.
-        if (gl.GetError)
-            metagl::debug::set_get_error_fn(
-                reinterpret_cast<unsigned int(*)()>(gl.GetError));
+        metagl::debug::set_get_error_fn(gl.initialized && gl.GetError
+            ? reinterpret_cast<unsigned int(*)()>(gl.GetError)
+            : nullptr);
 #endif
 
         return gl.initialized;
     }
 
-    bool IsInitialized()
+    bool IsInitialized() noexcept
     {
         return detail::g_gl.initialized;
     }

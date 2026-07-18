@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 // ---------------------------------------------------------------------------
@@ -13,6 +14,10 @@ namespace metagl::detail
     static ContextInfo  g_context_info{};
     static Capabilities g_capabilities{};
     static std::vector<ContextListener*> g_listeners{};
+
+    // Implemented in Functions.cpp. Context loss makes a previously successful
+    // loader state unusable until all entry points have been loaded again.
+    void InvalidateFunctionsAfterContextLoss() noexcept;
 
     static bool parse_version(const char* ptr, int& major, int& minor)
     {
@@ -120,6 +125,21 @@ namespace metagl::detail
         g_capabilities = std::move(caps);
         g_context_info = std::move(info);
     }
+
+    // Called by Functions.cpp after a non-null loader failed to provide the
+    // GLES 2.0 minimum. Do not expose capabilities from the previous context.
+    void ResetContextAfterLoadFailure() noexcept
+    {
+        const auto generation = g_context_info.generation;
+        const auto old_status = g_context_info.status;
+
+        g_capabilities = {};
+        g_context_info = {};
+        g_context_info.generation = generation;
+        g_context_info.status = old_status == ContextStatus::NotCreated
+            ? ContextStatus::NotCreated
+            : ContextStatus::Lost;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -150,6 +170,7 @@ namespace metagl
     void MarkContextLost() noexcept
     {
         detail::g_context_info.status = ContextStatus::Lost;
+        detail::InvalidateFunctionsAfterContextLoss();
     }
 
     void MarkContextRestored() noexcept
@@ -183,6 +204,9 @@ namespace metagl
     void AddContextListener(ContextListener* listener)
     {
         if (!listener) return;
+        if (std::find(detail::g_listeners.begin(), detail::g_listeners.end(), listener)
+            != detail::g_listeners.end())
+            return;
         detail::g_listeners.push_back(listener);
     }
 
@@ -195,15 +219,42 @@ namespace metagl
     void NotifyContextLost()
     {
         MarkContextLost();
-        for (auto* l : detail::g_listeners)
+        const auto listeners = detail::g_listeners;
+        for (auto* l : listeners)
             if (l) l->OnContextLost();
     }
 
     void NotifyContextRestored()
     {
+        if (!IsInitialized())
+        {
+            if (GetContextStatus() != ContextStatus::NotCreated)
+                MarkContextLost();
+            return;
+        }
+
         MarkContextRestored();
-        for (auto* l : detail::g_listeners)
-            if (l) l->OnContextRestored();
+        const auto listeners = detail::g_listeners;
+        try
+        {
+            for (auto* l : listeners)
+                if (l) l->OnContextRestored();
+        }
+        catch (...)
+        {
+            detail::g_context_info.status = ContextStatus::Current;
+            throw;
+        }
+        detail::g_context_info.status = ContextStatus::Current;
+    }
+
+    bool RestoreCurrentContext(GlGetProcAddressFn getProcAddress)
+    {
+        if (!LoadCurrentContext(getProcAddress))
+            return false;
+
+        NotifyContextRestored();
+        return GetContextStatus() == ContextStatus::Current;
     }
 }
 
@@ -223,10 +274,10 @@ namespace metagl
 
     static EM_BOOL emscripten_context_restored_cb(int, const void*, void*)
     {
-        // Caller must invoke LoadCurrentContext() to reload function pointers
-        // before rendering.
-        NotifyContextRestored();
-        return EM_FALSE;
+        const bool restored = RestoreCurrentContext(
+            reinterpret_cast<GlGetProcAddressFn>(
+                emscripten_webgl_get_proc_address));
+        return restored ? EM_TRUE : EM_FALSE;
     }
 
     bool InstallEmscriptenContextLossCallbacks(const char* canvasSelector)

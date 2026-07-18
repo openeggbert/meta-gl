@@ -43,6 +43,11 @@ namespace
         return empty;
     }
 
+    GLenum GL_APIENTRY stub_GetError()
+    {
+        return GL_NO_ERROR;
+    }
+
     // No-op for all other functions (never actually called after Initialize)
     void GL_APIENTRY stub_noop() {}
 
@@ -54,6 +59,8 @@ namespace
             return reinterpret_cast<void*>(stub_GetIntegerv);
         if (std::strcmp(name, "glGetStringi")  == 0)
             return reinterpret_cast<void*>(stub_GetStringi);
+        if (std::strcmp(name, "glGetError")    == 0)
+            return reinterpret_cast<void*>(stub_GetError);
         return reinterpret_cast<void*>(stub_noop);
     }
 }
@@ -153,14 +160,24 @@ int main()
     // Single listener receives both notifications
     MockListener ml1;
     metagl::AddContextListener(&ml1);
+    metagl::AddContextListener(&ml1); // duplicate registration is ignored
 
     metagl::NotifyContextLost();
     check("NotifyContextLost fires OnContextLost",     ml1.lost_count     == 1);
     check("NotifyContextLost does not fire Restored",  ml1.restored_count == 0);
 
+    // A restore event without a successful reload is rejected.
     metagl::NotifyContextRestored();
-    check("NotifyContextRestored fires OnContextRestored", ml1.restored_count == 1);
+    check("NotifyContextRestored requires a reload", ml1.restored_count == 0);
+    check("Rejected restore remains Lost",
+          metagl::GetContextStatus() == metagl::ContextStatus::Lost);
+
+    check("RestoreCurrentContext succeeds",
+          metagl::RestoreCurrentContext(mock_proc_address));
+    check("RestoreCurrentContext fires OnContextRestored", ml1.restored_count == 1);
     check("NotifyContextRestored does not fire Lost",      ml1.lost_count     == 1);
+    check("RestoreCurrentContext finishes Current",
+          metagl::GetContextStatus() == metagl::ContextStatus::Current);
 
     // Multiple listeners
     MockListener ml2;
@@ -172,6 +189,8 @@ int main()
 
     // Removing a listener stops notifications
     metagl::RemoveContextListener(&ml1);
+    check("Reload before manual restored notification",
+          metagl::LoadCurrentContext(mock_proc_address));
     metagl::NotifyContextRestored();
     check("Removed listener does not receive NotifyContextRestored", ml1.restored_count == 1);
     check("Active listener still receives NotifyContextRestored",    ml2.restored_count == 1);
@@ -181,6 +200,47 @@ int main()
     metagl::NotifyContextLost();
     check("No listeners: NotifyContextLost is silent (ml1 unchanged)", ml1.lost_count == 2);
     check("No listeners: NotifyContextLost is silent (ml2 unchanged)", ml2.lost_count == 1);
+
+    // Listener mutation during dispatch uses a stable snapshot.
+    struct SelfRemovingListener : metagl::ContextListener
+    {
+        int calls = 0;
+        void OnContextLost() override
+        {
+            ++calls;
+            metagl::RemoveContextListener(this);
+        }
+    } self_removing;
+    metagl::AddContextListener(&self_removing);
+    check("Reload before mutation test",
+          metagl::LoadCurrentContext(mock_proc_address));
+    metagl::NotifyContextLost();
+    check("Self-removing listener called once", self_removing.calls == 1);
+    check("Reload after mutation test",
+          metagl::LoadCurrentContext(mock_proc_address));
+    metagl::NotifyContextLost();
+    check("Self-removing listener stays removed", self_removing.calls == 1);
+
+    // A failed non-null loader must not leak the previous context state.
+    const auto generation_before_failure = metagl::GetContextGeneration();
+    auto incomplete_loader = [](const char* name) -> void*
+    {
+        if (std::strcmp(name, "glBindAttribLocation") == 0)
+            return nullptr;
+        return mock_proc_address(name);
+    };
+    check("Incomplete core loader fails",
+          !metagl::Initialize(incomplete_loader));
+    check("Failed load clears initialized state", !metagl::IsInitialized());
+    check("Failed reload remains Lost",
+          metagl::GetContextStatus() == metagl::ContextStatus::Lost);
+    check("Failed load preserves generation",
+          metagl::GetContextGeneration() == generation_before_failure);
+    check("Failed load clears old capabilities",
+          !metagl::SupportsGLES20()
+          && metagl::GetCapabilities().version_string.empty());
+    check("Recovery after failed loader succeeds",
+          metagl::RestoreCurrentContext(mock_proc_address));
 
     // ==========================================================================
     // I7 — HasExtension / GetCapabilities with fake extension string

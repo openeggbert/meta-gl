@@ -36,9 +36,12 @@ namespace metagl
      * Transitions:
      * - `NotCreated` → `Current`  after the first successful @ref Initialize call.
      * - `Current`    → `Lost`     via @ref MarkContextLost or @ref NotifyContextLost.
-     * - `Lost`       → `Restored` via @ref MarkContextRestored or @ref NotifyContextRestored
-     *                              (always call @ref LoadCurrentContext first).
-     * - `Restored`   → `Current`  automatically at the end of @ref LoadCurrentContext.
+     * - `Lost`       → `Restored` briefly while @ref NotifyContextRestored dispatches
+     *                              resource-recreation callbacks.
+     * - `Restored`   → `Current`  when @ref NotifyContextRestored finishes.
+     *
+     * Prefer @ref RestoreCurrentContext for the complete `Lost` → `Current`
+     * transition; it reloads entry points before dispatching callbacks.
      */
     enum class ContextStatus : std::uint8_t
     {
@@ -129,11 +132,11 @@ namespace metagl
     /**
      * @brief Marks the context as restored.
      *
-     * Transitions the status to `Restored`.
+     * Transitions the status to the temporary `Restored` state.
      *
-     * @warning Always call @ref LoadCurrentContext first to reload function pointers
-     *          and redetect capabilities before calling this function.
-     *          Prefer @ref NotifyContextRestored, which enforces the correct order.
+     * @warning This is a low-level state mutation only. Prefer
+     *          @ref RestoreCurrentContext, which reloads function pointers,
+     *          dispatches listeners, and returns the status to `Current`.
      */
     void MarkContextRestored() noexcept;
 

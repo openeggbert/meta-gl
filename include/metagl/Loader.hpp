@@ -66,7 +66,7 @@ namespace metagl
      * @return `true` if the core ES 2.0 function set was loaded successfully.
      *         `false` if the loader returned `nullptr` for one or more core functions.
      */
-    bool Initialize(GlGetProcAddressFn loader);
+    [[nodiscard]] bool Initialize(GlGetProcAddressFn loader);
 
     /**
      * @brief Convenience alias for @ref Initialize; provided for API consistency.
@@ -86,10 +86,31 @@ namespace metagl
      * @param getProcAddress  Platform `GetProcAddress` function.
      * @return `true` on success; same semantics as @ref Initialize.
      */
-    inline bool LoadCurrentContext(GlGetProcAddressFn getProcAddress)
+    [[nodiscard]] inline bool LoadCurrentContext(GlGetProcAddressFn getProcAddress)
     {
         return Initialize(getProcAddress);
     }
+
+    /**
+     * @brief Atomically reloads a restored context and notifies listeners.
+     *
+     * This is the preferred context-restore entry point. It calls
+     * @ref LoadCurrentContext first and dispatches
+     * @ref ContextListener::OnContextRestored only after every required GLES 2.0
+     * function has loaded and capabilities have been redetected. During listener
+     * callbacks the status is `ContextStatus::Restored`; on return it is
+     * `ContextStatus::Current`.
+     *
+     * If loading fails, no restored callback is dispatched, capabilities are
+     * cleared, and an existing context remains in `ContextStatus::Lost`.
+     *
+     * The older `LoadCurrentContext(loader); NotifyContextRestored();` sequence
+     * remains supported for source compatibility.
+     *
+     * @param getProcAddress Platform `GetProcAddress` function.
+     * @return `true` after a complete reload and notification; `false` on load failure.
+     */
+    [[nodiscard]] bool RestoreCurrentContext(GlGetProcAddressFn getProcAddress);
 
     /**
      * @brief Returns `true` if @ref Initialize has previously succeeded.
@@ -97,7 +118,7 @@ namespace metagl
      * Does not verify that function pointers are still valid (e.g. after context loss).
      * Use @ref GetContextStatus to check the lifecycle state.
      */
-    bool IsInitialized();
+    [[nodiscard]] bool IsInitialized() noexcept;
 
     /**
      * @brief Returns `true` if the named GL function was loaded during the last

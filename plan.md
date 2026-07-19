@@ -318,8 +318,8 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 | R70 | Add macOS OpenGL compile/runtime coverage. | The supported macOS compiler and context path configure, build, and run. | [Finding 20](analysis.md#finding-20) | 🌐 Requires macOS runner |
 | R71 | Add at least one non-Mesa vendor-driver runtime job. | The selected NVIDIA/AMD/Intel vendor path and maintenance expectation are documented. | [Finding 20](analysis.md#finding-20) | 🌐 Requires managed GPU runner |
 | R72 | Add a tag-triggered release workflow. | Only approved version tags start the workflow and untrusted/manual tags cannot overwrite a release. | Previous `NEXT.md` release automation | ✅ Done |
-| R73 | Build release archives and validate their installed CMake packages. | Each supported archive installs and an external consumer links and runs against it. | Previous `NEXT.md` release automation | 🚧 Blocked by R72 |
-| R74 | Attach validated artifacts and changelog-derived notes to the GitHub release. | Workflow output is checksummed, immutable, and associated with the matching tag. | Previous `NEXT.md` release automation | 🌐 Blocked by R73 |
+| R73 | Build release archives and validate their installed CMake packages. | Each supported archive installs and an external consumer links and runs against it. | Previous `NEXT.md` release automation | ✅ Done |
+| R74 | Attach validated artifacts and changelog-derived notes to the GitHub release. | Workflow output is checksummed, immutable, and associated with the matching tag. | Previous `NEXT.md` release automation | ✅ Done |
 | R75 | Decide and verify the Windows buffered-debug-log shutdown policy. | Explicit pre-teardown flush remains a tested contract, or a safe automatic lifecycle replaces it; MSVC shared tests cover the selected behavior. | Previous `NEXT.md` known limitation | 🌐 Requires Windows runner |
 
 ---
@@ -330,5 +330,5 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 |-------|----------:|----------:|------:|
 | A–K — Original plan and comprehensive audit | 113 | 0 | 113 |
 | L — Implemented follow-up findings | 4 | 0 | 4 |
-| R — Remaining individual tasks | 8 | 67 | 75 |
-| **Total** | **125** | **67** | **192** |
+| R — Remaining individual tasks | 10 | 65 | 75 |
+| **Total** | **127** | **65** | **192** |

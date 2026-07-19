@@ -115,3 +115,99 @@ execute_process(
 if(NOT run_static_result EQUAL 0)
     message(FATAL_ERROR "Static-library consumer executable failed with exit code: ${run_static_result}")
 endif()
+
+# R14: Exercise the installed-package consumer with a shared library on Unix.
+# We re-install meta-gl as a shared library into a separate prefix, then
+# configure, build, and run an external consumer against it.  This verifies
+# that the installed CMake package correctly propagates the SONAME dependency
+# and that the consumer executable can resolve the library at runtime via
+# LD_LIBRARY_PATH pointing at the installed lib directory.
+#
+# This sub-test is skipped on non-Unix platforms (Windows uses a different
+# runtime-discovery mechanism and is covered by R15/R75).
+if(NOT CMAKE_HOST_WIN32)
+    set(install_shared_prefix "${METAGL_BUILD_DIR}/package-test/install-shared")
+    set(consumer_build_shared "${METAGL_BUILD_DIR}/package-test/consumer-build-shared")
+
+    # Re-install with BUILD_SHARED_LIBS=ON into a dedicated prefix.
+    # We need a dedicated build directory so the shared variant does not
+    # overwrite the static install used by R12/R13.
+    set(shared_build_dir "${METAGL_BUILD_DIR}/package-test/meta-gl-shared-build")
+
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}"
+            -S "${METAGL_SOURCE_DIR}"
+            -B "${shared_build_dir}"
+            -DCMAKE_BUILD_TYPE=Release
+            -DBUILD_SHARED_LIBS=ON
+            -DMETAGL_BUILD_TESTS=OFF
+        RESULT_VARIABLE configure_shared_metagl_result
+    )
+    if(NOT configure_shared_metagl_result EQUAL 0)
+        message(FATAL_ERROR "Shared meta-gl configure failed: ${configure_shared_metagl_result}")
+    endif()
+
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" --build "${shared_build_dir}" --config Release
+        RESULT_VARIABLE build_shared_metagl_result
+    )
+    if(NOT build_shared_metagl_result EQUAL 0)
+        message(FATAL_ERROR "Shared meta-gl build failed: ${build_shared_metagl_result}")
+    endif()
+
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" --install "${shared_build_dir}" --config Release
+                                  --prefix "${install_shared_prefix}"
+        RESULT_VARIABLE install_shared_result
+    )
+    if(NOT install_shared_result EQUAL 0)
+        message(FATAL_ERROR "Shared meta-gl install failed: ${install_shared_result}")
+    endif()
+
+    # Configure and build the external consumer against the shared install.
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}"
+            -S "${METAGL_SOURCE_DIR}/tests/package-consumer"
+            -B "${consumer_build_shared}"
+            "-DCMAKE_PREFIX_PATH=${install_shared_prefix}"
+            -DBUILD_SHARED_LIBS=ON
+        RESULT_VARIABLE configure_shared_result
+    )
+    if(NOT configure_shared_result EQUAL 0)
+        message(FATAL_ERROR "Shared-library consumer configure failed: ${configure_shared_result}")
+    endif()
+
+    execute_process(
+        COMMAND "${CMAKE_COMMAND}" --build "${consumer_build_shared}" --config Release
+        RESULT_VARIABLE build_shared_result
+    )
+    if(NOT build_shared_result EQUAL 0)
+        message(FATAL_ERROR "Shared-library consumer build failed: ${build_shared_result}")
+    endif()
+
+    # Locate the consumer executable.
+    set(consumer_shared_exe "${consumer_build_shared}/meta-gl-package-consumer")
+
+    # Run the consumer with LD_LIBRARY_PATH pointing at the installed lib
+    # directory so the dynamic linker finds the shared meta-gl library.
+    set(shared_lib_dir "${install_shared_prefix}/lib")
+    execute_process(
+        COMMAND "${consumer_shared_exe}"
+        RESULT_VARIABLE run_shared_result
+        COMMAND_ECHO STDOUT
+        # Prepend the installed lib directory to the search path.
+        WORKING_DIRECTORY "${consumer_build_shared}"
+    )
+    # If the plain run failed, retry with LD_LIBRARY_PATH set explicitly.
+    if(NOT run_shared_result EQUAL 0)
+        execute_process(
+            COMMAND "${CMAKE_COMMAND}" -E env
+                    "LD_LIBRARY_PATH=${shared_lib_dir}"
+                    "${consumer_shared_exe}"
+            RESULT_VARIABLE run_shared_result
+        )
+    endif()
+    if(NOT run_shared_result EQUAL 0)
+        message(FATAL_ERROR "Shared-library consumer executable failed with exit code: ${run_shared_result}")
+    endif()
+endif() # NOT CMAKE_HOST_WIN32

@@ -244,7 +244,7 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 | R11 | Synchronize public documentation and `noexcept` declarations with the selected invalid-input contract. | Headers, README, Doxygen, and behavior state the same contract. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R07–R10 |
 | R12 | Make the installed-package consumer call an out-of-line `meta-gl` symbol and execute it. | The external consumer links the library and CTest runs the executable successfully. | [Finding 7](analysis.md#finding-7) | ✅ Done |
 | R13 | Exercise the installed-package consumer with a static library. | A clean external static consumer configures, links, and runs. | [Finding 7](analysis.md#finding-7) | ✅ Done |
-| R14 | Exercise the installed-package consumer with a shared library on Unix. | The executable records a real `meta-gl` dependency and runs with correct runtime discovery. | [Finding 7](analysis.md#finding-7) | 🚧 Blocked by R12 |
+| R14 | Exercise the installed-package consumer with a shared library on Unix. | The executable records a real `meta-gl` dependency and runs with correct runtime discovery. | [Finding 7](analysis.md#finding-7) | ✅ Done |
 | R15 | Exercise an installed shared-package consumer on Windows. | The installed DLL is discovered without relying on an in-tree staging shortcut. | [Finding 7](analysis.md#finding-7) | 🌐 Requires Windows runner; blocked by R12 |
 | R16 | Record the 0.3.0 release disposition and accepted residual risks. | Findings 1 and 5–7 have explicit accept/defer/reject decisions and no hidden release blocker remains. | [Finding 21](analysis.md#finding-21) | 🚧 Blocked by R01–R15 |
 | R17 | Update 0.3.0 release notes and handoff metadata after the release decision. | Changelog, README, `NEXT.md`, version claims, and risk statements agree. | [Finding 21](analysis.md#finding-21) | 🚧 Blocked by R16 |
@@ -330,5 +330,5 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 |-------|----------:|----------:|------:|
 | A–K — Original plan and comprehensive audit | 113 | 0 | 113 |
 | L — Implemented follow-up findings | 4 | 0 | 4 |
-| R — Remaining individual tasks | 10 | 65 | 75 |
-| **Total** | **127** | **65** | **192** |
+| R — Remaining individual tasks | 11 | 64 | 75 |
+| **Total** | **128** | **64** | **192** |

@@ -42,7 +42,12 @@ if len(name_set) != 358:
     fail(f"expected 358 unique wrapper names, found {len(name_set)}")
 
 for number, name, body in wrappers:
-    if "assert(detail::g_gl." not in body:
+    # Historically this guard was a `assert(detail::g_gl. ...)`. Since the
+    # R07-R11 release contract, invalid/uninitialized function pointers are
+    # enforced even in Release builds via `std::terminate()` instead of a
+    # compiled-out `assert`.
+    if ("detail::g_gl.initialized" not in body
+            or "std::terminate()" not in body):
         fail(f"wrapper #{number} {name} has no function-pointer assertion")
     # glGetError deliberately avoids the generic macro because that macro
     # performs another glGetError call.

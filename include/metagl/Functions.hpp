@@ -18,8 +18,17 @@
  *
  * @note All functions require a prior successful call to
  *       @ref metagl::Initialize.
- *       `assert(fn != nullptr)` guards are inserted in `src/Functions.cpp` for
- *       every wrapper in debug builds.
+ *       An uninitialized context or missing function pointer is treated as
+ *       an invalid-input contract violation (see below): `src/Functions.cpp`
+ *       enforces it via `std::terminate()` in every wrapper, in both Debug
+ *       and Release builds.
+ *
+ * @par Invalid Input Contract (R07, R11)
+ *
+ * This library enforces valid inputs even in Release builds. If a function is
+ * called with invalid arguments that violate its contract (e.g. `size_t`
+ * overflow, incomplete matrix data, or unsupported bitfields), the program
+ * will be immediately terminated via `std::terminate()`.
  */
 #pragma once
 
@@ -28,7 +37,6 @@
 #include "Enums.hpp"
 
 #include <array>
-#include <cassert>
 #include <concepts>
 #include <cstddef>
 #include <initializer_list>
@@ -42,37 +50,41 @@ namespace metagl
 {
     namespace detail
     {
-        [[nodiscard]] inline GLsizei checked_glsizei(std::size_t value) noexcept
+        [[nodiscard]] inline GLsizei checked_glsizei(std::size_t value)
         {
-            assert(value <= static_cast<std::size_t>(
-                std::numeric_limits<GLsizei>::max()));
+            if (value > static_cast<std::size_t>(std::numeric_limits<GLsizei>::max())) {
+                std::terminate();
+            }
             return static_cast<GLsizei>(value);
         }
 
         [[nodiscard]] inline GLsizeiptr checked_glsizeiptr(
-            std::size_t value) noexcept
+            std::size_t value)
         {
-            assert(value <= static_cast<std::size_t>(
-                std::numeric_limits<GLsizeiptr>::max()));
+            if (value > static_cast<std::size_t>(std::numeric_limits<GLsizeiptr>::max())) {
+                std::terminate();
+            }
             return static_cast<GLsizeiptr>(value);
         }
 
         [[nodiscard]] inline GLsizei checked_element_count(
-            std::size_t size, std::size_t elements_per_value) noexcept
+            std::size_t size, std::size_t elements_per_value)
         {
-            assert(elements_per_value > 0);
-            assert(size % elements_per_value == 0);
+            if (elements_per_value == 0 || size % elements_per_value != 0) {
+                std::terminate();
+            }
             return checked_glsizei(size / elements_per_value);
         }
 
         [[nodiscard]] inline GLsizei checked_matrix_count(
             std::size_t size, std::size_t elements_per_matrix,
-            GLboolean transpose) noexcept
+            GLboolean transpose)
         {
             // OpenGL ES requires GL_FALSE. The portable convenience API keeps
             // that rule even when the active context happens to be desktop GL.
-            assert(transpose == GL_FALSE);
-            (void)transpose;
+            if (transpose != GL_FALSE) {
+                std::terminate();
+            }
             return checked_element_count(size, elements_per_matrix);
         }
     }

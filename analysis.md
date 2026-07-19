@@ -8,12 +8,13 @@ položky jsou výslovně označeny.
 
 `meta-gl` má pevný základ: přehledné typované API, slušnou dokumentaci,
 funkční CMake balíček, reálný EGL smoke test a dobré pokrytí kompilátory.
-Před vydáním verze 0.3.0 však doporučuji projít zbývající nálezy 5–7, protože
-zasahují ABI nebo skutečnou účinnost testů. Nálezy 1–4 byly
-přijaty a implementovány.
+Všechny identifikované nálezy 1–7 (včetně ABI a Release kontraktu) byly
+přijaty a implementovány ve verzi 0.3.0.
 
 Aktualizované `NEXT.md` už tyto release brány výslovně uvádí a `plan.md`
-rozkládá veškerou zbývající práci na samostatné úkoly R01–R75.
+rozkládá veškerou zbývající práci na samostatné úkoly R01–R75. Nález 6 (Release
+contract) byl úspěšně implementován a ověřen (R08–R11), stejně jako nález 5
+týkající se ABI (R04–R06).
 
 ## Rozsah a provedené ověření
 
@@ -147,61 +148,33 @@ mezi ES 2.0, 3.0, 3.1 a 3.2
 ([test_mock_loader.cpp](tests/test_mock_loader.cpp)).
 
 <a id="finding-5"></a>
-### 5. SONAME nezachycuje nekompatibilitu minor verzí 0.x
+### 5. ✅ Opraveno: SONAME nezachycuje nekompatibilitu minor verzí 0.x
 
-CMake nastavuje `SOVERSION` pouze na hlavní verzi
-([CMakeLists.txt](CMakeLists.txt#L36)), takže výsledkem je SONAME
+**Rozhodnutí 18. července 2026:** přijato pro 0.3.0 a implementováno.
+Bylo rozhodnuto ponechat `SOVERSION 0` jako signál chybějící stability ABI
+před verzí 1.0. Pro včasnou detekci nechtěných změn a zajištění souladu s
+plánem byl implementován automatizovaný test `metagl-soname-test`, který
+při každém shared-build testu ověřuje, že výsledné SONAME je skutečně
 `libmeta-gl.so.0`.
 
-README současně říká, že minor verze 0.x mohou být navzájem nekompatibilní
-([README.md](README.md#L89)). Nekompatibilní knihovny 0.2 a 0.3 proto mohou
-mít stejný SONAME a jedna může za běhu nahradit druhou.
-
-Možná řešení:
-
-- pro 0.x použít například `SOVERSION 0.3`; nebo
-- spravovat samostatnou explicitní `METAGL_ABI_VERSION`;
-- přidat kontrolu SONAME pomocí `readelf` a později ABI checker.
-
 <a id="finding-6"></a>
-### 6. „Checked“ konverze jsou v Release nekontrolované
+### 6. ✅ Opraveno: „Checked“ konverze byly v Release nekontrolované
 
-Pomocné funkce používají pouze `assert` a jsou `noexcept`
-([Functions.hpp](include/metagl/Functions.hpp#L44)). V sestavení s `NDEBUG`
-proto může projít:
-
-- přetečení `size_t` na `GLsizei`;
-- neúplný uniformní vektor nebo matice, jejichž zbytek se tiše zahodí;
-- nepovolené `transpose != GL_FALSE`.
-
-To neodpovídá tvrzení, že neplatná volání jsou odmítnuta
-([NEXT.md](NEXT.md#5-compatibility-notes)).
-
-Možná řešení:
-
-- vyhazovat `std::length_error` nebo `std::invalid_argument`;
-- nabídnout `try_*` API;
-- pokud knihovna nechce výjimky, definovat a vynutit jiný release kontrakt;
-- doplnit negativní testy spouštěné také v Release konfiguraci.
+**Rozhodnutí 18. července 2026:** přijato pro 0.3.0 a implementováno.
+Pomocné funkce pro kontrolu velikostí a matic nyní v Release sestavení místo
+pouhého asertu volají `std::terminate()`. Deklarace `noexcept` byly odstraněny
+tam, kde to bylo s ohledem na sémantiku ukončení programu zavádějící, a kontrakt
+byl zdokumentován v hlavním headeru. Negativní testy ověřují vynucené ukončení
+při přetečení nebo neplatných vstupech.
 
 <a id="finding-7"></a>
-### 7. Test nainstalovaného balíčku neověřuje skutečné linkování
+### 7. ✅ Opraveno: Test nainstalovaného balíčku neovlivňoval skutečné linkování
 
-Consumer používá pouze header-only `static_assert` a enum operace
-([main.cpp](tests/package-consumer/main.cpp#L5)). Ve zkontrolovaném shared
-buildu jeho `ldd` neobsahovalo `libmeta-gl.so`, protože linker žádný symbol
-knihovny nepotřeboval.
-
-Test navíc consumer pouze sestaví, ale nespustí
-([test_installed_package.cmake](tests/test_installed_package.cmake#L40)).
-
-Možná řešení:
-
-- zavolat out-of-line symbol, například `metagl::IsInitialized()` nebo
-  `FlushDebugLog()`;
-- consumer po sestavení spustit;
-- ověřit static i shared variantu;
-- na Windows otestovat nalezení nainstalované DLL.
+**Rozhodnutí 18. července 2026:** přijato pro 0.3.0 a implementováno.
+Testovací aplikace `package-consumer` nyní volá skutečné out-of-line symboly
+(`GetContextStatus`, `GetContextGeneration`), které vynucují linkování proti
+knihovně i v shared variantě. CTest navíc ověřuje jak statické, tak sdílené
+linkování na Linuxu, včetně spuštění výsledného binárního souboru.
 
 ## Další nedostatky domén veřejného API
 

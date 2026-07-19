@@ -82,12 +82,21 @@ cmake --install build --prefix /path/to/prefix
 Consumers can then use:
 
 ```cmake
-find_package(meta-gl 0.2 CONFIG REQUIRED)
+find_package(meta-gl 0.3 CONFIG REQUIRED)
 target_link_libraries(my-target PRIVATE meta-gl::meta-gl)
 ```
 
 For `0.x` releases, package compatibility is limited to the same minor
 version because a minor bump may contain breaking API changes.
+
+### Invalid Input Contract
+
+`meta-gl` enforces valid inputs even in **Release** builds to prevent undefined behavior from reaching the OpenGL driver. If a function is called with arguments that violate its contract (e.g. `size_t` overflow when converting to `GLsizei`, incomplete matrix data, or unsupported bitfields), the program will be immediately terminated via `std::terminate()`.
+
+This policy ensures that:
+- Overflows never reach raw GL calls.
+- Divisibility requirements for vectors and matrices are strictly enforced.
+- Invalid bitfield combinations or unsupported parameters are caught early.
 
 ### Tests and documentation
 

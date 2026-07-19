@@ -20,6 +20,16 @@ metagl_apply_warnings(metagl-mock-tests)
 metagl_stage_runtime(metagl-mock-tests)
 add_test(NAME metagl-mock-loader-test COMMAND metagl-mock-tests)
 
+add_executable(metagl-release-contract-tests
+    test_release_contract.cpp
+)
+target_link_libraries(metagl-release-contract-tests PRIVATE meta-gl::meta-gl)
+target_compile_features(metagl-release-contract-tests PRIVATE cxx_std_23)
+set_target_properties(metagl-release-contract-tests PROPERTIES CXX_EXTENSIONS NO)
+metagl_apply_warnings(metagl-release-contract-tests)
+metagl_stage_runtime(metagl-release-contract-tests)
+add_test(NAME metagl-release-contract-test COMMAND metagl-release-contract-tests)
+
 add_executable(metagl-thread-tests
     test_threads.cpp
 )
@@ -29,6 +39,18 @@ set_target_properties(metagl-thread-tests PROPERTIES CXX_EXTENSIONS NO)
 metagl_apply_warnings(metagl-thread-tests)
 metagl_stage_runtime(metagl-thread-tests)
 add_test(NAME metagl-thread-test COMMAND metagl-thread-tests)
+
+if(UNIX AND BUILD_SHARED_LIBS AND NOT APPLE)
+    find_program(READELF_EXE readelf)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+    if(READELF_EXE AND Python3_Interpreter_FOUND)
+        add_test(NAME metagl-soname-test
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_soname.py
+            $<TARGET_FILE:meta-gl>
+            "libmeta-gl.so.0"
+        )
+    endif()
+endif()
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_test(

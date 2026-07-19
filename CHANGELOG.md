@@ -4,7 +4,7 @@ All notable changes to meta-gl will be documented here.
 
 ## [Unreleased]
 
-## [0.3.0] — 2026-07-18
+## [0.3.0] — 2026-07-19
 
 ### Breaking changes
 - `AttribLocation` now stores the signed `GLint` returned by
@@ -20,6 +20,14 @@ All notable changes to meta-gl will be documented here.
   draw-buffer arguments internally.
 
 ### Added
+- **Invalid Input Contract**: Enforced `std::terminate()` for invalid inputs even
+  in Release builds (R07–R11). This covers `size_t` overflow, incomplete
+  vector/matrix data, and invalid transpose flags.
+- **ABI/SONAME Verification**: Shared libraries on Linux now carry
+  `libmeta-gl.so.0` identity to signal pre-1.0 ABI instability (R04–R06),
+  verified by an automated test.
+- `metagl-release-contract-tests` and `metagl-soname-test` for reliability and
+  binary consistency.
 - `ImageCopyTextureTarget` and typed `glCopyImageSubData` overloads for all
   texture/renderbuffer source and destination combinations. The original
   raw-name overload remains available for downstream source compatibility.
@@ -35,6 +43,9 @@ All notable changes to meta-gl will be documented here.
   Doxygen build target.
 
 ### Changed
+- **Release Contract**: Helper functions for size and matrix checks no longer
+  rely on `assert()`; they now use enforced termination to prevent undefined
+  behavior from reaching the driver.
 - Initialization now bootstraps API detection and validates the exact
   mandatory entry-point set for the reported GLES 2.0/3.0/3.1/3.2 version;
   desktop contexts must report OpenGL 3.3 or newer and provide the common

@@ -37,13 +37,17 @@ follow-up branch is **approaching release-ready state**:
 - `CHANGELOG.md` contains a dated `0.3.0` section.
 - The original 113 plan tasks are complete.
 - Follow-up findings L1–L4 are implemented and locally verified.
-- `plan.md` reflects **147 completed tasks** and **45 remaining** (mostly long-term).
+- `plan.md` reflects **166 completed tasks** and **26 remaining** (mostly long-term).
 - **R01–R18 (Release Gates)** are resolved:
   - R01: Coordinated `easy-gl` migration is selected; `meta-gl` maintains strict types.
   - R04: ABI SOVERSION is set to `0` for the pre-1.0 phase.
+  - R06: Automated Linux SONAME assertion verifies binary identity (libmeta-gl.so.0).
   - R07: Release contract for invalid inputs is `std::terminate()`.
+  - R11: Contract documentation and `noexcept` sync for invalid inputs is complete.
   - R12–R14: Installed-package test now executes the consumer and verifies shared/static linkage on Unix.
-  - R16–R18: Documentation and final release-gate checks are passing.
+  - R16: Findings 1–7 are accepted and implemented.
+  - R17: Release notes and metadata are synchronized.
+  - R18: Build/test matrix is green.
 - **R44–R46 (ABI Surface)**: Explicit `METAGL_API` export macros and hidden visibility are implemented.
 - **R50–R59 (Thread Safety & Listeners)**: Thread-local global state, snapshot-based listener dispatch, and safe debug error formatting are implemented.
 - **R72–R74 (Automation)**: GitHub Release workflow with checksums and automated changelog extraction is ready.
@@ -79,17 +83,21 @@ Do not tag 0.3.0 until the owner explicitly approves the final release commit R1
 
 ## 4. Tests and CI
 
-CTest currently defines five tests:
+CTest currently defines seven tests:
 
 1. `metagl-compile-tests` — concepts, enum domains, bitfields, template
    dispatch, handle isolation, and enum-name coverage.
 2. `metagl-mock-loader-test` — loading, version-tier validation, failure
    recovery, context lifecycle/listeners (snapshot-safe), extensions, and debug flush.
-3. `metagl-thread-tests` — verification of independent `thread_local` context
+3. `metagl-release-contract-tests` — verification of enforced `std::terminate()`
+   for invalid sizes, incomplete ranges, and invalid transpose (R10).
+4. `metagl-thread-tests` — verification of independent `thread_local` context
    states in concurrent threads (R51).
-4. `metagl-api-consistency-test` — declaration, definition, loader-name, and
+5. `metagl-soname-test` — automated Linux SONAME assertion ensuring ABI
+   consistency with the R04 policy (R06).
+6. `metagl-api-consistency-test` — declaration, definition, loader-name, and
    exact GLES mandatory-function consistency.
-5. `metagl-installed-package-test` — install plus an external consumer build
+7. `metagl-installed-package-test` — install plus an external consumer build
    verifying static/shared linkage and runtime execution (R12–R14).
 
 GitHub Actions runs:

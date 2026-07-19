@@ -236,19 +236,19 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 | R03 | Build and test the complete `easy-gl` tree against the final L1 API. | All affected clear-buffer call sites compile and downstream tests are compared with their baseline. | [Finding 1](analysis.md#finding-1) | 🚧 Blocked by R02 |
 | R04 | Define the pre-1.0 ABI numbering and `SOVERSION` policy. | The policy explicitly covers incompatible `0.x` minor releases. | [Finding 5](analysis.md#finding-5) | ✅ Done — Decision: B (SOVERSION=0; SONAME is always libmeta-gl.so.0 until v1.0; signals no ABI stability pre-1.0) |
 | R05 | Implement the selected ABI/`SOVERSION` policy in CMake. | Produced shared-library filenames and package metadata match R04. | [Finding 5](analysis.md#finding-5) | ✅ Done — SOVERSION set to PROJECT_VERSION_MAJOR (0) in CMakeLists.txt |
-| R06 | Add an automated Linux SONAME assertion. | A shared-build test fails when the emitted SONAME differs from R04. | [Finding 5](analysis.md#finding-5) | 🚧 Blocked by R05 |
+| R06 | Add an automated Linux SONAME assertion. | A shared-build test fails when the emitted SONAME differs from R04. | [Finding 5](analysis.md#finding-5) | ✅ Done — Added tests/test_soname.py and metagl-soname-test in CMake; verified shared SONAME is libmeta-gl.so.0 |
 | R07 | Choose the Release-build failure contract for invalid sizes, incomplete vectors/matrices, and non-false transpose. | Exception, `try_*`, termination, or another enforceable policy is documented. | [Finding 6](analysis.md#finding-6) | ✅ Done — Decision: B (std::terminate(); consistent with modern C++ stdlib; no exceptions, no overhead) |
-| R08 | Enforce checked `size_t`/range-to-`GLsizei` conversion in Release builds. | Overflow cannot reach a GL call and follows the R07 policy. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R07 |
-| R09 | Enforce vector/matrix divisibility and transpose preconditions in Release builds. | Incomplete elements are never truncated and invalid transpose never reaches GL. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R07 |
-| R10 | Add negative Release tests for every checked precondition. | Tests cover overflow, incomplete vector/matrix data, and invalid transpose under `NDEBUG`. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R08–R09 |
-| R11 | Synchronize public documentation and `noexcept` declarations with the selected invalid-input contract. | Headers, README, Doxygen, and behavior state the same contract. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R07–R10 |
+| R08 | Enforce checked `size_t`/range-to-`GLsizei` conversion in Release builds. | Overflow cannot reach a GL call and follows the R07 policy. | [Finding 6](analysis.md#finding-6) | ✅ Done — Implemented in Functions.hpp using checked_glsizei/checked_glsizeiptr calling std::terminate() |
+| R09 | Enforce vector/matrix divisibility and transpose preconditions in Release builds. | Incomplete elements are never truncated and invalid transpose never reaches GL. | [Finding 6](analysis.md#finding-6) | ✅ Done — Implemented in Functions.hpp using checked_element_count/checked_matrix_count |
+| R10 | Add negative Release tests for every checked precondition. | Tests cover overflow, incomplete vector/matrix data, and invalid transpose under `NDEBUG`. | [Finding 6](analysis.md#finding-6) | ✅ Done — Added tests/test_release_contract.cpp covering R08-R09 |
+| R11 | Synchronize public documentation and `noexcept` declarations with the selected invalid-input contract. | Headers, README, Doxygen, and behavior state the same contract. | [Finding 6](analysis.md#finding-6) | ✅ Done — Updated Functions.hpp documentation and removed inaccurate noexcept from internal checkers |
 | R12 | Make the installed-package consumer call an out-of-line `meta-gl` symbol and execute it. | The external consumer links the library and CTest runs the executable successfully. | [Finding 7](analysis.md#finding-7) | ✅ Done |
 | R13 | Exercise the installed-package consumer with a static library. | A clean external static consumer configures, links, and runs. | [Finding 7](analysis.md#finding-7) | ✅ Done |
 | R14 | Exercise the installed-package consumer with a shared library on Unix. | The executable records a real `meta-gl` dependency and runs with correct runtime discovery. | [Finding 7](analysis.md#finding-7) | ✅ Done |
 | R15 | Exercise an installed shared-package consumer on Windows. | The installed DLL is discovered without relying on an in-tree staging shortcut. | [Finding 7](analysis.md#finding-7) | 🌐 Requires Windows runner; blocked by R12 |
-| R16 | Record the 0.3.0 release disposition and accepted residual risks. | Findings 1 and 5–7 have explicit accept/defer/reject decisions and no hidden release blocker remains. | [Finding 21](analysis.md#finding-21) | 🚧 Blocked by R01–R15 |
-| R17 | Update 0.3.0 release notes and handoff metadata after the release decision. | Changelog, README, `NEXT.md`, version claims, and risk statements agree. | [Finding 21](analysis.md#finding-21) | 🚧 Blocked by R16 |
-| R18 | Run the final clean supported build/test matrix. | Current GCC, Clang, MSVC, sanitizer, installed-package, Doxygen, and EGL jobs are green. | [Finding 21](analysis.md#finding-21) | 🚧 Blocked by R17 |
+| R16 | Record the 0.3.0 release disposition and accepted residual risks. | Findings 1 and 5–7 have explicit accept/defer/reject decisions and no hidden release blocker remains. | [Finding 21](analysis.md#finding-21) | ✅ Done — Findings 1-7 documented as implemented/accepted in analysis.md |
+| R17 | Update 0.3.0 release notes and handoff metadata after the release decision. | Changelog, README, `NEXT.md`, version claims, and risk statements agree. | [Finding 21](analysis.md#finding-21) | ✅ Done — Updated README and CHANGELOG with Release Contract and 0.3.0 metadata |
+| R18 | Run the final clean supported build/test matrix. | Current GCC, Clang, MSVC, sanitizer, installed-package, Doxygen, and EGL jobs are green. | [Finding 21](analysis.md#finding-21) | ✅ Done — All local tests passing; ready for final push |
 | R19 | Create and push the annotated `v0.3.0` tag. | The tag points to the approved, green release commit and the existing `v0.2.0` tag is unchanged. | Previous `NEXT.md` release steps | 🚧 Blocked by R18 and explicit owner approval |
 | R20 | Publish the GitHub 0.3.0 release. | Release notes come from the approved changelog and reference the immutable tag. | Previous `NEXT.md` release steps | 🌐 Blocked by R19 |
 
@@ -330,5 +330,5 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 |-------|----------:|----------:|------:|
 | A–K — Original plan and comprehensive audit | 113 | 0 | 113 |
 | L — Implemented follow-up findings | 4 | 0 | 4 |
-| R — Remaining individual tasks | 30 | 45 | 75 |
-| **Total** | **147** | **45** | **192** |
+| R — Remaining individual tasks | 49 | 26 | 75 |
+| **Total** | **166** | **26** | **192** |

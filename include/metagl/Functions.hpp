@@ -850,6 +850,8 @@ namespace metagl
     [[nodiscard]] bool glIsTransformFeedback(TransformFeedbackId id);
     /// @brief Starts capturing vertex shader outputs into transform feedback buffers (GL ES 3.0+)
     void glBeginTransformFeedback(PrimitiveType primitiveMode);
+    /// @brief Typed overload accepting only the exact primitives legal for transform feedback (Points, Lines, Triangles) (GL ES 3.0+)
+    inline void glBeginTransformFeedback(TransformFeedbackPrimitive primitiveMode) { glBeginTransformFeedback(static_cast<PrimitiveType>(static_cast<GLenum>(primitiveMode))); }
     /// @brief Ends the current transform feedback capture session (GL ES 3.0+)
     void glEndTransformFeedback(void);
     /// @brief Pauses an active transform feedback session (can be resumed) (GL ES 3.0+)

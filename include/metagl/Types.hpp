@@ -30,12 +30,49 @@ namespace metagl
     /**
      * @brief Signature of a platform-specific GL function-pointer loader.
      *
-     * The loader is called once per GL function name during @ref Initialize.
-     * Compatible implementations:
+     * @par Loader callback contract (R37)
+     *
+     * A compliant loader must satisfy all of the following requirements:
+     *
+     * **Current context:** The loader must be called with a GL context current on
+     * the calling thread.  Behaviour is undefined if no context is bound when
+     * @ref Initialize is invoked.
+     *
+     * **Address lifetime:** Returned function pointers are valid for the lifetime
+     * of the context for which they were queried.  After context loss, all
+     * previously obtained function pointers must be treated as invalid and
+     * @ref Initialize must be called again with a new context to reload them.
+     *
+     * **Function-pointer conversion:** The returned `void*` is used by meta-gl
+     * via `reinterpret_cast` to the actual GL function signature.  The platform
+     * loader must return a pointer that is safe to convert this way on the target
+     * architecture (this is implementation-defined by [conv.ptr] but holds on all
+     * supported platforms).
+     *
+     * **Failure:** A loader may return `nullptr` for any name it does not support.
+     * meta-gl treats `nullptr` as "unavailable" and does not call the slot.
+     * Returning a non-null, non-callable address for an unsupported name is
+     * undefined behaviour from the perspective of this contract.
+     *
+     * **WGL sentinel rejection:** `wglGetProcAddress` is legal to use as a loader
+     * on Windows, but it returns the sentinel values `(void*)1`, `(void*)2`,
+     * `(void*)3`, and `(void*)-1` to indicate failure.  Callers using WGL must
+     * wrap it to convert those sentinels to `nullptr` before passing the wrapper
+     * to @ref Initialize.  Core OpenGL symbols not returned by `wglGetProcAddress`
+     * (because they are part of `opengl32.dll`) should be loaded via
+     * `GetProcAddress(opengl32_module, name)` as a fallback.
+     *
+     * **Thread model:** The loader callback is invoked only from within
+     * @ref Initialize on the thread that called @ref Initialize.  It is not
+     * called concurrently, and it must not itself call any `metagl::` function.
+     *
+     * Compatible platform implementations (no wrapper needed on most platforms):
      * - `SDL_GL_GetProcAddress` (SDL2)
      * - `glfwGetProcAddress` (GLFW)
-     * - `eglGetProcAddress` (EGL)
-     * - `emscripten_webgl_get_proc_address` (Emscripten/WebGL)
+     * - `eglGetProcAddress` (EGL / OpenGL ES, Android, Linux)
+     * - `glXGetProcAddress` / `glXGetProcAddressARB` (Linux desktop GL)
+     * - `emscripten_webgl_get_proc_address` (Emscripten/WebGL — **not** `eglGetProcAddress`)
+     * - `wglGetProcAddress` (Windows — requires the WGL sentinel wrapper described above)
      *
      * @param name  Null-terminated GL function name (e.g. `"glDrawArrays"`).
      * @return Pointer to the GL function, or `nullptr` if unavailable.

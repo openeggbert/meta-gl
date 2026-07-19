@@ -1132,6 +1132,15 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of a @ref TransformFeedbackPrimitive value, or `"?"` for unknown values.
+    inline std::string_view to_string(TransformFeedbackPrimitive v)
+    {
+        if (v == TransformFeedbackPrimitive::Points) return "Points";
+        else if (v == TransformFeedbackPrimitive::Lines) return "Lines";
+        else if (v == TransformFeedbackPrimitive::Triangles) return "Triangles";
+        return "?";
+    }
+
     /// @brief Returns the enumerator name of a @ref QueryTarget value, or `"?"` for unknown values.
     inline std::string_view to_string(QueryTarget v)
     {
@@ -1297,6 +1306,10 @@ namespace metagl
         else if (v == DebugObjectLabel::Query) return "Query";
         else if (v == DebugObjectLabel::ProgramPipeline) return "ProgramPipeline";
         else if (v == DebugObjectLabel::Sampler) return "Sampler";
+        else if (v == DebugObjectLabel::Framebuffer) return "Framebuffer";
+        else if (v == DebugObjectLabel::Renderbuffer) return "Renderbuffer";
+        else if (v == DebugObjectLabel::Texture) return "Texture";
+        else if (v == DebugObjectLabel::TransformFeedback) return "TransformFeedback";
         return "?";
     }
 

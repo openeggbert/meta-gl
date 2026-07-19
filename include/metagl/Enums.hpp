@@ -1230,6 +1230,20 @@ namespace metagl
     };
 
     /**
+     * @brief Exact primitive modes accepted by glBeginTransformFeedback() (ES 3.0+).
+     *
+     * Only Points, Lines, and Triangles are legal for transform feedback capture.
+     * Use this instead of the broad PrimitiveType to prevent passing disallowed
+     * modes (e.g. TriangleFan, TriangleStrip, LineStrip) at compile time.
+     */
+    enum class TransformFeedbackPrimitive : GLenum
+    {
+        Points    = GL_POINTS,
+        Lines     = GL_LINES,
+        Triangles = GL_TRIANGLES
+    };
+
+    /**
      * @brief Occlusion and primitives-written query targets (ES 3.0+).
      */
     enum class QueryTarget : GLenum
@@ -1404,13 +1418,17 @@ namespace metagl
      */
     enum class DebugObjectLabel : GLenum
     {
-        Buffer          = GL_BUFFER,
-        Shader          = GL_SHADER,
-        Program         = GL_PROGRAM,
-        VertexArray     = GL_VERTEX_ARRAY,
-        Query           = GL_QUERY,
-        ProgramPipeline = GL_PROGRAM_PIPELINE,
-        Sampler         = GL_SAMPLER
+        Buffer            = GL_BUFFER,
+        Shader            = GL_SHADER,
+        Program           = GL_PROGRAM,
+        VertexArray       = GL_VERTEX_ARRAY,
+        Query             = GL_QUERY,
+        ProgramPipeline   = GL_PROGRAM_PIPELINE,
+        Sampler           = GL_SAMPLER,
+        Framebuffer       = GL_FRAMEBUFFER,
+        Renderbuffer      = GL_RENDERBUFFER,
+        Texture           = GL_TEXTURE,
+        TransformFeedback = GL_TRANSFORM_FEEDBACK
     };
 
     /**

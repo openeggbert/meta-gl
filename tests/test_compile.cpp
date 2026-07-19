@@ -285,7 +285,22 @@ int main()
     check("DebugSource::DontCare",                       to_string(DebugSource::DontCare));
     check("DebugType::DontCare",                         to_string(DebugType::DontCare));
     check("DebugSeverity::DontCare",                     to_string(DebugSeverity::DontCare));
+    // R23/R24: complete DebugObjectLabel domain (all 11 identifiers)
     check("DebugObjectLabel::Buffer",                    to_string(DebugObjectLabel::Buffer));
+    check("DebugObjectLabel::Shader",                    to_string(DebugObjectLabel::Shader));
+    check("DebugObjectLabel::Program",                   to_string(DebugObjectLabel::Program));
+    check("DebugObjectLabel::VertexArray",               to_string(DebugObjectLabel::VertexArray));
+    check("DebugObjectLabel::Query",                     to_string(DebugObjectLabel::Query));
+    check("DebugObjectLabel::ProgramPipeline",           to_string(DebugObjectLabel::ProgramPipeline));
+    check("DebugObjectLabel::Sampler",                   to_string(DebugObjectLabel::Sampler));
+    check("DebugObjectLabel::Framebuffer",               to_string(DebugObjectLabel::Framebuffer));
+    check("DebugObjectLabel::Renderbuffer",              to_string(DebugObjectLabel::Renderbuffer));
+    check("DebugObjectLabel::Texture",                   to_string(DebugObjectLabel::Texture));
+    check("DebugObjectLabel::TransformFeedback",         to_string(DebugObjectLabel::TransformFeedback));
+    // R34/R35: TransformFeedbackPrimitive exact domain (Points, Lines, Triangles only)
+    check("TransformFeedbackPrimitive::Points",          to_string(TransformFeedbackPrimitive::Points));
+    check("TransformFeedbackPrimitive::Lines",           to_string(TransformFeedbackPrimitive::Lines));
+    check("TransformFeedbackPrimitive::Triangles",       to_string(TransformFeedbackPrimitive::Triangles));
     check("ProvokingVertex::FirstVertex",                to_string(ProvokingVertex::FirstVertex));
     check("TessGenMode::Quads",                          to_string(TessGenMode::Quads));
     check("TessGenSpacing::Equal",                       to_string(TessGenSpacing::Equal));

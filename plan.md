@@ -242,7 +242,7 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 | R09 | Enforce vector/matrix divisibility and transpose preconditions in Release builds. | Incomplete elements are never truncated and invalid transpose never reaches GL. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R07 |
 | R10 | Add negative Release tests for every checked precondition. | Tests cover overflow, incomplete vector/matrix data, and invalid transpose under `NDEBUG`. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R08–R09 |
 | R11 | Synchronize public documentation and `noexcept` declarations with the selected invalid-input contract. | Headers, README, Doxygen, and behavior state the same contract. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R07–R10 |
-| R12 | Make the installed-package consumer call an out-of-line `meta-gl` symbol and execute it. | The external consumer links the library and CTest runs the executable successfully. | [Finding 7](analysis.md#finding-7) | ⏳ Pending |
+| R12 | Make the installed-package consumer call an out-of-line `meta-gl` symbol and execute it. | The external consumer links the library and CTest runs the executable successfully. | [Finding 7](analysis.md#finding-7) | ✅ Done |
 | R13 | Exercise the installed-package consumer with a static library. | A clean external static consumer configures, links, and runs. | [Finding 7](analysis.md#finding-7) | 🚧 Blocked by R12 |
 | R14 | Exercise the installed-package consumer with a shared library on Unix. | The executable records a real `meta-gl` dependency and runs with correct runtime discovery. | [Finding 7](analysis.md#finding-7) | 🚧 Blocked by R12 |
 | R15 | Exercise an installed shared-package consumer on Windows. | The installed DLL is discovered without relying on an in-tree staging shortcut. | [Finding 7](analysis.md#finding-7) | 🌐 Requires Windows runner; blocked by R12 |
@@ -258,8 +258,8 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 |---|-----------------|----------------------|--------|--------|
 | R21 | Choose the compatibility/deprecation policy for an exact `glMemoryBarrierByRegion` mask domain. | The legal bit set and treatment of the old broad call shape are recorded. | [Finding 8](analysis.md#finding-8) | 🔎 Pending decision |
 | R22 | Implement, test, and document the exact `glMemoryBarrierByRegion` mask domain. | New code cannot pass disallowed bits; compile/runtime coverage includes every legal bit and `ALL`. | [Finding 8](analysis.md#finding-8) | 🚧 Blocked by R21 |
-| R23 | Add every legal object identifier to `DebugObjectLabel`. | Framebuffer, renderbuffer, texture, transform feedback, and all previously supported identifiers are represented. | [Finding 9](analysis.md#finding-9) | ⏳ Pending |
-| R24 | Test and document the complete object-label domain. | Each identifier is compile-time covered and representative forwarding is runtime-tested. | [Finding 9](analysis.md#finding-9) | 🚧 Blocked by R23 |
+| R23 | Add every legal object identifier to `DebugObjectLabel`. | Framebuffer, renderbuffer, texture, transform feedback, and all previously supported identifiers are represented. | [Finding 9](analysis.md#finding-9) | ✅ Done |
+| R24 | Test and document the complete object-label domain. | Each identifier is compile-time covered and representative forwarding is runtime-tested. | [Finding 9](analysis.md#finding-9) | ✅ Done |
 | R25 | Choose the typed API model for default-framebuffer invalidation. | Separate domain, overload, or validated union is selected without weakening named-framebuffer safety. | [Finding 10](analysis.md#finding-10) | 🔎 Pending decision |
 | R26 | Implement default-framebuffer invalidation with a compatible migration path. | `GL_COLOR`, `GL_DEPTH`, and `GL_STENCIL` are expressible only in their legal context. | [Finding 10](analysis.md#finding-10) | 🚧 Blocked by R25 |
 | R27 | Add compile/runtime tests and documentation for both default and named framebuffer invalidation. | Legal tokens forward correctly and cross-domain misuse is rejected. | [Finding 10](analysis.md#finding-10) | 🚧 Blocked by R26 |
@@ -269,15 +269,15 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 | R31 | Choose the exact immutable-storage internal-format representation. | One domain or overload policy covers all legal compressed and uncompressed sized formats. | [Finding 12](analysis.md#finding-12) | 🔎 Pending decision |
 | R32 | Implement compressed-format support in `glTexStorage2D/3D`. | All selected legal format families compile without raw casts. | [Finding 12](analysis.md#finding-12) | 🚧 Blocked by R31 |
 | R33 | Test and document immutable-storage format coverage. | Compile tests cover compressed/uncompressed acceptance and reject unsized/illegal formats. | [Finding 12](analysis.md#finding-12) | 🚧 Blocked by R32 |
-| R34 | Add a transform-feedback primitive domain and compatible overload limited to points, lines, and triangles. | Invalid general primitive modes cannot enter the exact overload. | [Finding 13](analysis.md#finding-13) | ⏳ Pending |
-| R35 | Test and document transform-feedback primitive isolation and forwarding. | All three legal modes forward and representative illegal modes fail at compile time. | [Finding 13](analysis.md#finding-13) | 🚧 Blocked by R34 |
+| R34 | Add a transform-feedback primitive domain and compatible overload limited to points, lines, and triangles. | Invalid general primitive modes cannot enter the exact overload. | [Finding 13](analysis.md#finding-13) | ✅ Done |
+| R35 | Test and document transform-feedback primitive isolation and forwarding. | All three legal modes forward and representative illegal modes fail at compile time. | [Finding 13](analysis.md#finding-13) | ✅ Done |
 
 ### R36–R59 — Loader portability, ABI, context, listeners, and debug behavior
 
 | # | Individual task | Completion condition | Source | Status |
 |---|-----------------|----------------------|--------|--------|
 | R36 | Decide which loader adapters are library-owned versus host-owned. | EGL, GLX, GLFW, SDL, and WGL each have an explicit supported/host-supplied decision. | [Finding 14](analysis.md#finding-14) | 🔎 Pending decision |
-| R37 | Formalize the generic loader callback contract. | Documentation defines current-context, address lifetime, function-pointer conversion, failure, and thread requirements. | [Finding 14](analysis.md#finding-14) | ⏳ Pending |
+| R37 | Formalize the generic loader callback contract. | Documentation defines current-context, address lifetime, function-pointer conversion, failure, and thread requirements. | [Finding 14](analysis.md#finding-14) | ✅ Done |
 | R38 | Implement a WGL adapter with `opengl32.dll` core fallback and sentinel rejection. | `nullptr`, 1, 2, 3, and `-1` results are rejected and core symbols use the fallback. | [Finding 14](analysis.md#finding-14) | 🚧 Conditional on R36 |
 | R39 | Add automated WGL adapter tests. | Windows tests cover extension lookup, core fallback, missing symbols, and every sentinel. | [Finding 14](analysis.md#finding-14) | 🌐 Conditional on R38; requires Windows runner |
 | R40 | Add and test a library-owned EGL adapter if selected. | The adapter loads core and extension entry points according to R37. | [Finding 14](analysis.md#finding-14) | 🚧 Conditional on R36 |
@@ -330,5 +330,5 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 |-------|----------:|----------:|------:|
 | A–K — Original plan and comprehensive audit | 113 | 0 | 113 |
 | L — Implemented follow-up findings | 4 | 0 | 4 |
-| R — Remaining individual tasks | 0 | 75 | 75 |
-| **Total** | **117** | **75** | **192** |
+| R — Remaining individual tasks | 6 | 69 | 75 |
+| **Total** | **123** | **69** | **192** |

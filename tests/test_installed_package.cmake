@@ -44,3 +44,23 @@ execute_process(
 if(NOT build_result EQUAL 0)
     message(FATAL_ERROR "Installed-package consumer build failed: ${build_result}")
 endif()
+
+# R12: Run the consumer executable to verify out-of-line symbol resolution.
+if(METAGL_TEST_CONFIG)
+    set(consumer_exe "${consumer_build}/${METAGL_TEST_CONFIG}/meta-gl-package-consumer")
+else()
+    set(consumer_exe "${consumer_build}/meta-gl-package-consumer")
+endif()
+
+# Also accept the executable without a config subdirectory (single-config generators on Unix).
+if(NOT EXISTS "${consumer_exe}" AND EXISTS "${consumer_build}/meta-gl-package-consumer")
+    set(consumer_exe "${consumer_build}/meta-gl-package-consumer")
+endif()
+
+execute_process(
+    COMMAND "${consumer_exe}"
+    RESULT_VARIABLE run_result
+)
+if(NOT run_result EQUAL 0)
+    message(FATAL_ERROR "Installed-package consumer executable failed with exit code: ${run_result}")
+endif()

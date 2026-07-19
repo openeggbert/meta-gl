@@ -114,6 +114,14 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 | R74 | Attach validated artifacts and changelog-derived notes to the GitHub release. | Workflow output is checksummed, immutable, and associated with the matching tag. | Previous `NEXT.md` release automation | ✅ Done |
 | R75 | ~~Decide and verify the Windows buffered-debug-log shutdown policy.~~ | Explicit pre-teardown flush remains a tested contract, or a safe automatic lifecycle replaces it; MSVC shared tests cover the selected behavior. | Previous `NEXT.md` known limitation | ~~Cancelled~~ — no Windows runner available; deferred indefinitely |
 
+### R76–R78 — Desktop OpenGL ES-tier equivalence detection
+
+| # | Individual task | Completion condition | Source | Status |
+|---|-----------------|----------------------|--------|--------|
+| R76 | Add desktop tiers to `RequiredApiLevel` analogous to native ES (ES-3.0/3.1/3.2-equivalent) and validate the corresponding `gles30/31/32_required_names` for desktop only internally during `Initialize()`, without any public API/`Capabilities` change. | Desktop tiers are checked with the same mandatory-function lists as native ES; no new public field is added. | [Finding 22](analysis.md#finding-22) | ⏳ Pending implementation |
+| R77 | Detect `GL_ARB_ES3_1_compatibility` / `GL_ARB_ES3_2_compatibility` as a fast additional signal that a desktop driver satisfies a higher R76 tier on a lower base version, replacing any per-function ARB fallback. | Presence of either extension is checked via the existing extension query path and documented. | [Finding 22](analysis.md#finding-22) | ⏳ Pending implementation |
+| R78 | Add mock tests for boundary desktop versions (3.3, 4.1, 4.3) with and without the R77 extensions, covering the R76 tier boundaries. | Tests cover tier acceptance/rejection at each boundary version with/without the compatibility extensions. | [Finding 22](analysis.md#finding-22) | 🚧 Blocked by R76–R77 |
+
 ---
 
 ## Summary counts
@@ -121,5 +129,5 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 | Theme | Completed | Remaining | Total |
 |-------|----------:|----------:|------:|
 | A–L — Archived (see [archive/plan20260719.md](archive/plan20260719.md)) | 117 | 0 | 117 |
-| R — Remaining individual tasks | 72 | 3 | 75 |
-| **Total** | **189** | **3** | **192** |
+| R — Remaining individual tasks | 72 | 6 | 78 |
+| **Total** | **189** | **6** | **195** |

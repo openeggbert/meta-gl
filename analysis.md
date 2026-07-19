@@ -353,3 +353,44 @@ Navržené skupiny pro revizi:
 Celkově je základ projektu kvalitní a většina nálezů je řešitelná bez
 přepisování celé architektury. Klíčové je sladit skutečné chování s tím, co
 typové API, dokumentace a release metadata uživatelům slibují.
+
+## Doplňkový nález (2026-07-19)
+
+<a id="finding-22"></a>
+### 22. ✅ Rozhodnuto: ekvivalence OpenGL ES tierů na desktopu (z `opengl.md`)
+
+Samostatná analytická poznámka `opengl.md` (2026-07-19) zkoumala, zda a jak
+by `meta-gl` mohl na desktopovém OpenGL 3.3+ reportovat ekvivalentní
+OpenGL ES tier (ES 3.0/3.1/3.2), aniž by rozšířil veřejný API surface o
+desktop-only funkce/enumy. Popsala pět nálezů a šest navrhovaných změn.
+
+**Rozhodnutí 19. července 2026:**
+
+- **Přijato:** rozšířit `RequiredApiLevel` o desktop tiery analogické ES
+  (`Desktop33` zůstává ES-2.0-ekvivalentní baseline; přidávají se tiery
+  odpovídající ES 3.0/3.1/3.2) a validovat proti nim
+  `gles30/31/32_required_names` — výhradně jako interní krok při
+  `Initialize()`, beze změny veřejného API (viz R76).
+- **Přijato:** namísto kontroly ARB fallbacku pro jednotlivé funkce
+  detekovat `GL_ARB_ES3_1_compatibility` / `GL_ARB_ES3_2_compatibility`
+  jako jediný rychlý signál, že desktop driver danou úroveň poskytuje i na
+  nižší základní verzi (viz R77).
+- **Přijato:** doplnit mock testy pro hraniční desktop verze (3.3, 4.1,
+  4.3) s/bez těchto extensions, aby byly hranice mezi tiery pokryty testy
+  (viz R78).
+- **Zamítnuto jako mimo rozsah:** veřejné zpřístupnění tierů přes
+  `SupportsGLES30/31/32()` nebo nové paralelní pole typu
+  `desktopGles30Equivalent` v `Capabilities` — desktop a ES flagy zůstávají
+  záměrně oddělené, tiery z tohoto nálezu slouží jen interní validaci.
+- **Zamítnuto jako mimo rozsah:** per-funkce ARB fallback matice
+  (`ARB_texture_storage`, `ARB_get_program_binary`,
+  `ARB_invalidate_subdata`, `ARB_internalformat_query`) — nahrazeno jediným
+  signálem `GL_ARB_ES3_x_compatibility` výše.
+- **Zamítnuto jako mimo rozsah:** dotaz na `GL_CONTEXT_PROFILE_MASK` — nemá
+  funkční dopad, protože `meta-gl` nikdy neexponuje fixed-function API.
+- **Potvrzeno jako trvalé pravidlo:** žádné nové wrappery pro čistě
+  desktop-only funkce/enumy; API surface zůstává výhradně podmnožinou
+  OpenGL ES 3.2.
+
+Analytická poznámka `opengl.md` byla po tomto rozhodnutí smazána; závěry
+jsou zaznamenány zde a jako úkoly R76–R78 v [`plan.md`](plan.md).

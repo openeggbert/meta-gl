@@ -175,6 +175,11 @@ legacy draw-index, active-attribute, and raw `glCopyImageSubData` call forms.
 - Buffered Windows debug logging must be flushed explicitly with
   `metagl::FlushDebugLog()` before DLL teardown, or built with
   `METAGL_DEBUG_IMMEDIATE=ON`; its long-term shutdown policy is R75.
+- Desktop OpenGL 3.3+ contexts do not yet validate or report an
+  ES-3.0/3.1/3.2-equivalent tier (`RequiredApiLevel` desktop tiers and
+  `GL_ARB_ES3_1/3_2_compatibility` detection); this is tracked by R76–R78
+  ([finding 22](analysis.md#finding-22)) and stays internal to
+  `Initialize()` with no new public `Capabilities` field.
 
 R19 is the final approval step for 0.3.0 release.
 
@@ -196,6 +201,8 @@ lists in this document.
    work.
 6. Release automation is tracked explicitly by R72–R74; the remaining Windows
    debug-shutdown decision/test is R75.
+7. Implement the desktop OpenGL ES-tier equivalence detection R76–R78 as an
+   internal-only refinement of `Initialize()` validation.
 
 ---
 
@@ -240,5 +247,5 @@ lists in this document.
 | `tools/verify_api.py` | API/loader/version-required-function consistency verifier |
 | `.github/workflows/ci.yml` | Cross-platform build and test matrix |
 | `analysis.md` | Detailed findings and rationale |
-| `plan.md` | The authoritative R01–R75 backlog |
+| `plan.md` | The authoritative R01–R78 backlog |
 | `archive/plan20260719.md` | Archived, fully completed themes A–L (2026-07-19) |

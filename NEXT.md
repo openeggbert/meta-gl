@@ -83,7 +83,7 @@ Do not tag 0.3.0 until the owner explicitly approves the final release commit R1
 
 ## 4. Tests and CI
 
-CTest currently defines seven tests:
+CTest currently defines eight tests:
 
 1. `metagl-compile-tests` — concepts, enum domains, bitfields, template
    dispatch, handle isolation, and enum-name coverage.
@@ -95,9 +95,11 @@ CTest currently defines seven tests:
    states in concurrent threads (R51).
 5. `metagl-soname-test` — automated Linux SONAME assertion ensuring ABI
    consistency with the R04 policy (R06).
-6. `metagl-api-consistency-test` — declaration, definition, loader-name, and
+6. `metagl-desktop-tier-test` — desktop OpenGL ES-tier boundary coverage at
+   3.3/4.1/4.3, with and without `GL_ARB_ES3_1/3_2_compatibility` (R76–R78).
+7. `metagl-api-consistency-test` — declaration, definition, loader-name, and
    exact GLES mandatory-function consistency.
-7. `metagl-installed-package-test` — install plus an external consumer build
+8. `metagl-installed-package-test` — install plus an external consumer build
    verifying static/shared linkage and runtime execution (R12–R14).
 
 GitHub Actions runs:
@@ -175,11 +177,10 @@ legacy draw-index, active-attribute, and raw `glCopyImageSubData` call forms.
 - Buffered Windows debug logging must be flushed explicitly with
   `metagl::FlushDebugLog()` before DLL teardown, or built with
   `METAGL_DEBUG_IMMEDIATE=ON`; its long-term shutdown policy is R75.
-- Desktop OpenGL 3.3+ contexts do not yet validate or report an
-  ES-3.0/3.1/3.2-equivalent tier (`RequiredApiLevel` desktop tiers and
-  `GL_ARB_ES3_1/3_2_compatibility` detection); this is tracked by R76–R78
-  ([finding 22](analysis.md#finding-22)) and stays internal to
-  `Initialize()` with no new public `Capabilities` field.
+- Desktop OpenGL 3.3+ ES-tier equivalence is an internal-only diagnostic
+  (`metagl::detail::GetDesktopEsTier()`, R76–R78,
+  [finding 22](analysis.md#finding-22)); it never affects `Capabilities` or
+  `Initialize()`'s success/failure, by design.
 
 R19 is the final approval step for 0.3.0 release.
 
@@ -201,7 +202,7 @@ lists in this document.
    work.
 6. Release automation is tracked explicitly by R72–R74; the remaining Windows
    debug-shutdown decision/test is R75.
-7. Implement the desktop OpenGL ES-tier equivalence detection R76–R78 as an
+7. The desktop OpenGL ES-tier equivalence detection R76–R78 is complete as an
    internal-only refinement of `Initialize()` validation.
 
 ---
@@ -240,6 +241,7 @@ lists in this document.
 | `include/metagl/ContextEvents.hpp` | Context lifecycle listeners |
 | `include/metagl/Debug.hpp` | Optional debug wrapper layer |
 | `include/metagl/Emscripten.hpp` | Browser context-loss callbacks |
+| `include/metagl/DesktopEsTier.hpp` | Internal-only desktop OpenGL ES-tier diagnostic (R76–R78) |
 | `src/Functions.cpp` | Loader table and 358 wrapper implementations |
 | `src/RequiredFunctions.inc` | Khronos-verified GLES 3.0/3.1/3.2 mandatory entry-point sets |
 | `src/Context.cpp` | Context/capability state and restore flow |

@@ -4,6 +4,15 @@ All notable changes to meta-gl will be documented here.
 
 ## [Unreleased]
 
+### Added
+- Internal-only desktop OpenGL ES-tier equivalence diagnostic
+  (`metagl::detail::GetDesktopEsTier()` in `DesktopEsTier.hpp`, R76–R78):
+  checks the same mandatory-function lists used for native OpenGL ES against
+  a desktop 3.3+ context, with `GL_ARB_ES3_1_compatibility` /
+  `GL_ARB_ES3_2_compatibility` as a fast additional signal. It never affects
+  `Capabilities` or `Initialize()`'s success/failure, and is not part of the
+  stable public API surface.
+
 ## [0.3.0] — 2026-07-19
 
 ### Breaking changes

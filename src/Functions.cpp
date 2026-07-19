@@ -1,5 +1,6 @@
 #include "metagl/metagl.hpp"
 #include "metagl/Debug.hpp"
+#include "metagl/DesktopEsTier.hpp"
 
 #include <functional>
 #include <string>
@@ -412,10 +413,16 @@ namespace metagl::detail
     thread_local std::unordered_map<std::string, bool,
         TransparentStringHash, std::equal_to<>> g_function_availability;
 
+    // R76 — internal desktop OpenGL ES-tier diagnostic (see DesktopEsTier.hpp).
+    // Reset alongside the rest of the loader/context state on any failure or
+    // context loss so it never reports a stale tier.
+    thread_local DesktopEsTier g_desktop_es_tier = DesktopEsTier::None;
+
     void InvalidateFunctionsAfterContextLoss() noexcept
     {
         g_gl.initialized = false;
         g_function_availability.clear();
+        g_desktop_es_tier = DesktopEsTier::None;
 #ifdef METAGLDEBUG
         metagl::debug::set_get_error_fn(nullptr);
 #endif
@@ -442,7 +449,13 @@ namespace metagl::detail
         Gles32,
         Webgl1,
         Webgl2,
-        Desktop33
+        Desktop33,
+        // R76 — desktop tiers analogous to native ES, checked internally
+        // against the same gles30/31/32_required_names lists. Never returned
+        // by detect_version(); only used by detect_desktop_es_tier() below.
+        Desktop33Es30,
+        Desktop33Es31,
+        Desktop33Es32
     };
 
     struct DetectedVersion
@@ -747,6 +760,66 @@ namespace metagl::detail
             && !required_names_loaded(gles32_required_names))
             return false;
         return true;
+    }
+
+    // R77 — queries GL_EXTENSIONS directly via gl.GetStringi/gl.GetIntegerv.
+    // Used only while detecting the R76 desktop ES tier, which runs before
+    // UpdateContextAfterLoad() populates the public Capabilities::extensions
+    // list, so that list is not available here yet.
+    static bool has_extension_via_gl(
+        const GlTable& gl, std::string_view name) noexcept
+    {
+        if (!gl.GetStringi || !gl.GetIntegerv)
+            return false;
+
+        GLint count = 0;
+        gl.GetIntegerv(GL_NUM_EXTENSIONS, &count);
+        for (GLint i = 0; i < count; ++i)
+        {
+            const auto* raw = gl.GetStringi(
+                GL_EXTENSIONS, static_cast<GLuint>(i));
+            if (raw && name == reinterpret_cast<const char*>(raw))
+                return true;
+        }
+        return false;
+    }
+
+    // R76 — desktop-only diagnostic tier, checked only after a desktop 3.3+
+    // context has already passed required_version_loaded()'s ES-2.0-
+    // equivalent baseline gate. Reuses the same mandatory-entry-point lists
+    // as native OpenGL ES; GL_ARB_ES3_1/3_2_compatibility (R77) is a fast
+    // additional signal that stands in for missing individual entry points,
+    // replacing any per-function ARB extension fallback.
+    static RequiredApiLevel detect_desktop_es_tier(const GlTable& gl) noexcept
+    {
+        if (!required_names_loaded(gles30_required_names))
+            return RequiredApiLevel::Desktop33;
+
+        const bool es31_signal =
+            required_names_loaded(gles31_required_names)
+            || has_extension_via_gl(gl, "GL_ARB_ES3_1_compatibility")
+            || has_extension_via_gl(gl, "GL_ARB_ES3_2_compatibility");
+        if (!es31_signal)
+            return RequiredApiLevel::Desktop33Es30;
+
+        const bool es32_signal =
+            required_names_loaded(gles32_required_names)
+            || has_extension_via_gl(gl, "GL_ARB_ES3_2_compatibility");
+        if (!es32_signal)
+            return RequiredApiLevel::Desktop33Es31;
+
+        return RequiredApiLevel::Desktop33Es32;
+    }
+
+    static DesktopEsTier to_desktop_es_tier(RequiredApiLevel level) noexcept
+    {
+        switch (level)
+        {
+            case RequiredApiLevel::Desktop33Es30: return DesktopEsTier::Es30;
+            case RequiredApiLevel::Desktop33Es31: return DesktopEsTier::Es31;
+            case RequiredApiLevel::Desktop33Es32: return DesktopEsTier::Es32;
+            default:                              return DesktopEsTier::Baseline;
+        }
     }
 
     /// Legacy helper kept for diagnostics — checks all 358 GLES 3.2 functions.
@@ -1126,6 +1199,7 @@ namespace metagl
         // declared API/version has passed the complete mandatory-entry check.
         detail::g_gl.initialized = false;
         detail::g_function_availability.clear();
+        detail::g_desktop_es_tier = detail::DesktopEsTier::None;
         detail::ResetContextAfterLoadFailure();
 #ifdef METAGLDEBUG
         metagl::debug::set_get_error_fn(nullptr);
@@ -1526,6 +1600,13 @@ namespace metagl
             return false;
         }
 
+        // R76 — internal-only desktop ES-tier diagnostic (see
+        // DesktopEsTier.hpp); never affects Initialize()'s success/failure.
+        detail::g_desktop_es_tier =
+            detected.level == detail::RequiredApiLevel::Desktop33
+                ? detail::to_desktop_es_tier(detail::detect_desktop_es_tier(gl))
+                : detail::DesktopEsTier::None;
+
         detail::g_gl = gl;
         try
         {
@@ -1536,6 +1617,7 @@ namespace metagl
         {
             detail::g_gl.initialized = false;
             detail::g_function_availability.clear();
+            detail::g_desktop_es_tier = detail::DesktopEsTier::None;
             detail::ResetContextAfterLoadFailure();
             throw;
         }
@@ -1566,6 +1648,15 @@ namespace metagl
     bool AllFunctionsLoaded() noexcept
     {
         return detail::g_gl.initialized && detail::all_loaded(detail::g_gl);
+    }
+
+    namespace detail
+    {
+        // R76 — internal-only; see DesktopEsTier.hpp.
+        DesktopEsTier GetDesktopEsTier() noexcept
+        {
+            return g_gl.initialized ? g_desktop_es_tier : DesktopEsTier::None;
+        }
     }
 
     // #1

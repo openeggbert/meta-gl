@@ -40,6 +40,16 @@ metagl_apply_warnings(metagl-thread-tests)
 metagl_stage_runtime(metagl-thread-tests)
 add_test(NAME metagl-thread-test COMMAND metagl-thread-tests)
 
+add_executable(metagl-desktop-tier-tests
+    test_desktop_es_tier.cpp
+)
+target_link_libraries(metagl-desktop-tier-tests PRIVATE meta-gl::meta-gl)
+target_compile_features(metagl-desktop-tier-tests PRIVATE cxx_std_23)
+set_target_properties(metagl-desktop-tier-tests PROPERTIES CXX_EXTENSIONS NO)
+metagl_apply_warnings(metagl-desktop-tier-tests)
+metagl_stage_runtime(metagl-desktop-tier-tests)
+add_test(NAME metagl-desktop-tier-test COMMAND metagl-desktop-tier-tests)
+
 if(UNIX AND BUILD_SHARED_LIBS AND NOT APPLE)
     find_program(READELF_EXE readelf)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)

@@ -394,3 +394,23 @@ desktop-only funkce/enumy. Popsala pět nálezů a šest navrhovaných změn.
 
 Analytická poznámka `opengl.md` byla po tomto rozhodnutí smazána; závěry
 jsou zaznamenány zde a jako úkoly R76–R78 v [`plan.md`](plan.md).
+
+**Implementace (2026-07-19, R76–R78 dokončeny):**
+
+- `RequiredApiLevel` v `src/Functions.cpp` byl rozšířen o `Desktop33Es30`,
+  `Desktop33Es31` a `Desktop33Es32`; `detect_desktop_es_tier()` je vyhodnocuje
+  proti stejným `gles30/31/32_required_names` polím jako nativní ES, a to až
+  po úspěšném průchodu základní ES-2.0-ekvivalentní kontrolou pro desktop.
+- `has_extension_via_gl()` dotazuje `GL_EXTENSIONS` přímo přes
+  `gl.GetStringi`/`gl.GetIntegerv` (běží dřív, než `UpdateContextAfterLoad()`
+  naplní veřejný `Capabilities::extensions`), a implementuje tak signál
+  `GL_ARB_ES3_1_compatibility`/`GL_ARB_ES3_2_compatibility` z R77.
+- Výsledný tier se nikdy nepromítá do `Capabilities` ani neovlivňuje
+  návratovou hodnotu `Initialize()`/`LoadCurrentContext()` — je dostupný
+  výhradně přes nový interní `metagl::detail::GetDesktopEsTier()`
+  (`include/metagl/DesktopEsTier.hpp`), explicitně zdokumentovaný jako
+  neveřejné API mimo stabilitní záruky projektu, resetovaný při selhání
+  načtení i při ztrátě kontextu.
+- `tests/test_desktop_es_tier.cpp` (`metagl-desktop-tier-test`) mock-testy
+  ověřují hranice tierů na verzích 3.3/4.1/4.3 s/bez `GL_ARB_ES3_1/3_2_compatibility`, negativní scénář (GLES kontext → `None`) a reset po
+  `MarkContextLost()`.

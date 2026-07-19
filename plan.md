@@ -118,9 +118,9 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 
 | # | Individual task | Completion condition | Source | Status |
 |---|-----------------|----------------------|--------|--------|
-| R76 | Add desktop tiers to `RequiredApiLevel` analogous to native ES (ES-3.0/3.1/3.2-equivalent) and validate the corresponding `gles30/31/32_required_names` for desktop only internally during `Initialize()`, without any public API/`Capabilities` change. | Desktop tiers are checked with the same mandatory-function lists as native ES; no new public field is added. | [Finding 22](analysis.md#finding-22) | ⏳ Pending implementation |
-| R77 | Detect `GL_ARB_ES3_1_compatibility` / `GL_ARB_ES3_2_compatibility` as a fast additional signal that a desktop driver satisfies a higher R76 tier on a lower base version, replacing any per-function ARB fallback. | Presence of either extension is checked via the existing extension query path and documented. | [Finding 22](analysis.md#finding-22) | ⏳ Pending implementation |
-| R78 | Add mock tests for boundary desktop versions (3.3, 4.1, 4.3) with and without the R77 extensions, covering the R76 tier boundaries. | Tests cover tier acceptance/rejection at each boundary version with/without the compatibility extensions. | [Finding 22](analysis.md#finding-22) | 🚧 Blocked by R76–R77 |
+| R76 | Add desktop tiers to `RequiredApiLevel` analogous to native ES (ES-3.0/3.1/3.2-equivalent) and validate the corresponding `gles30/31/32_required_names` for desktop only internally during `Initialize()`, without any public API/`Capabilities` change. | Desktop tiers are checked with the same mandatory-function lists as native ES; no new public field is added. | [Finding 22](analysis.md#finding-22) | ✅ Done — Added `Desktop33Es30/31/32` to `RequiredApiLevel` and `detect_desktop_es_tier()` in Functions.cpp; result exposed only via the internal-only `metagl::detail::GetDesktopEsTier()` diagnostic (DesktopEsTier.hpp), not part of `Capabilities` |
+| R77 | Detect `GL_ARB_ES3_1_compatibility` / `GL_ARB_ES3_2_compatibility` as a fast additional signal that a desktop driver satisfies a higher R76 tier on a lower base version, replacing any per-function ARB fallback. | Presence of either extension is checked via the existing extension query path and documented. | [Finding 22](analysis.md#finding-22) | ✅ Done — `has_extension_via_gl()` queries `GL_EXTENSIONS` directly via `glGetStringi`/`glGetIntegerv` before `Capabilities::extensions` is populated; used by `detect_desktop_es_tier()` |
+| R78 | Add mock tests for boundary desktop versions (3.3, 4.1, 4.3) with and without the R77 extensions, covering the R76 tier boundaries. | Tests cover tier acceptance/rejection at each boundary version with/without the compatibility extensions. | [Finding 22](analysis.md#finding-22) | ✅ Done — Added `tests/test_desktop_es_tier.cpp` (`metagl-desktop-tier-test`) covering 3.3/4.1/4.3 boundaries, with/without the R77 extensions, a non-desktop context, and context loss |
 
 ---
 
@@ -129,5 +129,5 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 | Theme | Completed | Remaining | Total |
 |-------|----------:|----------:|------:|
 | A–L — Archived (see [archive/plan20260719.md](archive/plan20260719.md)) | 117 | 0 | 117 |
-| R — Remaining individual tasks | 72 | 6 | 78 |
-| **Total** | **189** | **6** | **195** |
+| R — Remaining individual tasks | 75 | 3 | 78 |
+| **Total** | **192** | **3** | **195** |

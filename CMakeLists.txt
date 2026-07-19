@@ -72,6 +72,7 @@ target_sources(meta-gl
         include/metagl/Emscripten.hpp
         include/metagl/Debug.hpp
         include/metagl/EnumNames.hpp
+        include/metagl/DesktopEsTier.hpp
 )
 
 target_sources(meta-gl

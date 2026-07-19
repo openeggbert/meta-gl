@@ -240,4 +240,5 @@ lists in this document.
 | `tools/verify_api.py` | API/loader/version-required-function consistency verifier |
 | `.github/workflows/ci.yml` | Cross-platform build and test matrix |
 | `analysis.md` | Detailed findings and rationale |
-| `plan.md` | Completed history plus the authoritative R01–R75 backlog |
+| `plan.md` | The authoritative R01–R75 backlog |
+| `archive/plan20260719.md` | Archived, fully completed themes A–L (2026-07-19) |

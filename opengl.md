@@ -31,8 +31,8 @@ desktop-only entry points or enums, ever).
 
 ## What already exists for desktop OpenGL
 
-Desktop support **already exists partially** (task J5 in `plan.md`,
-implemented):
+Desktop support **already exists partially** (task J5 in
+`archive/plan20260719.md`, implemented):
 
 - `ApiKind::OpenGL` + `Capabilities::desktop_gl` + `SupportsDesktopOpenGL()`.
 - `detect_version()` classifies any version `>= 3.3` as

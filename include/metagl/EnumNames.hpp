@@ -725,6 +725,19 @@ namespace metagl
         return "?";
     }
 
+    /// @brief Returns the enumerator name of an @ref ImageCopyTextureTarget value.
+    inline std::string_view to_string(ImageCopyTextureTarget v)
+    {
+        if (v == ImageCopyTextureTarget::Texture2D) return "Texture2D";
+        else if (v == ImageCopyTextureTarget::TextureCubeMap) return "TextureCubeMap";
+        else if (v == ImageCopyTextureTarget::Texture3D) return "Texture3D";
+        else if (v == ImageCopyTextureTarget::Texture2DArray) return "Texture2DArray";
+        else if (v == ImageCopyTextureTarget::Texture2DMultisample) return "Texture2DMultisample";
+        else if (v == ImageCopyTextureTarget::TextureCubeMapArray) return "TextureCubeMapArray";
+        else if (v == ImageCopyTextureTarget::Texture2DMultisampleArray) return "Texture2DMultisampleArray";
+        return "?";
+    }
+
     /// @brief Returns the enumerator name of a @ref TextureParameter value, or `"?"` for unknown values.
     inline std::string_view to_string(TextureParameter v)
     {
@@ -1602,12 +1615,26 @@ namespace metagl
         return "?";
     }
 
-    /// @brief Returns the enumerator name of a @ref ClearBuffer value, or `"?"` for unknown values.
-    inline std::string_view to_string(ClearBuffer v)
+    /// @brief Returns the enumerator name of a @ref FloatClearBuffer value, or `"?"` for unknown values.
+    inline std::string_view to_string(FloatClearBuffer v)
     {
-        if (v == ClearBuffer::Color) return "Color";
-        else if (v == ClearBuffer::Depth) return "Depth";
-        else if (v == ClearBuffer::Stencil) return "Stencil";
+        if (v == FloatClearBuffer::Color) return "Color";
+        else if (v == FloatClearBuffer::Depth) return "Depth";
+        return "?";
+    }
+
+    /// @brief Returns the enumerator name of a @ref SignedIntegerClearBuffer value, or `"?"` for unknown values.
+    inline std::string_view to_string(SignedIntegerClearBuffer v)
+    {
+        if (v == SignedIntegerClearBuffer::Color) return "Color";
+        else if (v == SignedIntegerClearBuffer::Stencil) return "Stencil";
+        return "?";
+    }
+
+    /// @brief Returns the enumerator name of a @ref UnsignedIntegerClearBuffer value, or `"?"` for unknown values.
+    inline std::string_view to_string(UnsignedIntegerClearBuffer v)
+    {
+        if (v == UnsignedIntegerClearBuffer::Color) return "Color";
         return "?";
     }
 

@@ -80,7 +80,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | D2 | ✅ Add `glGetnUniform<T>` template dispatch for `glGetnUniformfv` / `glGetnUniformiv` / `glGetnUniformuiv` |
 | D3 | ✅ Add `glTexParameter<T>(TextureTarget, TextureParameter, T)` template dispatch to unify `glTexParameterf` and `glTexParameteri` |
 | D4 | ✅ Add `glSamplerParameter<T>(SamplerId, SamplerParameter, T)` template dispatch for `glSamplerParameterf` and `glSamplerParameteri` |
-| D5 | ✅ Add `glClearBuffer<T>(ClearBuffer buffer, GLint drawbuffer, T* value)` template dispatch for `glClearBufferfv` / `glClearBufferiv` / `glClearBufferuiv` |
+| D5 | ✅ Add typed `glClearBuffer<T>` dispatch overloads for `glClearBufferfv` / `glClearBufferiv` / `glClearBufferuiv`, using the exact float, signed-integer, and unsigned-integer target domains |
 | D6 | ✅ Add `glGetVertexAttrib<T>(AttribLocation, VertexAttribParameter, T* params)` template dispatch for `glGetVertexAttribfv` / `glGetVertexAttribiv` / `glGetVertexAttribIiv` / `glGetVertexAttribIuiv` |
 
 ---
@@ -141,7 +141,7 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 | H9 | ✅ Add documentation of `Debug.hpp`, `Capabilities.hpp`, `ContextEvents.hpp`, and `Emscripten.hpp` to the header table in README.md |
 | H10 | ✅ Add Emscripten/WASM build instructions to README.md (which `emcmake`/`emmake` invocation, how to link, when to call `InstallEmscriptenContextLossCallbacks`) |
 | H11 | ✅ Document in `glObjectLabel` / `glGetObjectLabel` that `name` is a raw `GLuint` because the API targets named objects of mixed types and typed overloads would be unwieldy |
-| H12 | ✅ Clarify `glCopyImageSubData` usage: changed `srcName`/`dstName` from `TextureId` to raw `GLuint` with an explanatory comment — they can refer to textures or renderbuffers depending on the target parameter |
+| H12 | ✅ Preserve the raw-name `glCopyImageSubData` compatibility overload and document its limitations; L2 adds typed texture/renderbuffer overloads without removing this downstream-compatible path |
 
 ---
 
@@ -201,19 +201,134 @@ All gen/delete and data-upload functions currently use raw pointer + size pairs.
 
 ---
 
+## L — 2026 Follow-up Deep Analysis — Implemented Findings
+
+The complete supporting analysis is recorded in [`analysis.md`](analysis.md).
+These changes exist only in the isolated `feature/followup-audit` worktree
+until the remaining release and downstream-compatibility tasks below are
+resolved. No item in this section authorizes a merge by itself.
+
+| # | Implemented item | Decision |
+|---|------------------|----------|
+| L1 | ✅ Replace `glClearBufferfi` with a safe depth/stencil-only wrapper, split the other clear-buffer calls into exact value-specific target domains, and cover forwarding plus type isolation with tests. See [analysis finding 1](analysis.md#finding-1). | Implemented; merge blocked by R01–R03 |
+| L2 | ✅ Add an exact `ImageCopyTextureTarget` plus typed overloads for all four texture/renderbuffer endpoint combinations, retain the existing raw overload for downstream compatibility, and verify forwarding plus the legacy call shape used by `easy-gl`. See [analysis finding 2](analysis.md#finding-2). | Implemented in the feature worktree |
+| L3 | ✅ Clear current context identity/capabilities and function availability on context loss, gate loader queries on initialization, add initialized-context Debug assertions to all wrappers, and verify loss/reload state transitions. See [analysis finding 3](analysis.md#finding-3). | Implemented in the feature worktree |
+| L4 | ✅ Add bootstrap loading, strict version/API detection, exact cumulative native GLES 2.0/3.0/3.1/3.2 mandatory-entry validation, WebGL-subset and desktop 3.3+ validation, staged publication, and boundary/failure tests. See [analysis finding 4](analysis.md#finding-4). | Implemented in the feature worktree |
+
+---
+
+## R — Remaining Work — Individual Tasks
+
+Every remaining action found in `analysis.md` and `NEXT.md` is represented
+below by one stable task ID. A decision task must be completed before its
+dependent implementation tasks. A conditional task may be closed as
+`not applicable` only by recording the decision that made it unnecessary.
+
+Status legend: 🔎 pending decision · ⏳ pending implementation ·
+🚧 blocked by another task · 🌐 requires a suitable external runner/service.
+
+### R01–R20 — 0.3.0 release gates and release actions
+
+| # | Individual task | Completion condition | Source | Status |
+|---|-----------------|----------------------|--------|--------|
+| R01 | Choose the L1 downstream strategy: compatibility overloads in `meta-gl` or a coordinated `easy-gl` migration. | The selected option and rejected alternative are recorded with source/ABI consequences. | [Finding 1](analysis.md#finding-1) | 🔎 Pending decision |
+| R02 | Implement the selected L1 compatibility or migration strategy only in isolated feature worktrees. | Both repositories use one agreed clear-buffer API without unsafe casts. | [Finding 1](analysis.md#finding-1) | 🚧 Blocked by R01 |
+| R03 | Build and test the complete `easy-gl` tree against the final L1 API. | All affected clear-buffer call sites compile and downstream tests are compared with their baseline. | [Finding 1](analysis.md#finding-1) | 🚧 Blocked by R02 |
+| R04 | Define the pre-1.0 ABI numbering and `SOVERSION` policy. | The policy explicitly covers incompatible `0.x` minor releases. | [Finding 5](analysis.md#finding-5) | 🔎 Pending decision |
+| R05 | Implement the selected ABI/`SOVERSION` policy in CMake. | Produced shared-library filenames and package metadata match R04. | [Finding 5](analysis.md#finding-5) | 🚧 Blocked by R04 |
+| R06 | Add an automated Linux SONAME assertion. | A shared-build test fails when the emitted SONAME differs from R04. | [Finding 5](analysis.md#finding-5) | 🚧 Blocked by R05 |
+| R07 | Choose the Release-build failure contract for invalid sizes, incomplete vectors/matrices, and non-false transpose. | Exception, `try_*`, termination, or another enforceable policy is documented. | [Finding 6](analysis.md#finding-6) | 🔎 Pending decision |
+| R08 | Enforce checked `size_t`/range-to-`GLsizei` conversion in Release builds. | Overflow cannot reach a GL call and follows the R07 policy. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R07 |
+| R09 | Enforce vector/matrix divisibility and transpose preconditions in Release builds. | Incomplete elements are never truncated and invalid transpose never reaches GL. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R07 |
+| R10 | Add negative Release tests for every checked precondition. | Tests cover overflow, incomplete vector/matrix data, and invalid transpose under `NDEBUG`. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R08–R09 |
+| R11 | Synchronize public documentation and `noexcept` declarations with the selected invalid-input contract. | Headers, README, Doxygen, and behavior state the same contract. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R07–R10 |
+| R12 | Make the installed-package consumer call an out-of-line `meta-gl` symbol and execute it. | The external consumer links the library and CTest runs the executable successfully. | [Finding 7](analysis.md#finding-7) | ⏳ Pending |
+| R13 | Exercise the installed-package consumer with a static library. | A clean external static consumer configures, links, and runs. | [Finding 7](analysis.md#finding-7) | 🚧 Blocked by R12 |
+| R14 | Exercise the installed-package consumer with a shared library on Unix. | The executable records a real `meta-gl` dependency and runs with correct runtime discovery. | [Finding 7](analysis.md#finding-7) | 🚧 Blocked by R12 |
+| R15 | Exercise an installed shared-package consumer on Windows. | The installed DLL is discovered without relying on an in-tree staging shortcut. | [Finding 7](analysis.md#finding-7) | 🌐 Requires Windows runner; blocked by R12 |
+| R16 | Record the 0.3.0 release disposition and accepted residual risks. | Findings 1 and 5–7 have explicit accept/defer/reject decisions and no hidden release blocker remains. | [Finding 21](analysis.md#finding-21) | 🚧 Blocked by R01–R15 |
+| R17 | Update 0.3.0 release notes and handoff metadata after the release decision. | Changelog, README, `NEXT.md`, version claims, and risk statements agree. | [Finding 21](analysis.md#finding-21) | 🚧 Blocked by R16 |
+| R18 | Run the final clean supported build/test matrix. | Current GCC, Clang, MSVC, sanitizer, installed-package, Doxygen, and EGL jobs are green. | [Finding 21](analysis.md#finding-21) | 🚧 Blocked by R17 |
+| R19 | Create and push the annotated `v0.3.0` tag. | The tag points to the approved, green release commit and the existing `v0.2.0` tag is unchanged. | Previous `NEXT.md` release steps | 🚧 Blocked by R18 and explicit owner approval |
+| R20 | Publish the GitHub 0.3.0 release. | Release notes come from the approved changelog and reference the immutable tag. | Previous `NEXT.md` release steps | 🌐 Blocked by R19 |
+
+### R21–R35 — Exact public API domains
+
+| # | Individual task | Completion condition | Source | Status |
+|---|-----------------|----------------------|--------|--------|
+| R21 | Choose the compatibility/deprecation policy for an exact `glMemoryBarrierByRegion` mask domain. | The legal bit set and treatment of the old broad call shape are recorded. | [Finding 8](analysis.md#finding-8) | 🔎 Pending decision |
+| R22 | Implement, test, and document the exact `glMemoryBarrierByRegion` mask domain. | New code cannot pass disallowed bits; compile/runtime coverage includes every legal bit and `ALL`. | [Finding 8](analysis.md#finding-8) | 🚧 Blocked by R21 |
+| R23 | Add every legal object identifier to `DebugObjectLabel`. | Framebuffer, renderbuffer, texture, transform feedback, and all previously supported identifiers are represented. | [Finding 9](analysis.md#finding-9) | ⏳ Pending |
+| R24 | Test and document the complete object-label domain. | Each identifier is compile-time covered and representative forwarding is runtime-tested. | [Finding 9](analysis.md#finding-9) | 🚧 Blocked by R23 |
+| R25 | Choose the typed API model for default-framebuffer invalidation. | Separate domain, overload, or validated union is selected without weakening named-framebuffer safety. | [Finding 10](analysis.md#finding-10) | 🔎 Pending decision |
+| R26 | Implement default-framebuffer invalidation with a compatible migration path. | `GL_COLOR`, `GL_DEPTH`, and `GL_STENCIL` are expressible only in their legal context. | [Finding 10](analysis.md#finding-10) | 🚧 Blocked by R25 |
+| R27 | Add compile/runtime tests and documentation for both default and named framebuffer invalidation. | Legal tokens forward correctly and cross-domain misuse is rejected. | [Finding 10](analysis.md#finding-10) | 🚧 Blocked by R26 |
+| R28 | Choose setter/query texture-parameter domains and the legacy-overload deprecation policy. | Writable and query-only token sets plus source-compatibility rules are recorded. | [Finding 11](analysis.md#finding-11) | 🔎 Pending decision |
+| R29 | Implement the exact writable texture-parameter API. | Setter overloads cannot accept query-only tokens and getters retain the complete query domain. | [Finding 11](analysis.md#finding-11) | 🚧 Blocked by R28 |
+| R30 | Add rejection, forwarding, compatibility, and documentation coverage for texture parameters. | Tests prove the setter/query separation and any retained legacy path. | [Finding 11](analysis.md#finding-11) | 🚧 Blocked by R29 |
+| R31 | Choose the exact immutable-storage internal-format representation. | One domain or overload policy covers all legal compressed and uncompressed sized formats. | [Finding 12](analysis.md#finding-12) | 🔎 Pending decision |
+| R32 | Implement compressed-format support in `glTexStorage2D/3D`. | All selected legal format families compile without raw casts. | [Finding 12](analysis.md#finding-12) | 🚧 Blocked by R31 |
+| R33 | Test and document immutable-storage format coverage. | Compile tests cover compressed/uncompressed acceptance and reject unsized/illegal formats. | [Finding 12](analysis.md#finding-12) | 🚧 Blocked by R32 |
+| R34 | Add a transform-feedback primitive domain and compatible overload limited to points, lines, and triangles. | Invalid general primitive modes cannot enter the exact overload. | [Finding 13](analysis.md#finding-13) | ⏳ Pending |
+| R35 | Test and document transform-feedback primitive isolation and forwarding. | All three legal modes forward and representative illegal modes fail at compile time. | [Finding 13](analysis.md#finding-13) | 🚧 Blocked by R34 |
+
+### R36–R59 — Loader portability, ABI, context, listeners, and debug behavior
+
+| # | Individual task | Completion condition | Source | Status |
+|---|-----------------|----------------------|--------|--------|
+| R36 | Decide which loader adapters are library-owned versus host-owned. | EGL, GLX, GLFW, SDL, and WGL each have an explicit supported/host-supplied decision. | [Finding 14](analysis.md#finding-14) | 🔎 Pending decision |
+| R37 | Formalize the generic loader callback contract. | Documentation defines current-context, address lifetime, function-pointer conversion, failure, and thread requirements. | [Finding 14](analysis.md#finding-14) | ⏳ Pending |
+| R38 | Implement a WGL adapter with `opengl32.dll` core fallback and sentinel rejection. | `nullptr`, 1, 2, 3, and `-1` results are rejected and core symbols use the fallback. | [Finding 14](analysis.md#finding-14) | 🚧 Conditional on R36 |
+| R39 | Add automated WGL adapter tests. | Windows tests cover extension lookup, core fallback, missing symbols, and every sentinel. | [Finding 14](analysis.md#finding-14) | 🌐 Conditional on R38; requires Windows runner |
+| R40 | Add and test a library-owned EGL adapter if selected. | The adapter loads core and extension entry points according to R37. | [Finding 14](analysis.md#finding-14) | 🚧 Conditional on R36 |
+| R41 | Add and test a library-owned GLFW adapter if selected. | The adapter compiles without unsafe user-side callback casts. | [Finding 14](analysis.md#finding-14) | 🚧 Conditional on R36 |
+| R42 | Add and test a library-owned SDL adapter if selected. | The adapter compiles without unsafe user-side callback casts. | [Finding 14](analysis.md#finding-14) | 🚧 Conditional on R36 |
+| R43 | Add and test a library-owned GLX adapter if selected. | The adapter handles the platform function-pointer contract documented by R37. | [Finding 14](analysis.md#finding-14) | 🚧 Conditional on R36 |
+| R44 | Define the supported public binary ABI symbol list. | Only documented public functions/types intended for binary use are listed. | [Finding 15](analysis.md#finding-15) | 🔎 Pending decision |
+| R45 | Introduce and apply a central `METAGL_API` export/import macro. | Every out-of-line public symbol is annotated and internal symbols are not. | [Finding 15](analysis.md#finding-15) | 🚧 Blocked by R44 |
+| R46 | Enable hidden visibility and remove `WINDOWS_EXPORT_ALL_SYMBOLS`. | Static/shared Linux and Windows builds export only the R44 surface. | [Finding 15](analysis.md#finding-15) | 🚧 Blocked by R45 |
+| R47 | Add a Unix exported-symbol allowlist test. | CI fails on missing public or newly leaked internal symbols. | [Finding 15](analysis.md#finding-15) | 🚧 Blocked by R46 |
+| R48 | Add a Windows exported-symbol allowlist test. | MSVC shared CI fails on missing public or newly leaked internal symbols. | [Finding 15](analysis.md#finding-15) | 🌐 Blocked by R46; requires Windows runner |
+| R49 | Establish an ABI baseline and compatibility check. | An approved tool compares releases using the R44 public surface. | [Finding 5](analysis.md#finding-5) and [finding 15](analysis.md#finding-15) | 🚧 Blocked by R44–R48 |
+| R50 | Decide the supported single-context, multi-context, and threading model. | Ownership and synchronization guarantees are explicit for loader, context, listeners, and debug state. | [Finding 16](analysis.md#finding-16) | 🔎 Pending decision |
+| R51 | Implement and document the selected context-state model. | Global, thread-local, or explicit state matches R50 everywhere without mixed semantics. | [Finding 16](analysis.md#finding-16) | 🚧 Blocked by R50 |
+| R52 | Add tests for every context/thread scenario promised by R50. | Supported transitions pass and unsupported concurrent use is explicitly guarded or documented. | [Finding 16](analysis.md#finding-16) | 🚧 Blocked by R51 |
+| R53 | Define listener ownership, lifetime, removal, reentrancy, and exception rules. | The contract covers self-removal, destruction of another listener, and exceptions during partial restore. | [Finding 17](analysis.md#finding-17) | 🔎 Pending decision |
+| R54 | Make dispatch safe when a queued listener is removed or destroyed. | No callback is made through an invalid snapshot pointer. | [Finding 17](analysis.md#finding-17) | 🚧 Blocked by R53 |
+| R55 | Implement the selected restore-listener exception semantics. | Published status and partially restored resources follow the R53 rule after an exception. | [Finding 17](analysis.md#finding-17) | 🚧 Blocked by R53 |
+| R56 | Add listener lifetime, removal, reentrancy, and exception tests. | Tests reproduce the original hazards and verify R54–R55. | [Finding 17](analysis.md#finding-17) | 🚧 Blocked by R54–R55 |
+| R57 | Decide whether debug logging may consume application `glGetError` state. | Default/opt-in behavior, reporting, and queue-draining limits are recorded. | [Finding 18](analysis.md#finding-18) | 🔎 Pending decision |
+| R58 | Implement and document the selected debug-error policy. | Debug checks follow R57 and expose no undocumented error-state mutation. | [Finding 18](analysis.md#finding-18) | 🚧 Blocked by R57 |
+| R59 | Add tests for debug error ownership, multiple queued errors, and reporting. | Tests verify both configured modes and the documented drain limit. | [Finding 18](analysis.md#finding-18) | 🚧 Blocked by R58 |
+
+### R60–R75 — Generation, runtime coverage, release automation, and shutdown
+
+| # | Individual task | Completion condition | Source | Status |
+|---|-----------------|----------------------|--------|--------|
+| R60 | Define the generator scope and authoritative Khronos inputs. | Generated versus hand-maintained files and policy data have explicit ownership. | [Finding 19](analysis.md#finding-19) | 🔎 Pending decision |
+| R61 | Pin `gl.xml` and make generator output reproducible. | The registry revision/license are recorded and two clean runs produce identical output. | [Finding 19](analysis.md#finding-19) | 🚧 Blocked by R60 |
+| R62 | Generate function declarations, loader slots/calls, and version-required sets. | Generated output preserves all supported 358 wrappers and exact version metadata. | [Finding 19](analysis.md#finding-19) | 🚧 Blocked by R61 |
+| R63 | Generate or verify exact signatures, enum names, and enum coverage. | CI detects signature drift, missing names, and unexpected registry differences. | [Finding 19](analysis.md#finding-19) | 🚧 Blocked by R61 |
+| R64 | Add a small typed-policy layer for strong domains and compatibility overloads. | Custom safety decisions survive regeneration without editing generated files. | [Finding 19](analysis.md#finding-19) | 🚧 Blocked by R62–R63 |
+| R65 | Add a CI regeneration/no-diff guard. | CI fails whenever committed generated output is stale. | [Finding 19](analysis.md#finding-19) | 🚧 Blocked by R64 |
+| R66 | Add a real-browser WebGL 2 loss/restore test using `WEBGL_lose_context`. | It verifies initialization, invalidation, reload, generation, status, and listener ordering. | [Finding 20](analysis.md#finding-20) | 🌐 Requires Emscripten/browser runner |
+| R67 | Add a Windows WGL runtime smoke test. | A real context covers loader core fallback and at least one rendered/queried operation. | [Finding 20](analysis.md#finding-20) | 🌐 Requires Windows OpenGL runner |
+| R68 | Add a Windows ANGLE runtime smoke test. | A real ANGLE context verifies backend detection and GLES loading. | [Finding 20](analysis.md#finding-20) | 🌐 Requires ANGLE-enabled runner |
+| R69 | Add a Linux desktop GL/GLX runtime smoke test. | A real desktop context exercises version validation and depth adapters. | [Finding 20](analysis.md#finding-20) | 🌐 Requires GLX-capable runner |
+| R70 | Add macOS OpenGL compile/runtime coverage. | The supported macOS compiler and context path configure, build, and run. | [Finding 20](analysis.md#finding-20) | 🌐 Requires macOS runner |
+| R71 | Add at least one non-Mesa vendor-driver runtime job. | The selected NVIDIA/AMD/Intel vendor path and maintenance expectation are documented. | [Finding 20](analysis.md#finding-20) | 🌐 Requires managed GPU runner |
+| R72 | Add a tag-triggered release workflow. | Only approved version tags start the workflow and untrusted/manual tags cannot overwrite a release. | Previous `NEXT.md` release automation | ⏳ Pending |
+| R73 | Build release archives and validate their installed CMake packages. | Each supported archive installs and an external consumer links and runs against it. | Previous `NEXT.md` release automation | 🚧 Blocked by R72 |
+| R74 | Attach validated artifacts and changelog-derived notes to the GitHub release. | Workflow output is checksummed, immutable, and associated with the matching tag. | Previous `NEXT.md` release automation | 🌐 Blocked by R73 |
+| R75 | Decide and verify the Windows buffered-debug-log shutdown policy. | Explicit pre-teardown flush remains a tested contract, or a safe automatic lifecycle replaces it; MSVC shared tests cover the selected behavior. | Previous `NEXT.md` known limitation | 🌐 Requires Windows runner |
+
+---
+
 ## Summary counts
 
-| Theme | Tasks |
-|-------|-------|
-| A — Typed handle types | 15 |
-| B — Enum cleanup | 14 |
-| C — std::span adoption | 11 |
-| D — Template dispatch | 6 |
-| E — Concepts | 5 |
-| F — Build system | 7 |
-| G — Debug & error handling | 8 |
-| H — Code quality & naming | 12 |
-| I — Tests | 10 |
-| J — Emscripten / platform | 5 |
-| K — 2026 comprehensive audit | 20 |
-| **Total** | **113** |
+| Theme | Completed | Remaining | Total |
+|-------|----------:|----------:|------:|
+| A–K — Original plan and comprehensive audit | 113 | 0 | 113 |
+| L — Implemented follow-up findings | 4 | 0 | 4 |
+| R — Remaining individual tasks | 0 | 75 | 75 |
+| **Total** | **117** | **75** | **192** |

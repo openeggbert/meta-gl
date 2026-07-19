@@ -14,14 +14,17 @@ namespace
 {
     // Stubs for functions called by UpdateContextAfterLoad() -------------------
 
+    const char* mock_version = "OpenGL ES 3.0 Mock";
+    const char* omitted_function = nullptr;
+
     const GLubyte* GL_APIENTRY stub_GetString(GLenum name)
     {
-        static const GLubyte version[]  = "OpenGL ES 3.0 Mock";
         static const GLubyte vendor[]   = "MockVendor";
         static const GLubyte renderer[] = "MockRenderer";
         static const GLubyte glsl[]     = "OpenGL ES GLSL ES 3.00";
         static const GLubyte empty[]    = "";
-        if (name == GL_VERSION)                  return version;
+        if (name == GL_VERSION)
+            return reinterpret_cast<const GLubyte*>(mock_version);
         if (name == GL_VENDOR)                   return vendor;
         if (name == GL_RENDERER)                 return renderer;
         if (name == GL_SHADING_LANGUAGE_VERSION) return glsl;
@@ -78,6 +81,37 @@ namespace
     int desktop_depth_range_calls = 0;
     int desktop_clear_depth_calls = 0;
 
+    struct ClearBufferCall
+    {
+        GLenum buffer = GL_NONE;
+        GLint drawbuffer = -1;
+        GLfloat depth = 0.0f;
+        GLint stencil = 0;
+    };
+
+    ClearBufferCall clear_buffer_call;
+
+    struct CopyImageCall
+    {
+        GLuint src_name = 0;
+        GLenum src_target = GL_NONE;
+        GLint src_level = -1;
+        GLint src_x = -1;
+        GLint src_y = -1;
+        GLint src_z = -1;
+        GLuint dst_name = 0;
+        GLenum dst_target = GL_NONE;
+        GLint dst_level = -1;
+        GLint dst_x = -1;
+        GLint dst_y = -1;
+        GLint dst_z = -1;
+        GLsizei width = -1;
+        GLsizei height = -1;
+        GLsizei depth = -1;
+    };
+
+    CopyImageCall copy_image_call;
+
     void GL_APIENTRY stub_DesktopDepthRange(double, double)
     {
         ++desktop_depth_range_calls;
@@ -86,6 +120,47 @@ namespace
     void GL_APIENTRY stub_DesktopClearDepth(double)
     {
         ++desktop_clear_depth_calls;
+    }
+
+    void GL_APIENTRY stub_ClearBufferfv(
+        GLenum buffer, GLint drawbuffer, const GLfloat*)
+    {
+        clear_buffer_call.buffer = buffer;
+        clear_buffer_call.drawbuffer = drawbuffer;
+    }
+
+    void GL_APIENTRY stub_ClearBufferiv(
+        GLenum buffer, GLint drawbuffer, const GLint*)
+    {
+        clear_buffer_call.buffer = buffer;
+        clear_buffer_call.drawbuffer = drawbuffer;
+    }
+
+    void GL_APIENTRY stub_ClearBufferuiv(
+        GLenum buffer, GLint drawbuffer, const GLuint*)
+    {
+        clear_buffer_call.buffer = buffer;
+        clear_buffer_call.drawbuffer = drawbuffer;
+    }
+
+    void GL_APIENTRY stub_ClearBufferfi(
+        GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil)
+    {
+        clear_buffer_call = {buffer, drawbuffer, depth, stencil};
+    }
+
+    void GL_APIENTRY stub_CopyImageSubData(
+        GLuint src_name, GLenum src_target, GLint src_level,
+        GLint src_x, GLint src_y, GLint src_z,
+        GLuint dst_name, GLenum dst_target, GLint dst_level,
+        GLint dst_x, GLint dst_y, GLint dst_z,
+        GLsizei width, GLsizei height, GLsizei depth)
+    {
+        copy_image_call = {
+            src_name, src_target, src_level, src_x, src_y, src_z,
+            dst_name, dst_target, dst_level, dst_x, dst_y, dst_z,
+            width, height, depth
+        };
     }
 
     // No-op for all other functions (never actually called after Initialize)
@@ -103,7 +178,25 @@ namespace
             return reinterpret_cast<void*>(stub_GetError);
         if (std::strcmp(name, "glGetAttribLocation") == 0)
             return reinterpret_cast<void*>(stub_GetAttribLocation);
+        if (std::strcmp(name, "glClearBufferfv") == 0)
+            return reinterpret_cast<void*>(stub_ClearBufferfv);
+        if (std::strcmp(name, "glClearBufferiv") == 0)
+            return reinterpret_cast<void*>(stub_ClearBufferiv);
+        if (std::strcmp(name, "glClearBufferuiv") == 0)
+            return reinterpret_cast<void*>(stub_ClearBufferuiv);
+        if (std::strcmp(name, "glClearBufferfi") == 0)
+            return reinterpret_cast<void*>(stub_ClearBufferfi);
+        if (std::strcmp(name, "glCopyImageSubData") == 0)
+            return reinterpret_cast<void*>(stub_CopyImageSubData);
         return reinterpret_cast<void*>(stub_noop);
+    }
+
+    void* omitting_proc_address(const char* name)
+    {
+        if (omitted_function
+            && std::strcmp(name, omitted_function) == 0)
+            return nullptr;
+        return mock_proc_address(name);
     }
 }
 
@@ -159,6 +252,99 @@ int main()
     check("glGetAttribLocation preserves -1",
           metagl::glGetAttribLocation(metagl::ProgramId{1}, "missing").value == -1);
 
+    // Exact clear-buffer domains forward their only legal GL tokens.
+    GLfloat float_value[4]{};
+    metagl::glClearBuffer(
+        metagl::FloatClearBuffer::Depth, 0, float_value);
+    check("Float clear forwards GL_DEPTH",
+          clear_buffer_call.buffer == GL_DEPTH
+          && clear_buffer_call.drawbuffer == 0);
+
+    GLint signed_value[4]{};
+    metagl::glClearBuffer(
+        metagl::SignedIntegerClearBuffer::Stencil, 0, signed_value);
+    check("Signed integer clear forwards GL_STENCIL",
+          clear_buffer_call.buffer == GL_STENCIL
+          && clear_buffer_call.drawbuffer == 0);
+
+    GLuint unsigned_value[4]{};
+    metagl::glClearBuffer(
+        metagl::UnsignedIntegerClearBuffer::Color, 2, unsigned_value);
+    check("Unsigned integer clear forwards GL_COLOR and draw buffer",
+          clear_buffer_call.buffer == GL_COLOR
+          && clear_buffer_call.drawbuffer == 2);
+
+    metagl::glClearBufferfi(0.25f, 7);
+    check("Depth-stencil clear fixes raw target and draw buffer",
+          clear_buffer_call.buffer == GL_DEPTH_STENCIL
+          && clear_buffer_call.drawbuffer == 0);
+    check("Depth-stencil clear forwards values",
+          clear_buffer_call.depth == 0.25f
+          && clear_buffer_call.stencil == 7);
+
+    // Typed image-copy overloads normalize all four endpoint combinations.
+    metagl::glCopyImageSubData(
+        metagl::TextureId{11}, metagl::ImageCopyTextureTarget::Texture3D,
+        2, 1, 2, 3,
+        metagl::TextureId{12},
+        metagl::ImageCopyTextureTarget::Texture2DArray,
+        4, 5, 6, 7, 8, 9, 10);
+    check("Texture-to-texture copy forwards typed endpoints",
+          copy_image_call.src_name == 11
+          && copy_image_call.src_target == GL_TEXTURE_3D
+          && copy_image_call.src_level == 2
+          && copy_image_call.src_z == 3
+          && copy_image_call.dst_name == 12
+          && copy_image_call.dst_target == GL_TEXTURE_2D_ARRAY
+          && copy_image_call.dst_level == 4
+          && copy_image_call.dst_z == 7
+          && copy_image_call.width == 8
+          && copy_image_call.height == 9
+          && copy_image_call.depth == 10);
+
+    metagl::glCopyImageSubData(
+        metagl::TextureId{21}, metagl::ImageCopyTextureTarget::TextureCubeMap,
+        3, 4, 5, 2,
+        metagl::RenderbufferId{22}, 6, 7, 8, 9);
+    check("Texture-to-renderbuffer copy fixes destination metadata",
+          copy_image_call.src_name == 21
+          && copy_image_call.src_target == GL_TEXTURE_CUBE_MAP
+          && copy_image_call.dst_name == 22
+          && copy_image_call.dst_target == GL_RENDERBUFFER
+          && copy_image_call.dst_level == 0
+          && copy_image_call.dst_z == 0
+          && copy_image_call.depth == 1);
+
+    metagl::glCopyImageSubData(
+        metagl::RenderbufferId{31}, 1, 2,
+        metagl::TextureId{32},
+        metagl::ImageCopyTextureTarget::TextureCubeMapArray,
+        3, 4, 5, 6, 7, 8);
+    check("Renderbuffer-to-texture copy fixes source metadata",
+          copy_image_call.src_name == 31
+          && copy_image_call.src_target == GL_RENDERBUFFER
+          && copy_image_call.src_level == 0
+          && copy_image_call.src_z == 0
+          && copy_image_call.dst_name == 32
+          && copy_image_call.dst_target == GL_TEXTURE_CUBE_MAP_ARRAY
+          && copy_image_call.depth == 1);
+
+    metagl::glCopyImageSubData(
+        metagl::RenderbufferId{41}, 1, 2,
+        metagl::RenderbufferId{42}, 3, 4, 5, 6);
+    check("Renderbuffer-to-renderbuffer copy fixes both endpoint metadata",
+          copy_image_call.src_name == 41
+          && copy_image_call.src_target == GL_RENDERBUFFER
+          && copy_image_call.src_level == 0
+          && copy_image_call.src_z == 0
+          && copy_image_call.dst_name == 42
+          && copy_image_call.dst_target == GL_RENDERBUFFER
+          && copy_image_call.dst_level == 0
+          && copy_image_call.dst_z == 0
+          && copy_image_call.width == 5
+          && copy_image_call.height == 6
+          && copy_image_call.depth == 1);
+
     // ==========================================================================
     // I5 — Context lifecycle state transitions
     // ==========================================================================
@@ -173,6 +359,34 @@ int main()
     check("IsContextLost() == true", metagl::IsContextLost());
     check("Generation unchanged after MarkContextLost",
           metagl::GetContextInfo().generation == gen1);
+    check("Lost context clears initialized state",
+          !metagl::IsInitialized());
+    check("Lost context hides individual function availability",
+          !metagl::IsFunctionAvailable("glEnable")
+          && !metagl::IsFunctionAvailable("glGetString"));
+    check("Lost context hides complete loader state",
+          !metagl::AllFunctionsLoaded());
+
+    const auto lost_info = metagl::GetContextInfo();
+    check("Lost context clears current API identity",
+          lost_info.api == metagl::ApiKind::Unknown
+          && lost_info.major == 0
+          && lost_info.minor == 0);
+
+    const auto& lost_caps = metagl::GetCapabilities();
+    check("Lost context clears capability strings and extensions",
+          lost_caps.version_string.empty()
+          && lost_caps.vendor.empty()
+          && lost_caps.renderer.empty()
+          && lost_caps.extensions.empty());
+    check("Lost context clears capability flags",
+          !metagl::SupportsGLES20()
+          && !metagl::SupportsGLES30()
+          && !metagl::SupportsGLES31()
+          && !metagl::SupportsGLES32()
+          && !metagl::SupportsWebGL2()
+          && !metagl::SupportsDesktopOpenGL()
+          && !metagl::IsAngle());
 
     // Restored transition (without reloading function pointers — just state)
     metagl::MarkContextRestored();
@@ -187,6 +401,15 @@ int main()
           metagl::GetContextStatus() == metagl::ContextStatus::Current);
     check("Generation incremented after LoadCurrentContext",
           metagl::GetContextInfo().generation > gen1);
+    check("Reload republishes loader availability",
+          metagl::IsInitialized()
+          && metagl::IsFunctionAvailable("glEnable")
+          && metagl::AllFunctionsLoaded());
+    check("Reload republishes API identity and capabilities",
+          metagl::GetContextInfo().api == metagl::ApiKind::OpenGLES
+          && metagl::SupportsGLES20()
+          && metagl::SupportsGLES30()
+          && !metagl::GetCapabilities().version_string.empty());
 
     // ==========================================================================
     // I6 — ContextEvents: listener registration and notification
@@ -196,8 +419,28 @@ int main()
     {
         int lost_count     = 0;
         int restored_count = 0;
-        void OnContextLost()     override { ++lost_count; }
-        void OnContextRestored() override { ++restored_count; }
+        bool lost_saw_invalidated_state = false;
+        bool restored_saw_current_state = false;
+
+        void OnContextLost() override
+        {
+            ++lost_count;
+            lost_saw_invalidated_state =
+                !metagl::IsInitialized()
+                && !metagl::IsFunctionAvailable("glEnable")
+                && !metagl::AllFunctionsLoaded()
+                && !metagl::SupportsGLES20();
+        }
+
+        void OnContextRestored() override
+        {
+            ++restored_count;
+            restored_saw_current_state =
+                metagl::IsInitialized()
+                && metagl::IsFunctionAvailable("glEnable")
+                && metagl::AllFunctionsLoaded()
+                && metagl::SupportsGLES20();
+        }
     };
 
     // Single listener receives both notifications
@@ -208,6 +451,8 @@ int main()
     metagl::NotifyContextLost();
     check("NotifyContextLost fires OnContextLost",     ml1.lost_count     == 1);
     check("NotifyContextLost does not fire Restored",  ml1.restored_count == 0);
+    check("Lost listener sees invalidated public state",
+          ml1.lost_saw_invalidated_state);
 
     // A restore event without a successful reload is rejected.
     metagl::NotifyContextRestored();
@@ -218,6 +463,8 @@ int main()
     check("RestoreCurrentContext succeeds",
           metagl::RestoreCurrentContext(mock_proc_address));
     check("RestoreCurrentContext fires OnContextRestored", ml1.restored_count == 1);
+    check("Restored listener sees republished current state",
+          ml1.restored_saw_current_state);
     check("NotifyContextRestored does not fire Lost",      ml1.lost_count     == 1);
     check("RestoreCurrentContext finishes Current",
           metagl::GetContextStatus() == metagl::ContextStatus::Current);
@@ -286,6 +533,88 @@ int main()
           metagl::RestoreCurrentContext(mock_proc_address));
 
     // ==========================================================================
+    // L4 — Version-aware loader validation
+    // ==========================================================================
+
+    mock_version = nullptr;
+    check("Null GL_VERSION is rejected",
+          !metagl::Initialize(mock_proc_address));
+    check("Null GL_VERSION does not publish bootstrap functions",
+          !metagl::IsInitialized()
+          && !metagl::IsFunctionAvailable("glGetString"));
+
+    mock_version = "OpenGL ES three";
+    check("Malformed GL_VERSION is rejected",
+          !metagl::Initialize(mock_proc_address));
+
+    mock_version = "OpenGL ES 3.0 Mock";
+    omitted_function = "glGetIntegerv";
+    check("Missing bootstrap function is rejected",
+          !metagl::Initialize(omitting_proc_address));
+    omitted_function = nullptr;
+
+    mock_version = "2.1 Mock Desktop";
+    check("Desktop OpenGL below 3.3 is rejected",
+          !metagl::Initialize(mock_proc_address));
+
+    mock_version = "WebGL 1.0 Mock";
+    omitted_function = "glReadBuffer";
+    check("WebGL 1 accepts a missing GLES 3.0 function",
+          metagl::Initialize(omitting_proc_address));
+
+    mock_version = "WebGL 2.0 Mock";
+    omitted_function = "glDispatchCompute";
+    check("WebGL 2 accepts a non-WebGL GLES 3.1 function",
+          metagl::Initialize(omitting_proc_address));
+    omitted_function = "glGetStringi";
+    check("WebGL 2 requires glGetStringi",
+          !metagl::Initialize(omitting_proc_address));
+
+    // A function is optional below the version that introduced it and
+    // mandatory from that version onward.
+    mock_version = "OpenGL ES 2.0 Mock";
+    omitted_function = "glReadBuffer";
+    check("GLES 2.0 accepts a missing GLES 3.0 function",
+          metagl::Initialize(omitting_proc_address));
+
+    mock_version = "OpenGL ES 3.0 Mock";
+    check("GLES 3.0 rejects a missing GLES 3.0 function",
+          !metagl::Initialize(omitting_proc_address));
+
+    omitted_function = "glGetStringi";
+    check("GLES 3.0 requires glGetStringi",
+          !metagl::Initialize(omitting_proc_address));
+
+    omitted_function = "glDispatchCompute";
+    check("GLES 3.0 accepts a missing GLES 3.1 function",
+          metagl::Initialize(omitting_proc_address));
+
+    mock_version = "OpenGL ES 3.1 Mock";
+    check("GLES 3.1 rejects a missing GLES 3.1 function",
+          !metagl::Initialize(omitting_proc_address));
+
+    omitted_function = "glBlendBarrier";
+    check("GLES 3.1 accepts a missing GLES 3.2 function",
+          metagl::Initialize(omitting_proc_address));
+
+    mock_version = "OpenGL ES 3.2 Mock";
+    check("GLES 3.2 rejects a missing GLES 3.2 function",
+          !metagl::Initialize(omitting_proc_address));
+
+    omitted_function = nullptr;
+    check("Complete GLES 3.2 loader succeeds",
+          metagl::Initialize(mock_proc_address));
+    check("GLES 3.2 capabilities are published after validation",
+          metagl::SupportsGLES20()
+          && metagl::SupportsGLES30()
+          && metagl::SupportsGLES31()
+          && metagl::SupportsGLES32());
+
+    mock_version = "OpenGL ES 3.0 Mock";
+    check("Default GLES 3.0 context restored after tier tests",
+          metagl::Initialize(mock_proc_address));
+
+    // ==========================================================================
     // I7 — HasExtension / GetCapabilities with fake extension string
     // ==========================================================================
 
@@ -345,6 +674,9 @@ int main()
     // require the GLES-only shader compiler query functions.
     auto desktop_loader = [](const char* name) -> void*
     {
+        if (omitted_function
+            && std::strcmp(name, omitted_function) == 0)
+            return nullptr;
         if (std::strcmp(name, "glGetString") == 0)
             return reinterpret_cast<void*>(stub_DesktopGetString);
         if (std::strcmp(name, "glDepthRange") == 0)
@@ -359,6 +691,11 @@ int main()
             return nullptr;
         return mock_proc_address(name);
     };
+
+    omitted_function = "glGetStringi";
+    check("Desktop OpenGL 3.3+ requires glGetStringi",
+          !metagl::Initialize(desktop_loader));
+    omitted_function = nullptr;
 
     check("Desktop OpenGL loader succeeds",
           metagl::Initialize(desktop_loader));

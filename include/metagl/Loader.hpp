@@ -52,9 +52,19 @@ namespace metagl
     /**
      * @brief Loads all GL function pointers and initialises the library.
      *
-     * Iterates over the list of 358 OpenGL ES 3.2 function names, calls @p loader for each,
-     * and stores the resulting function pointers.  After a successful call:
-     * - All `metagl::gl*` wrappers are ready to use.
+     * First loads `glGetString`, `glGetIntegerv`, and `glGetError`, validates
+     * `GL_VERSION`, then loads the complete wrapper surface into a staging
+     * table. Initialization succeeds only when every core entry point required
+     * by the detected GLES 2.0, 3.0, 3.1, or 3.2 level is available. Desktop
+     * OpenGL requires version 3.3 or newer, the common core subset, and
+     * `glGetStringi`. WebGL uses its browser-compatible GLES subset: WebGL 1
+     * requires the GLES 2.0 entry points and WebGL 2 additionally requires
+     * `glGetStringi`. The staging table is not published on failure.
+     *
+     * After a successful call:
+     * - Every wrapper required by the detected API level is ready to use;
+     *   higher-version and extension wrappers must still be checked with
+     *   @ref IsFunctionAvailable.
      * - @ref GetContextStatus returns `ContextStatus::Current`.
      * - The context generation counter is incremented.
      * - Capabilities (version, extensions, GLES flags) are (re-)detected.
@@ -67,9 +77,9 @@ namespace metagl
      * hand off rendering to any thread.
      *
      * @param loader  Platform `GetProcAddress` function.  Must not be `nullptr`.
-     * @return `true` if the core ES 2.0 set, or the corresponding desktop
-     *         OpenGL 3.3+ common subset, loaded successfully. `false` if a
-     *         required function is missing.
+     * @return `true` if the version string is valid and every function required
+     *         by the detected supported API level loaded successfully; `false`
+     *         for an invalid/unsupported version or a missing required function.
      */
     bool Initialize(GlGetProcAddressFn loader);
 
@@ -101,10 +111,10 @@ namespace metagl
      *
      * This is the preferred context-restore entry point. It calls
      * @ref LoadCurrentContext first and dispatches
-     * @ref ContextListener::OnContextRestored only after every required GLES 2.0
-     * function has loaded and capabilities have been redetected. During listener
-     * callbacks the status is `ContextStatus::Restored`; on return it is
-     * `ContextStatus::Current`.
+     * @ref ContextListener::OnContextRestored only after every function required
+     * by the detected API/version has loaded and capabilities have been
+     * redetected. During listener callbacks the status is
+     * `ContextStatus::Restored`; on return it is `ContextStatus::Current`.
      *
      * If loading fails, no restored callback is dispatched, capabilities are
      * cleared, and an existing context remains in `ContextStatus::Lost`.
@@ -118,22 +128,23 @@ namespace metagl
     [[nodiscard]] bool RestoreCurrentContext(GlGetProcAddressFn getProcAddress);
 
     /**
-     * @brief Returns `true` if @ref Initialize has previously succeeded.
+     * @brief Returns `true` while a successfully loaded context remains current.
      *
-     * Does not verify that function pointers are still valid (e.g. after context loss).
-     * Use @ref GetContextStatus to check the lifecycle state.
+     * Context loss immediately changes the result to `false`; a successful
+     * @ref Initialize or @ref RestoreCurrentContext makes it `true` again.
      */
     [[nodiscard]] bool IsInitialized() noexcept;
 
     /**
-     * @brief Returns `true` if the named GL function was loaded during the last
-     *        @ref Initialize call.
+     * @brief Returns `true` if the named GL function is available for the
+     *        current loaded context.
      *
      * Useful for checking whether an optional extension entry-point is available
      * before calling it.
      *
      * @param name  Null-terminated GL function name (e.g. `"glBlendBarrier"`).
-     * @return `true` if the function pointer is non-null; `false` otherwise.
+     * @return `true` if the current context is initialized and the function
+     *         pointer is non-null; `false` after context loss or when absent.
      */
     [[nodiscard]] bool IsFunctionAvailable(std::string_view name) noexcept;
 
@@ -141,7 +152,8 @@ namespace metagl
      * @brief Returns `true` if every OpenGL ES 3.2 function pointer was loaded successfully.
      *
      * A `true` result indicates a complete ES 3.2 driver.  A `false` result means
-     * at least one ES 3.2 entry-point was absent (the driver may still be ES 2.0 or 3.x).
+     * the context is lost/uninitialized or at least one ES 3.2 entry-point was
+     * absent (the driver may still be ES 2.0 or 3.x).
      *
      * @note A stub / mock loader that returns a non-null noop for every query will
      *       satisfy this check even without a real GPU.  It is intended as a

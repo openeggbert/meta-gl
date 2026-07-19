@@ -99,8 +99,9 @@ ctest --test-dir build --output-on-failure
 
 The default tests include mock lifecycle/platform coverage, a fresh installed
 package consumer, and an API consistency check for all 358 wrappers and the
-142-function GLES 2.0 minimum. To exercise a real headless context when EGL
-and Mesa (or another EGL implementation) are installed:
+exact 142/104/68/44-function mandatory sets added by GLES
+2.0/3.0/3.1/3.2. To exercise a real headless context when EGL and Mesa (or
+another EGL implementation) are installed:
 
 ```bash
 cmake -S . -B build-gpu \

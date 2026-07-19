@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = (ROOT / "src/Functions.cpp").read_text(encoding="utf-8")
 HEADER = (ROOT / "include/metagl/Functions.hpp").read_text(encoding="utf-8")
 GL32 = (ROOT / "third_party/Khronos/GLES3/gl32.h").read_text(encoding="utf-8")
+REQUIRED = (ROOT / "src/RequiredFunctions.inc").read_text(encoding="utf-8")
 
 errors: list[str] = []
 
@@ -68,21 +69,29 @@ unexpected_loads = sorted(loaded_names - name_set - allowed_desktop_fallbacks)
 if unexpected_loads:
     fail("unexpected loader-only entries: " + ", ".join(unexpected_loads))
 
-gles2_section_match = re.search(
-    r"#ifndef GL_ES_VERSION_2_0(.*?)#endif /\* GL_ES_VERSION_2_0 \*/",
-    GL32,
-    flags=re.DOTALL,
-)
-if gles2_section_match is None:
-    fail("could not locate the GLES 2.0 prototype section in gl32.h")
-    gles2_names: set[str] = set()
-else:
-    gles2_names = set(re.findall(
+def version_names(version: str, expected_count: int) -> set[str]:
+    section_match = re.search(
+        rf"#ifndef GL_ES_VERSION_{version}"
+        rf"(.*?)#endif /\* GL_ES_VERSION_{version} \*/",
+        GL32,
+        flags=re.DOTALL,
+    )
+    if section_match is None:
+        fail(f"could not locate the GLES {version.replace('_', '.')} "
+             "prototype section in gl32.h")
+        return set()
+
+    names = set(re.findall(
         r"GL_APICALL\b.*?\b(gl[A-Za-z0-9_]+)\s*\(",
-        gles2_section_match.group(1),
+        section_match.group(1),
     ))
-    if len(gles2_names) != 142:
-        fail(f"expected 142 GLES 2.0 prototypes, found {len(gles2_names)}")
+    if len(names) != expected_count:
+        fail(f"expected {expected_count} GLES {version.replace('_', '.')} "
+             f"prototypes, found {len(names)}")
+    return names
+
+
+gles2_names = version_names("2_0", 142)
 
 minimum_match = re.search(
     r"static bool minimum_loaded\(.*?\n    \}(.*?)"
@@ -102,6 +111,34 @@ else:
         fail("GLES 2.0 functions absent from minimum_loaded(): "
              + ", ".join(missing_core))
 
+for version, expected_count in (("3_0", 104), ("3_1", 68), ("3_2", 44)):
+    expected_names = version_names(version, expected_count)
+    array_name = f"gles{version.replace('_', '')}_required_names"
+    array_match = re.search(
+        rf"\b{array_name}\[\]\s*=\s*\{{(.*?)\}};",
+        REQUIRED,
+        flags=re.DOTALL,
+    )
+    if array_match is None:
+        fail(f"could not locate {array_name} in RequiredFunctions.inc")
+        continue
+
+    actual_list = re.findall(
+        r'"(gl[A-Za-z0-9_]+)"', array_match.group(1))
+    actual_names = set(actual_list)
+    if len(actual_list) != len(actual_names):
+        fail(f"{array_name} contains duplicate function names")
+    missing_names = sorted(expected_names - actual_names)
+    extra_names = sorted(actual_names - expected_names)
+    if missing_names:
+        fail(f"GLES {version.replace('_', '.')} required set is missing: "
+             + ", ".join(missing_names))
+    if extra_names:
+        fail(f"GLES {version.replace('_', '.')} required set has extras: "
+             + ", ".join(extra_names))
+    if f"required_names_loaded({array_name})" not in SOURCE:
+        fail(f"{array_name} is not used by required_version_loaded()")
+
 if errors:
     for error in errors:
         print(f"ERROR: {error}", file=sys.stderr)
@@ -110,5 +147,6 @@ if errors:
 print(
     "API verification passed: "
     f"{len(wrappers)} wrappers, {len(loaded_names)} loader names, "
-    f"{len(gles2_names)} GLES 2.0 minimum functions."
+    "mandatory GLES sets 2.0/3.0/3.1/3.2 = "
+    f"{len(gles2_names)}/104/68/44."
 )

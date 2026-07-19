@@ -34,10 +34,63 @@ static_assert(requires { glSamplerParameter(SamplerId{}, SamplerParameter::MinFi
 static_assert(requires { glSamplerParameter(SamplerId{}, TextureMinFilter::Linear); });
 static_assert(requires { glSamplerParameter(SamplerId{}, SamplerWrapParameter::WrapS, TextureWrapMode::Repeat); });
 
-// glClearBuffer<T>
-static_assert(requires(float* v)        { glClearBuffer(ClearBuffer::Color, 0, v); });
-static_assert(requires(int* v)          { glClearBuffer(ClearBuffer::Color, 0, v); });
-static_assert(requires(unsigned int* v) { glClearBuffer(ClearBuffer::Color, 0, v); });
+// glClearBuffer<T>: each value type has its own legal buffer-target domain.
+template<typename Buffer, typename Value>
+concept ClearBufferCallable = requires(Buffer buffer, Value* value)
+{
+    glClearBuffer(buffer, 0, value);
+};
+
+template<typename Buffer>
+concept LegacyClearBufferFiCallable = requires(Buffer buffer)
+{
+    glClearBufferfi(buffer, 0, 1.0f, 0);
+};
+
+static_assert(ClearBufferCallable<FloatClearBuffer, float>);
+static_assert(ClearBufferCallable<SignedIntegerClearBuffer, int>);
+static_assert(ClearBufferCallable<UnsignedIntegerClearBuffer, unsigned int>);
+static_assert(!ClearBufferCallable<FloatClearBuffer, int>);
+static_assert(!ClearBufferCallable<SignedIntegerClearBuffer, float>);
+static_assert(!ClearBufferCallable<UnsignedIntegerClearBuffer, int>);
+static_assert(!std::is_convertible_v<FloatClearBuffer, SignedIntegerClearBuffer>);
+static_assert(!std::is_convertible_v<SignedIntegerClearBuffer, UnsignedIntegerClearBuffer>);
+static_assert(requires { glClearBufferfi(1.0f, 0); });
+static_assert(!LegacyClearBufferFiCallable<FloatClearBuffer>);
+static_assert(!LegacyClearBufferFiCallable<SignedIntegerClearBuffer>);
+static_assert(!LegacyClearBufferFiCallable<UnsignedIntegerClearBuffer>);
+
+// glCopyImageSubData: all four texture/renderbuffer endpoint combinations.
+static_assert(requires {
+    glCopyImageSubData(
+        TextureId{}, ImageCopyTextureTarget::Texture2D, 0, 0, 0, 0,
+        TextureId{}, ImageCopyTextureTarget::Texture2DArray, 0, 0, 0, 0,
+        1, 1, 1);
+});
+static_assert(requires {
+    glCopyImageSubData(
+        TextureId{}, ImageCopyTextureTarget::TextureCubeMap, 0, 0, 0, 0,
+        RenderbufferId{}, 0, 0, 1, 1);
+});
+static_assert(requires {
+    glCopyImageSubData(
+        RenderbufferId{}, 0, 0,
+        TextureId{}, ImageCopyTextureTarget::Texture3D, 0, 0, 0, 0,
+        1, 1);
+});
+static_assert(requires {
+    glCopyImageSubData(
+        RenderbufferId{}, 0, 0,
+        RenderbufferId{}, 0, 0, 1, 1);
+});
+// The existing easy-gl-style raw overload remains source-compatible.
+static_assert(requires {
+    glCopyImageSubData(
+        GLuint{}, TextureTarget::Texture2D, 0, 0, 0, 0,
+        GLuint{}, TextureTarget::Texture2D, 0, 0, 0, 0,
+        1, 1, 1);
+});
+static_assert(!std::is_convertible_v<TextureTarget, ImageCopyTextureTarget>);
 
 // glGetVertexAttrib<T>
 static_assert(requires(float* v)        { glGetVertexAttrib(AttribLocation{}, VertexAttribParameter::CurrentVertexAttrib, v); });
@@ -238,7 +291,10 @@ int main()
     check("TessGenSpacing::Equal",                       to_string(TessGenSpacing::Equal));
     check("TessellationParameter::PatchVertices",        to_string(TessellationParameter::PatchVertices));
     check("GetParameter::Viewport",                      to_string(GetParameter::Viewport));
-    check("ClearBuffer::Color",                          to_string(ClearBuffer::Color));
+    check("FloatClearBuffer::Depth",                     to_string(FloatClearBuffer::Depth));
+    check("SignedIntegerClearBuffer::Stencil",           to_string(SignedIntegerClearBuffer::Stencil));
+    check("UnsignedIntegerClearBuffer::Color",           to_string(UnsignedIntegerClearBuffer::Color));
+    check("ImageCopyTextureTarget::TextureCubeMap",      to_string(ImageCopyTextureTarget::TextureCubeMap));
     check("DrawBuffer::None",                            to_string(DrawBuffer::None));
     check("ReadBuffer::None",                            to_string(ReadBuffer::None));
     check("ShaderBinaryFormat(0)",                       to_string(static_cast<ShaderBinaryFormat>(0)));

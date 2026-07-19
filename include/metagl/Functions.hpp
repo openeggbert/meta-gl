@@ -367,14 +367,28 @@ namespace metagl
     void glClearDepthf(GLfloat d);
     /// @brief Sets the integer value used when clearing the stencil buffer (GL ES 2.0+)
     void glClearStencil(GLint s);
-    /// @brief Clears a float color or depth buffer attachment to a given value (GL ES 3.0+)
-    void glClearBufferfv(ClearBuffer buffer, GLint drawbuffer, const GLfloat * value);
-    /// @brief Clears an integer color or stencil buffer attachment to a given value (GL ES 3.0+)
-    void glClearBufferiv(ClearBuffer buffer, GLint drawbuffer, const GLint * value);
+    /**
+     * @brief Clears a float color or depth buffer attachment (GL ES 3.0+).
+     * @note `drawbuffer` must be zero when `buffer` is
+     *       `FloatClearBuffer::Depth`.
+     */
+    void glClearBufferfv(FloatClearBuffer buffer, GLint drawbuffer, const GLfloat * value);
+    /**
+     * @brief Clears a signed integer color or stencil buffer attachment (GL ES 3.0+).
+     * @note `drawbuffer` must be zero when `buffer` is
+     *       `SignedIntegerClearBuffer::Stencil`.
+     */
+    void glClearBufferiv(SignedIntegerClearBuffer buffer, GLint drawbuffer, const GLint * value);
     /// @brief Clears an unsigned integer color buffer attachment to a given value (GL ES 3.0+)
-    void glClearBufferuiv(ClearBuffer buffer, GLint drawbuffer, const GLuint * value);
-    /// @brief Clears depth and stencil buffer attachments together in one call (GL ES 3.0+)
-    void glClearBufferfi(ClearBuffer buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
+    void glClearBufferuiv(UnsignedIntegerClearBuffer buffer, GLint drawbuffer, const GLuint * value);
+    /**
+     * @brief Clears the depth and stencil attachments together (GL ES 3.0+).
+     *
+     * OpenGL requires the raw `buffer` and `drawbuffer` arguments to be
+     * `GL_DEPTH_STENCIL` and zero respectively. This safe wrapper supplies
+     * both fixed values so callers cannot form an invalid combination.
+     */
+    void glClearBufferfi(GLfloat depth, GLint stencil);
 
     /// @}
     /// @name Shaders and Programs
@@ -672,11 +686,22 @@ namespace metagl
     void glCopyTexSubImage2D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
     /// @brief Copies a framebuffer region into a slice of a 3D or array texture (GL ES 3.0+)
     void glCopyTexSubImage3D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height);
-    /// @brief Copies a region between two images without format conversion. (GL ES 3.2+)
-    // srcName/dstName are raw GLuint: when srcTarget/dstTarget is GL_RENDERBUFFER the name
-    // refers to a RenderbufferId, otherwise to a TextureId. The object type is determined
-    // at runtime by the target, so a single typed handle cannot be used safely here.
+    /**
+     * @brief Compatibility overload for copying between texture images (GL ES 3.2+).
+     *
+     * This original raw-name overload remains available for existing consumers.
+     * Prefer the typed overloads below: they restrict texture targets and also
+     * represent texture/renderbuffer copies without casts.
+     */
     void glCopyImageSubData(GLuint srcName, TextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, GLuint dstName, TextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth);
+    /// @brief Copies a region between two texture images (GL ES 3.2+).
+    void glCopyImageSubData(TextureId srcName, ImageCopyTextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, TextureId dstName, ImageCopyTextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei width, GLsizei height, GLsizei depth);
+    /// @brief Copies one texture layer or slice into a renderbuffer (GL ES 3.2+).
+    void glCopyImageSubData(TextureId srcName, ImageCopyTextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, RenderbufferId dstName, GLint dstX, GLint dstY, GLsizei width, GLsizei height);
+    /// @brief Copies a renderbuffer into one texture layer or slice (GL ES 3.2+).
+    void glCopyImageSubData(RenderbufferId srcName, GLint srcX, GLint srcY, TextureId dstName, ImageCopyTextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei width, GLsizei height);
+    /// @brief Copies a two-dimensional region between renderbuffers (GL ES 3.2+).
+    void glCopyImageSubData(RenderbufferId srcName, GLint srcX, GLint srcY, RenderbufferId dstName, GLint dstX, GLint dstY, GLsizei width, GLsizei height);
     /// @brief Auto-generates all mipmap levels below the base level by downsampling (GL ES 2.0+)
     void glGenerateMipmap(TextureTarget target);
     /// @brief Sets a float texture sampling parameter (filter, LOD, wrap mode) (GL ES 2.0+)
@@ -1673,14 +1698,26 @@ namespace metagl
             static_cast<GLint>(value));
     }
 
-    // #116-#118 - typed dispatch: glClearBuffer<float/int/unsigned int>(buffer, drawbuffer, value)
-    template<UniformScalar T>
-    inline void glClearBuffer(ClearBuffer buffer, GLint drawbuffer, const T* value)
+    // #116-#118 - typed dispatch with an exact target domain for each value type.
+    template<std::same_as<GLfloat> T>
+    inline void glClearBuffer(
+        FloatClearBuffer buffer, GLint drawbuffer, const T* value)
     {
-        using Value = std::remove_cvref_t<T>;
-        if constexpr (std::same_as<Value, GLfloat>)     { glClearBufferfv(buffer, drawbuffer, value); }
-        else if constexpr (std::same_as<Value, GLint>)  { glClearBufferiv(buffer, drawbuffer, value); }
-        else if constexpr (std::same_as<Value, GLuint>) { glClearBufferuiv(buffer, drawbuffer, value); }
+        glClearBufferfv(buffer, drawbuffer, value);
+    }
+
+    template<std::same_as<GLint> T>
+    inline void glClearBuffer(
+        SignedIntegerClearBuffer buffer, GLint drawbuffer, const T* value)
+    {
+        glClearBufferiv(buffer, drawbuffer, value);
+    }
+
+    template<std::same_as<GLuint> T>
+    inline void glClearBuffer(
+        UnsignedIntegerClearBuffer buffer, GLint drawbuffer, const T* value)
+    {
+        glClearBufferuiv(buffer, drawbuffer, value);
     }
 
     // #88-#91 - typed dispatch: glGetVertexAttrib<float/int/unsigned int>(index, pname, params)

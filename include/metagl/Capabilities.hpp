@@ -37,8 +37,8 @@ namespace metagl
         std::string shading_language_version; ///< GL_SHADING_LANGUAGE_VERSION string.
         std::vector<std::string> extensions;  ///< All extensions reported via `glGetStringi(GL_EXTENSIONS, i)`.
 
-        bool gles20 = false;  ///< True when the context supports at least OpenGL ES 2.0.
-        bool gles30 = false;  ///< True when the context supports at least OpenGL ES 3.0.
+        bool gles20 = false;  ///< True for GLES 2.0+ or its WebGL equivalent.
+        bool gles30 = false;  ///< True for GLES 3.0+ or its WebGL 2 equivalent.
         bool gles31 = false;  ///< True when the context supports at least OpenGL ES 3.1.
         bool gles32 = false;  ///< True when the context supports at least OpenGL ES 3.2.
 
@@ -64,24 +64,29 @@ namespace metagl
     // -------------------------------------------------------------------------
 
     /**
-     * @brief Returns the capabilities detected during the last @ref LoadCurrentContext call.
+     * @brief Returns capabilities for the current loaded context.
      *
-     * The returned reference remains valid until the next @ref LoadCurrentContext call
-     * replaces the internal @ref Capabilities instance.
+     * Context loss or loader failure clears every string, extension, and feature
+     * flag. A successful @ref Initialize or @ref RestoreCurrentContext replaces
+     * the contents with capabilities detected for the new current context.
      *
-     * @note The reference is invalidated on the next @ref Initialize / @ref LoadCurrentContext call.
-     *       Do not store it across context restore events.
+     * @note Do not retain this reference across context loss/restore events;
+     *       copy any diagnostic data that must outlive the current context.
      */
     [[nodiscard]] const Capabilities& GetCapabilities() noexcept;
 
     /**
-     * @brief Returns `true` if the context supports at least OpenGL ES 2.0.
+     * @brief Returns `true` for OpenGL ES 2.0+ or its WebGL equivalent.
      * @note Equivalent to `GetCapabilities().gles20`.
      */
     [[nodiscard]] bool SupportsGLES20() noexcept;
 
     /**
-     * @brief Returns `true` if the context supports at least OpenGL ES 3.0.
+     * @brief Returns `true` for OpenGL ES 3.0+ or its WebGL 2 equivalent.
+     *
+     * WebGL exposes a browser-compatible subset of GLES 3.0. Check
+     * @ref SupportsWebGL2 and @ref IsFunctionAvailable when code depends on an
+     * entry point that is not part of that subset.
      * @note Equivalent to `GetCapabilities().gles30`.
      */
     [[nodiscard]] bool SupportsGLES30() noexcept;

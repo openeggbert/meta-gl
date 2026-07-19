@@ -123,6 +123,11 @@ namespace metagl
      * @brief Marks the context as lost.
      *
      * Transitions the status from `Current` → `Lost`.
+     * Current API/version identity and capabilities are cleared, and loader
+     * availability queries return `false` until a successful reload. The
+     * context generation is preserved so stale resource handles remain
+     * distinguishable from resources created after restore.
+     *
      * Typically called by platform hooks (Emscripten context-lost callback,
      * Android `onSurfaceDestroyed`, etc.).
      *

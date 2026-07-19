@@ -139,19 +139,24 @@ namespace metagl::detail
         g_context_info = std::move(info);
     }
 
-    // Called by Functions.cpp after a non-null loader failed to provide the
-    // GLES 2.0 minimum. Do not expose capabilities from the previous context.
-    void ResetContextAfterLoadFailure() noexcept
+    static void ClearCurrentContextState(ContextStatus status) noexcept
     {
         const auto generation = g_context_info.generation;
-        const auto old_status = g_context_info.status;
 
         g_capabilities = {};
         g_context_info = {};
         g_context_info.generation = generation;
-        g_context_info.status = old_status == ContextStatus::NotCreated
+        g_context_info.status = status;
+    }
+
+    // Called while a new load attempt is hidden, or after it failed version or
+    // mandatory-entry validation. Do not expose the previous capabilities.
+    void ResetContextAfterLoadFailure() noexcept
+    {
+        const auto status = g_context_info.status == ContextStatus::NotCreated
             ? ContextStatus::NotCreated
             : ContextStatus::Lost;
+        ClearCurrentContextState(status);
     }
 }
 
@@ -182,8 +187,8 @@ namespace metagl
 
     void MarkContextLost() noexcept
     {
-        detail::g_context_info.status = ContextStatus::Lost;
         detail::InvalidateFunctionsAfterContextLoss();
+        detail::ClearCurrentContextState(ContextStatus::Lost);
     }
 
     void MarkContextRestored() noexcept

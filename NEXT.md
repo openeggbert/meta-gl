@@ -1,7 +1,8 @@
-# NEXT.md — meta-gl 0.3.0 handoff
+# NEXT.md — meta-gl follow-up audit handoff
 
-Updated on 2026-07-18 from the `develop` branch after the comprehensive
-correctness, portability, packaging, and CI audit.
+Updated on 2026-07-18 for the isolated `feature/followup-audit` worktree.
+The shared `develop` worktree remains unchanged at `d51fcd7`; the follow-up
+changes described here are not committed or merged.
 
 ---
 
@@ -28,20 +29,30 @@ identifiers only; ownership belongs in `easy-gl`.
 
 ## 2. Release status
 
-The source tree is prepared for version **0.3.0**:
+Version **0.3.0** metadata was prepared by the earlier audit, but the current
+follow-up branch is **not release-ready**:
 
 - `project(meta-gl VERSION 0.3.0)` drives the CMake package version and library
   `VERSION`/`SOVERSION` metadata.
 - `CHANGELOG.md` contains a dated `0.3.0` section.
-- All 113 tasks in `plan.md` are resolved.
-- The API verifier reports 358 wrappers, 360 loader names, and all 142 required
-  OpenGL ES 2.0 entry points.
-- The test suite covers GCC, Clang, MSVC, ASan/UBSan, static/shared builds,
-  installation, package consumption, mock contexts, and headless EGL/Mesa.
+- The original 113 plan tasks are complete.
+- Follow-up findings L1–L4 are implemented and locally verified in the feature
+  worktree.
+- `plan.md` now contains 75 remaining individual tasks (`R01`–`R75`).
+- L1 deliberately changes the clear-buffer source API used by `easy-gl`; the
+  compatibility or coordinated-migration decision in R01–R03 is unresolved.
+- ABI/SONAME policy, Release precondition behavior, and real installed-package
+  execution remain release decisions/work in R04–R15.
+- The API verifier reports 358 wrappers, 360 loader names, and exact mandatory
+  OpenGL ES 2.0/3.0/3.1/3.2 sets of 142/104/68/44 entry points.
+- The current feature worktree passes GCC Debug, GCC Release shared, Clang,
+  ASan/UBSan, installed-package build, mock tests, real headless EGL/Mesa,
+  API verification, and Doxygen.
+- The existing CI workflow contains an MSVC shared job, but the uncommitted
+  feature state has not run on hosted CI.
 
-The version is prepared but not published. Before release, require the current
-`develop` CI run to be green, then create and push the annotated `v0.3.0` tag
-and publish release notes from `CHANGELOG.md`.
+Do not tag or publish 0.3.0 until R01–R18 are complete and the owner explicitly
+approves R19.
 
 ---
 
@@ -54,8 +65,9 @@ and publish release notes from `CHANGELOG.md`.
 - WebGL/Emscripten loader and context-loss/context-restore integration.
 - ANGLE detection through version, vendor, and renderer strings.
 - 358 typed `metagl::gl*` wrappers.
-- 98 enum classes and 15 lightweight handle/location/index types.
-- Checked `std::span` and range-size conversions.
+- 99 enum classes and 15 lightweight handle/location/index types.
+- `std::span` and range-size helpers with Debug assertions; the enforceable
+  Release contract remains R07–R11.
 - Typed template dispatch for uniforms, vertex attributes, texture parameters,
   sampler parameters, and clear-buffer calls.
 - Context status, generation tracking, capabilities, extension queries, and
@@ -72,12 +84,14 @@ CTest currently defines five tests:
 
 1. `metagl-compile-tests` — concepts, enum domains, bitfields, template
    dispatch, handle isolation, and enum-name coverage.
-2. `metagl-mock-loader-test` — loading, availability, failure recovery,
-   context lifecycle/listeners, extensions, desktop GL, ANGLE, and debug flush.
+2. `metagl-mock-loader-test` — loading, version-tier validation, availability,
+   failure recovery, context lifecycle/listeners, extensions, desktop GL,
+   ANGLE, and debug flush.
 3. `metagl-api-consistency-test` — declaration, definition, loader-name, and
-   GLES 2.0 minimum-function consistency.
+   exact GLES 2.0/3.0/3.1/3.2 mandatory-function consistency.
 4. `metagl-installed-package-test` — install plus an external
-   `find_package(meta-gl CONFIG)` consumer build.
+   `find_package(meta-gl CONFIG)` consumer build. It does not yet force an
+   out-of-line library dependency or execute the consumer; see R12–R15.
 5. `metagl-egl-smoke-test` — real headless EGL/Mesa context on Linux.
 
 GitHub Actions runs:
@@ -112,79 +126,79 @@ cmake --build build/docs --target metagl-docs
 
 ## 5. Compatibility with easy-gl
 
-The audited `meta-gl` branch was compiled against the complete `easy-gl`
-source tree. The audit did not introduce a new `easy-gl` compile failure. A
-pre-existing `easy-gl` resource-test failure was reproduced on both its
-baseline and the audited dependency, so it was not caused by `meta-gl`.
+The original comprehensive audit was compiled against the complete `easy-gl`
+source tree and did not create a new failure. The newer L1 follow-up change is
+different: current `easy-gl` uses the removed broad `ClearBuffer` type and the
+old four-argument `glClearBufferfi` call shape.
 
-Version 0.3.0 does include deliberate source/API corrections:
+The feature worktree must therefore not be merged into shared `develop` until
+R01–R03 select and verify either:
+
+- compatible `meta-gl` overloads; or
+- a coordinated `easy-gl` migration in its own feature worktree.
+
+Other deliberate source/API corrections in the candidate include:
 
 - `AttribLocation` has signed storage and represents `-1` correctly;
 - invalid enum-domain values were removed;
-- stricter enum types and checked range conversions reject previously accepted
-  invalid calls.
+- clear-buffer domains are split by value type and `glClearBufferfi` supplies
+  its fixed target/draw-buffer arguments;
+- stricter enum types reject previously accepted invalid calls; range helpers
+  diagnose invalid input in Debug while R07–R11 define the Release contract.
 
 Compatibility overloads are retained where they are valid, including the
-legacy draw-index and active-attribute call forms.
+legacy draw-index, active-attribute, and raw `glCopyImageSubData` call forms.
 
 ---
 
 ## 6. Known limitations
 
+- L1 downstream compatibility is unresolved (R01–R03).
+- Pre-1.0 ABI/SONAME policy does not match the stated same-minor compatibility
+  rule yet (R04–R06).
+- Checked size, element-count, matrix-count, and transpose preconditions still
+  rely on Debug assertions (R07–R11).
+- The installed-package consumer does not prove runtime linkage, shared-library
+  discovery, or installed Windows DLL execution (R12–R15).
 - Emscripten code and presets are present, but context loss/restore has not yet
-  been exercised by an automated test in a real browser/WebGL runtime.
+  been exercised by an automated test in a real browser/WebGL runtime (R66).
 - The real-GPU CI smoke test currently covers Linux EGL/Mesa only. Native WGL,
-  GLX, ANGLE, and vendor drivers are not runtime-tested in CI.
-- `AllFunctionsLoaded()` answers whether every tracked loader slot is non-null;
-  it cannot prove that a mock or driver implementation behaves correctly.
-- Loader and context-state initialization is not a concurrent operation.
-  Complete `Initialize()` or `RestoreCurrentContext()` before render threads
-  call wrappers, as documented in `Loader.hpp`.
+  GLX, ANGLE, macOS, and vendor drivers are not runtime-tested in CI
+  (R67–R71).
+- For an initialized current context, `AllFunctionsLoaded()` answers whether
+  every tracked loader slot is non-null; it returns false after context loss
+  and cannot prove that a mock or driver implementation behaves correctly.
+- Loader, context, listener, and debug state remain global; the supported
+  single/multi-context and threading contract awaits R50–R52.
+- Listener snapshots do not yet protect a queued listener destroyed by another
+  callback, and restore-listener exception semantics remain open (R53–R56).
+- Debug `glGetError` checks consume application error state (R57–R59).
+- The mechanical API surface is still hand-maintained (R60–R65).
 - Buffered Windows debug logging must be flushed explicitly with
   `metagl::FlushDebugLog()` before DLL teardown, or built with
-  `METAGL_DEBUG_IMMEDIATE=ON`.
+  `METAGL_DEBUG_IMMEDIATE=ON`; its long-term shutdown policy is R75.
 
-None of these limitations blocks the 0.3.0 release.
+R01–R18 are the explicit 0.3.0 release-gate sequence. Later tasks may be
+deferred only by an owner decision recorded in `plan.md` and the release notes.
 
 ---
 
-## 7. Recommended next work
+## 7. Execution order
 
-### Release 0.3.0
+`plan.md` is the single task backlog; do not create additional implicit TODO
+lists in this document.
 
-After the release-preparation commit is green:
-
-```bash
-git tag -a v0.3.0 -m "Release 0.3.0"
-git push origin v0.3.0
-```
-
-Then create the GitHub release from the `0.3.0` changelog section. Do not move
-or recreate the existing `v0.2.0` tag.
-
-### Browser runtime coverage
-
-Add a small Emscripten/WebGL test page that:
-
-1. creates a WebGL 2 context;
-2. initializes `meta-gl` through `emscripten_webgl_get_proc_address`;
-3. forces context loss and restore with `WEBGL_lose_context`;
-4. verifies generation/status and listener ordering after reload.
-
-This is the highest-value remaining platform test.
-
-### Broader native runtime coverage
-
-Add one of the following only when a reliable runner is available:
-
-- Windows ANGLE or WGL smoke test;
-- Linux desktop GL/GLX smoke test;
-- macOS OpenGL compile/runtime coverage.
-
-### Release automation
-
-Optionally add a tag-triggered workflow that builds release archives, validates
-the installed CMake package, and attaches artifacts to the GitHub release.
+1. Resolve the 0.3.0 release gates R01–R18, starting with the owner decisions
+   R01, R04, and R07.
+2. Only after a green approved release commit, perform R19–R20 (tag and GitHub
+   release). Never move or recreate the existing `v0.2.0` tag.
+3. Review the exact API-domain work R21–R35 for the next compatible feature
+   release.
+4. Resolve platform, ABI, context, listener, and debug contracts in R36–R59.
+5. Treat generation and broader runtime coverage R60–R71 as staged long-term
+   work.
+6. Release automation is tracked explicitly by R72–R74; the remaining Windows
+   debug-shutdown decision/test is R75.
 
 ---
 
@@ -195,12 +209,17 @@ the installed CMake package, and attaches artifacts to the GitHub release.
 3. `detail::GlTable` remains the single function-pointer table.
 4. A failed or lost context must not expose stale loader state or capabilities.
 5. Restore must reload function pointers before restored listeners run.
-6. Enum domains must model legal GL parameter domains, not merely share a raw
+6. Initialization must validate every mandatory entry point for the detected
+   native GLES version, the WebGL-compatible subset, or the desktop 3.3+
+   common subset before publishing state.
+7. Enum domains must model legal GL parameter domains, not merely share a raw
    underlying type.
-7. Raw pointer overloads remain available where OpenGL uses `nullptr` to mean
+8. Raw pointer overloads remain available where OpenGL uses `nullptr` to mean
    allocation without initial data.
-8. No C++ modules, C++26-only features, heavy metaprogramming, or
+9. No C++ modules, C++26-only features, heavy metaprogramming, or
    `std::expected`-based framework should be introduced.
+10. Shared `develop` must not be used as a scratch area; follow-up changes and
+    downstream migrations stay in isolated feature worktrees until approved.
 
 ---
 
@@ -218,8 +237,10 @@ the installed CMake package, and attaches artifacts to the GitHub release.
 | `include/metagl/Debug.hpp` | Optional debug wrapper layer |
 | `include/metagl/Emscripten.hpp` | Browser context-loss callbacks |
 | `src/Functions.cpp` | Loader table and 358 wrapper implementations |
+| `src/RequiredFunctions.inc` | Khronos-verified GLES 3.0/3.1/3.2 mandatory entry-point sets |
 | `src/Context.cpp` | Context/capability state and restore flow |
 | `src/Debug.cpp` | Debug records, error checks, and flushing |
-| `tools/verify_api.py` | API/loader/minimum-function consistency verifier |
+| `tools/verify_api.py` | API/loader/version-required-function consistency verifier |
 | `.github/workflows/ci.yml` | Cross-platform build and test matrix |
-| `plan.md` | Completed audit and improvement task history |
+| `analysis.md` | Detailed findings and rationale |
+| `plan.md` | Completed history plus the authoritative R01–R75 backlog |

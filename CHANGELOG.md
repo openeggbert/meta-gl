@@ -13,8 +13,16 @@ All notable changes to meta-gl will be documented here.
 - Invalid `PrimitiveType::Quads` and `PixelFormat::Green/Blue` constants were
   removed. They were not legal values for the wrapped OpenGL ES function
   domains.
+- The broad `ClearBuffer` enum was replaced by the exact
+  `FloatClearBuffer`, `SignedIntegerClearBuffer`, and
+  `UnsignedIntegerClearBuffer` domains. `glClearBufferfi` now accepts only
+  `depth` and `stencil`; it supplies the required `GL_DEPTH_STENCIL` and zero
+  draw-buffer arguments internally.
 
 ### Added
+- `ImageCopyTextureTarget` and typed `glCopyImageSubData` overloads for all
+  texture/renderbuffer source and destination combinations. The original
+  raw-name overload remains available for downstream source compatibility.
 - Atomic `RestoreCurrentContext()` lifecycle helper and automatic Emscripten
   entry-point reload before restored callbacks.
 - Explicit bitfield traits, safe `IndexType`, `ActiveAttribIndex`, and
@@ -27,6 +35,11 @@ All notable changes to meta-gl will be documented here.
   Doxygen build target.
 
 ### Changed
+- Initialization now bootstraps API detection and validates the exact
+  mandatory entry-point set for the reported GLES 2.0/3.0/3.1/3.2 version;
+  desktop contexts must report OpenGL 3.3 or newer and provide the common
+  subset plus `glGetStringi`, while WebGL retains its browser-compatible
+  GLES subset.
 - `AttribLocation` stores the signed `GLint` returned by
   `glGetAttribLocation`; explicit signed and unsigned constructors preserve
   existing call sites.
@@ -37,6 +50,18 @@ All notable changes to meta-gl will be documented here.
   support same-type equality comparisons.
 
 ### Fixed
+- Loader candidates and capabilities are published only after version parsing
+  and mandatory-entry validation succeed; invalid, unsupported, and partial
+  contexts no longer pass initialization.
+- Context loss now clears current API identity and capabilities, hides all
+  function availability, makes `AllFunctionsLoaded()` false, and adds an
+  initialized-context precondition to every Debug wrapper assertion.
+- `glCopyImageSubData` can now represent renderbuffer endpoints without casts,
+  while typed texture endpoints exclude cube-map faces and texture buffers
+  that are not legal targets for this function.
+- Clear-buffer wrappers no longer expose impossible or cross-function buffer
+  targets, and `glClearBufferfi` can now express its only legal OpenGL call
+  without an unsafe enum cast.
 - Failed reloads no longer expose stale context status or capabilities.
 - Context listener registration ignores duplicates and event dispatch remains
   stable when a listener removes itself.

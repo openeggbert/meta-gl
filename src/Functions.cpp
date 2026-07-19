@@ -397,14 +397,6 @@ namespace metagl::detail
     void UpdateContextAfterLoad();
     void ResetContextAfterLoadFailure() noexcept;
 
-    void InvalidateFunctionsAfterContextLoss() noexcept
-    {
-        g_gl.initialized = false;
-#ifdef METAGLDEBUG
-        metagl::debug::set_get_error_fn(nullptr);
-#endif
-    }
-
     struct TransparentStringHash
     {
         using is_transparent = void;
@@ -421,6 +413,15 @@ namespace metagl::detail
     std::unordered_map<std::string, bool,
         TransparentStringHash, std::equal_to<>> g_function_availability;
 
+    void InvalidateFunctionsAfterContextLoss() noexcept
+    {
+        g_gl.initialized = false;
+        g_function_availability.clear();
+#ifdef METAGLDEBUG
+        metagl::debug::set_get_error_fn(nullptr);
+#endif
+    }
+
     template <typename T>
     static T load(GlGetProcAddressFn loader, const char* name)
     {
@@ -431,20 +432,115 @@ namespace metagl::detail
 
     // ---------------------------------------------------------------------------
     // Version-aware validation helpers
-    //
-    // Only the minimum functions required for each API level are checked.
-    // Missing higher-level functions do NOT prevent successful initialization.
     // ---------------------------------------------------------------------------
 
-    static bool is_desktop_context(const GlTable& gl)
+    enum class RequiredApiLevel
     {
-        if (!gl.GetString) return false;
+        Invalid,
+        Gles20,
+        Gles30,
+        Gles31,
+        Gles32,
+        Webgl1,
+        Webgl2,
+        Desktop33
+    };
+
+    struct DetectedVersion
+    {
+        RequiredApiLevel level = RequiredApiLevel::Invalid;
+        int major = 0;
+        int minor = 0;
+    };
+
+    static bool parse_major_minor(
+        std::string_view version, std::size_t offset,
+        int& major, int& minor) noexcept
+    {
+        while (offset < version.size() && version[offset] == ' ')
+            ++offset;
+
+        const auto major_begin = offset;
+        major = 0;
+        while (offset < version.size()
+            && version[offset] >= '0' && version[offset] <= '9')
+        {
+            const int digit = version[offset] - '0';
+            if (major > (99 - digit) / 10)
+                return false;
+            major = major * 10 + digit;
+            ++offset;
+        }
+        if (offset == major_begin
+            || offset >= version.size() || version[offset] != '.')
+            return false;
+
+        ++offset;
+        const auto minor_begin = offset;
+        minor = 0;
+        while (offset < version.size()
+            && version[offset] >= '0' && version[offset] <= '9')
+        {
+            const int digit = version[offset] - '0';
+            if (minor > (99 - digit) / 10)
+                return false;
+            minor = minor * 10 + digit;
+            ++offset;
+        }
+        return offset != minor_begin;
+    }
+
+    static DetectedVersion detect_version(const GlTable& gl) noexcept
+    {
+        if (!gl.GetString) return {};
         const auto* raw = gl.GetString(GL_VERSION);
-        if (!raw) return false;
+        if (!raw) return {};
+
         const std::string_view version(
             reinterpret_cast<const char*>(raw));
-        return version.find("OpenGL ES") == std::string_view::npos
-            && version.find("WebGL") == std::string_view::npos;
+        if (version.empty()) return {};
+
+        DetectedVersion detected{};
+        const auto webgl = version.find("WebGL");
+        if (webgl != std::string_view::npos)
+        {
+            if (!parse_major_minor(
+                    version, webgl + std::string_view("WebGL").size(),
+                    detected.major, detected.minor))
+                return {};
+
+            if (detected.major == 1)
+                detected.level = RequiredApiLevel::Webgl1;
+            else if (detected.major == 2)
+                detected.level = RequiredApiLevel::Webgl2;
+            return detected;
+        }
+
+        const auto gles = version.find("OpenGL ES");
+        if (gles != std::string_view::npos)
+        {
+            if (!parse_major_minor(
+                    version, gles + std::string_view("OpenGL ES").size(),
+                    detected.major, detected.minor))
+                return {};
+
+            if (detected.major == 2 && detected.minor == 0)
+                detected.level = RequiredApiLevel::Gles20;
+            else if (detected.major == 3 && detected.minor == 0)
+                detected.level = RequiredApiLevel::Gles30;
+            else if (detected.major == 3 && detected.minor == 1)
+                detected.level = RequiredApiLevel::Gles31;
+            else if (detected.major == 3 && detected.minor == 2)
+                detected.level = RequiredApiLevel::Gles32;
+            return detected;
+        }
+
+        if (!parse_major_minor(version, 0, detected.major, detected.minor))
+            return {};
+        if (detected.major > 3
+            || (detected.major == 3 && detected.minor >= 3))
+            detected.level = RequiredApiLevel::Desktop33;
+        return detected;
     }
 
     /// Core common subset required for GLES 2.0 or desktop OpenGL 3.3+.
@@ -608,6 +704,50 @@ namespace metagl::detail
             gl.IsRenderbuffer != nullptr &&
             gl.RenderbufferStorage != nullptr &&
             gl.GetRenderbufferParameteriv != nullptr;
+    }
+
+#include "RequiredFunctions.inc"
+
+    template <std::size_t N>
+    static bool required_names_loaded(
+        const std::string_view (&names)[N]) noexcept
+    {
+        for (const auto name : names)
+        {
+            const auto it = g_function_availability.find(name);
+            if (it == g_function_availability.end() || !it->second)
+                return false;
+        }
+        return true;
+    }
+
+    static bool required_version_loaded(
+        const GlTable& gl, RequiredApiLevel level) noexcept
+    {
+        if (level == RequiredApiLevel::Invalid)
+            return false;
+
+        const bool desktop = level == RequiredApiLevel::Desktop33;
+        if (!minimum_loaded(gl, desktop))
+            return false;
+
+        if (desktop)
+            return gl.GetStringi != nullptr;
+        if (level == RequiredApiLevel::Webgl1)
+            return true;
+        if (level == RequiredApiLevel::Webgl2)
+            return gl.GetStringi != nullptr;
+
+        if (level >= RequiredApiLevel::Gles30
+            && !required_names_loaded(gles30_required_names))
+            return false;
+        if (level >= RequiredApiLevel::Gles31
+            && !required_names_loaded(gles31_required_names))
+            return false;
+        if (level >= RequiredApiLevel::Gles32
+            && !required_names_loaded(gles32_required_names))
+            return false;
+        return true;
     }
 
     /// Legacy helper kept for diagnostics — checks all 358 GLES 3.2 functions.
@@ -982,9 +1122,39 @@ namespace metagl
     {
         if (loader == nullptr) return false;
 
+        // Hide the previous context before asking an external loader for a new
+        // candidate. The candidate table below is published only after its
+        // declared API/version has passed the complete mandatory-entry check.
+        detail::g_gl.initialized = false;
         detail::g_function_availability.clear();
+        detail::ResetContextAfterLoadFailure();
+#ifdef METAGLDEBUG
+        metagl::debug::set_get_error_fn(nullptr);
+#endif
 
-        auto& gl = detail::g_gl;
+        detail::GlTable candidate{};
+        auto& gl = candidate;
+
+        // Bootstrap only what is needed to identify and validate the context.
+        gl.GetString = detail::load<PFNGLGETSTRINGPROC>(
+            loader, "glGetString");
+        gl.GetIntegerv = detail::load<PFNGLGETINTEGERVPROC>(
+            loader, "glGetIntegerv");
+        gl.GetError = detail::load<PFNGLGETERRORPROC>(
+            loader, "glGetError");
+
+        if (!gl.GetString || !gl.GetIntegerv || !gl.GetError)
+        {
+            detail::g_function_availability.clear();
+            return false;
+        }
+
+        const auto detected = detail::detect_version(gl);
+        if (detected.level == detail::RequiredApiLevel::Invalid)
+        {
+            detail::g_function_availability.clear();
+            return false;
+        }
 
         gl.Enable = detail::load<PFNGLENABLEPROC>(loader, "glEnable");
         gl.Disable = detail::load<PFNGLDISABLEPROC>(loader, "glDisable");
@@ -1030,15 +1200,12 @@ namespace metagl
         gl.PixelStorei = detail::load<PFNGLPIXELSTOREIPROC>(loader, "glPixelStorei");
         gl.Finish = detail::load<PFNGLFINISHPROC>(loader, "glFinish");
         gl.Flush = detail::load<PFNGLFLUSHPROC>(loader, "glFlush");
-        gl.GetError = detail::load<PFNGLGETERRORPROC>(loader, "glGetError");
         gl.GetBooleanv = detail::load<PFNGLGETBOOLEANVPROC>(loader, "glGetBooleanv");
-        gl.GetIntegerv = detail::load<PFNGLGETINTEGERVPROC>(loader, "glGetIntegerv");
         gl.GetFloatv = detail::load<PFNGLGETFLOATVPROC>(loader, "glGetFloatv");
         gl.GetInteger64v = detail::load<PFNGLGETINTEGER64VPROC>(loader, "glGetInteger64v");
         gl.GetIntegeri_v = detail::load<PFNGLGETINTEGERI_VPROC>(loader, "glGetIntegeri_v");
         gl.GetInteger64i_v = detail::load<PFNGLGETINTEGER64I_VPROC>(loader, "glGetInteger64i_v");
         gl.GetBooleani_v = detail::load<PFNGLGETBOOLEANI_VPROC>(loader, "glGetBooleani_v");
-        gl.GetString = detail::load<PFNGLGETSTRINGPROC>(loader, "glGetString");
         gl.GetStringi = detail::load<PFNGLGETSTRINGIPROC>(loader, "glGetStringi");
         gl.GetPointerv = detail::load<PFNGLGETPOINTERVPROC>(loader, "glGetPointerv");
         gl.GenBuffers = detail::load<PFNGLGENBUFFERSPROC>(loader, "glGenBuffers");
@@ -1353,31 +1520,35 @@ namespace metagl
         gl.GetObjectPtrLabel = detail::load<PFNGLGETOBJECTPTRLABELPROC>(loader, "glGetObjectPtrLabel");
         gl.GetGraphicsResetStatus = detail::load<PFNGLGETGRAPHICSRESETSTATUSPROC>(loader, "glGetGraphicsResetStatus");
 
-        // Initialization succeeds when the GLES 2.0 minimum set is available.
-        // Higher-level functions (GLES 3.0/3.1/3.2) may be absent on
-        // WebGL 1, WebGL 2, or older Android devices — that is not an error.
-        gl.initialized = detail::minimum_loaded(
-            gl, detail::is_desktop_context(gl));
-
-        if (gl.initialized)
+        gl.initialized = detail::required_version_loaded(gl, detected.level);
+        if (!gl.initialized)
         {
-            // Detect capabilities and update context state.
+            detail::g_function_availability.clear();
+            return false;
+        }
+
+        detail::g_gl = gl;
+        try
+        {
+            // Detect capabilities and publish context state.
             detail::UpdateContextAfterLoad();
         }
-        else
+        catch (...)
         {
+            detail::g_gl.initialized = false;
+            detail::g_function_availability.clear();
             detail::ResetContextAfterLoadFailure();
+            throw;
         }
 
 #ifdef METAGLDEBUG
         // Register raw GetError pointer so the debug logger can check for GL
         // errors after each call without going through the wrapper.
-        metagl::debug::set_get_error_fn(gl.initialized && gl.GetError
-            ? reinterpret_cast<unsigned int(*)()>(gl.GetError)
-            : nullptr);
+        metagl::debug::set_get_error_fn(
+            reinterpret_cast<unsigned int(*)()>(detail::g_gl.GetError));
 #endif
 
-        return gl.initialized;
+        return true;
     }
 
     bool IsInitialized() noexcept
@@ -1387,6 +1558,7 @@ namespace metagl
 
     bool IsFunctionAvailable(std::string_view name) noexcept
     {
+        if (!detail::g_gl.initialized) return false;
         const auto it = detail::g_function_availability.find(name);
         if (it == detail::g_function_availability.end()) return false;
         return it->second;
@@ -1394,13 +1566,13 @@ namespace metagl
 
     bool AllFunctionsLoaded() noexcept
     {
-        return detail::all_loaded(detail::g_gl);
+        return detail::g_gl.initialized && detail::all_loaded(detail::g_gl);
     }
 
     // #1
     void glEnable(Capability cap)
     {
-        assert(detail::g_gl.Enable != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Enable != nullptr);
         detail::g_gl.Enable(detail::to_gl_enum(cap));
         METAGL_DEBUG_LOG_VOID("glEnable", cap);
     }
@@ -1408,7 +1580,7 @@ namespace metagl
     // #2
     void glDisable(Capability cap)
     {
-        assert(detail::g_gl.Disable != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Disable != nullptr);
         detail::g_gl.Disable(detail::to_gl_enum(cap));
         METAGL_DEBUG_LOG_VOID("glDisable", cap);
     }
@@ -1416,7 +1588,7 @@ namespace metagl
     // #3
     void glEnablei(Capability target, GLuint index)
     {
-        assert(detail::g_gl.Enablei != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Enablei != nullptr);
         detail::g_gl.Enablei(detail::to_gl_enum(target), index);
         METAGL_DEBUG_LOG_VOID("glEnablei", target, index);
     }
@@ -1424,7 +1596,7 @@ namespace metagl
     // #4
     void glDisablei(Capability target, GLuint index)
     {
-        assert(detail::g_gl.Disablei != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Disablei != nullptr);
         detail::g_gl.Disablei(detail::to_gl_enum(target), index);
         METAGL_DEBUG_LOG_VOID("glDisablei", target, index);
     }
@@ -1432,7 +1604,7 @@ namespace metagl
     // #5
     bool glIsEnabled(Capability cap)
     {
-        assert(detail::g_gl.IsEnabled != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsEnabled != nullptr);
         const auto _r = detail::g_gl.IsEnabled(detail::to_gl_enum(cap));
         METAGL_DEBUG_LOG("glIsEnabled", _r, cap);
         return _r;
@@ -1441,7 +1613,7 @@ namespace metagl
     // #6
     bool glIsEnabledi(Capability target, GLuint index)
     {
-        assert(detail::g_gl.IsEnabledi != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsEnabledi != nullptr);
         const auto _r = detail::g_gl.IsEnabledi(detail::to_gl_enum(target), index);
         METAGL_DEBUG_LOG("glIsEnabledi", _r, target, index);
         return _r;
@@ -1450,7 +1622,7 @@ namespace metagl
     // #7
     void glBlendFunc(BlendFactor sfactor, BlendFactor dfactor)
     {
-        assert(detail::g_gl.BlendFunc != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BlendFunc != nullptr);
         detail::g_gl.BlendFunc(detail::to_gl_enum(sfactor), detail::to_gl_enum(dfactor));
         METAGL_DEBUG_LOG_VOID("glBlendFunc", sfactor, dfactor);
     }
@@ -1458,7 +1630,7 @@ namespace metagl
     // #8
     void glBlendFuncSeparate(BlendFactor sfactorRGB, BlendFactor dfactorRGB, BlendFactor sfactorAlpha, BlendFactor dfactorAlpha)
     {
-        assert(detail::g_gl.BlendFuncSeparate != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BlendFuncSeparate != nullptr);
         detail::g_gl.BlendFuncSeparate(detail::to_gl_enum(sfactorRGB), detail::to_gl_enum(dfactorRGB), detail::to_gl_enum(sfactorAlpha), detail::to_gl_enum(dfactorAlpha));
         METAGL_DEBUG_LOG_VOID("glBlendFuncSeparate", sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha);
     }
@@ -1466,7 +1638,7 @@ namespace metagl
     // #9
     void glBlendFunci(GLuint buf, BlendFactor src, BlendFactor dst)
     {
-        assert(detail::g_gl.BlendFunci != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BlendFunci != nullptr);
         detail::g_gl.BlendFunci(buf, detail::to_gl_enum(src), detail::to_gl_enum(dst));
         METAGL_DEBUG_LOG_VOID("glBlendFunci", buf, src, dst);
     }
@@ -1474,7 +1646,7 @@ namespace metagl
     // #10
     void glBlendFuncSeparatei(GLuint buf, BlendFactor srcRGB, BlendFactor dstRGB, BlendFactor srcAlpha, BlendFactor dstAlpha)
     {
-        assert(detail::g_gl.BlendFuncSeparatei != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BlendFuncSeparatei != nullptr);
         detail::g_gl.BlendFuncSeparatei(buf, detail::to_gl_enum(srcRGB), detail::to_gl_enum(dstRGB), detail::to_gl_enum(srcAlpha), detail::to_gl_enum(dstAlpha));
         METAGL_DEBUG_LOG_VOID("glBlendFuncSeparatei", buf, srcRGB, dstRGB, srcAlpha, dstAlpha);
     }
@@ -1482,7 +1654,7 @@ namespace metagl
     // #11
     void glBlendEquation(BlendEquation mode)
     {
-        assert(detail::g_gl.BlendEquation != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BlendEquation != nullptr);
         detail::g_gl.BlendEquation(detail::to_gl_enum(mode));
         METAGL_DEBUG_LOG_VOID("glBlendEquation", mode);
     }
@@ -1490,7 +1662,7 @@ namespace metagl
     // #12
     void glBlendEquationSeparate(BlendEquation modeRGB, BlendEquation modeAlpha)
     {
-        assert(detail::g_gl.BlendEquationSeparate != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BlendEquationSeparate != nullptr);
         detail::g_gl.BlendEquationSeparate(detail::to_gl_enum(modeRGB), detail::to_gl_enum(modeAlpha));
         METAGL_DEBUG_LOG_VOID("glBlendEquationSeparate", modeRGB, modeAlpha);
     }
@@ -1498,7 +1670,7 @@ namespace metagl
     // #13
     void glBlendEquationi(GLuint buf, BlendEquation mode)
     {
-        assert(detail::g_gl.BlendEquationi != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BlendEquationi != nullptr);
         detail::g_gl.BlendEquationi(buf, detail::to_gl_enum(mode));
         METAGL_DEBUG_LOG_VOID("glBlendEquationi", buf, mode);
     }
@@ -1506,7 +1678,7 @@ namespace metagl
     // #14
     void glBlendEquationSeparatei(GLuint buf, BlendEquation modeRGB, BlendEquation modeAlpha)
     {
-        assert(detail::g_gl.BlendEquationSeparatei != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BlendEquationSeparatei != nullptr);
         detail::g_gl.BlendEquationSeparatei(buf, detail::to_gl_enum(modeRGB), detail::to_gl_enum(modeAlpha));
         METAGL_DEBUG_LOG_VOID("glBlendEquationSeparatei", buf, modeRGB, modeAlpha);
     }
@@ -1514,7 +1686,7 @@ namespace metagl
     // #15
     void glBlendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
     {
-        assert(detail::g_gl.BlendColor != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BlendColor != nullptr);
         detail::g_gl.BlendColor(red, green, blue, alpha);
         METAGL_DEBUG_LOG_VOID("glBlendColor", red, green, blue, alpha);
     }
@@ -1522,7 +1694,7 @@ namespace metagl
     // #16
     void glBlendBarrier(void)
     {
-        assert(detail::g_gl.BlendBarrier != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BlendBarrier != nullptr);
         detail::g_gl.BlendBarrier();
         METAGL_DEBUG_LOG_VOID("glBlendBarrier");
     }
@@ -1530,7 +1702,7 @@ namespace metagl
     // #17
     void glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
     {
-        assert(detail::g_gl.ColorMask != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ColorMask != nullptr);
         detail::g_gl.ColorMask(red, green, blue, alpha);
         METAGL_DEBUG_LOG_VOID("glColorMask", red, green, blue, alpha);
     }
@@ -1538,7 +1710,7 @@ namespace metagl
     // #18
     void glColorMaski(GLuint index, GLboolean r, GLboolean g, GLboolean b, GLboolean a)
     {
-        assert(detail::g_gl.ColorMaski != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ColorMaski != nullptr);
         detail::g_gl.ColorMaski(index, r, g, b, a);
         METAGL_DEBUG_LOG_VOID("glColorMaski", index, r, g, b, a);
     }
@@ -1546,7 +1718,7 @@ namespace metagl
     // #19
     void glDepthFunc(CompareFunc func)
     {
-        assert(detail::g_gl.DepthFunc != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DepthFunc != nullptr);
         detail::g_gl.DepthFunc(detail::to_gl_enum(func));
         METAGL_DEBUG_LOG_VOID("glDepthFunc", func);
     }
@@ -1554,7 +1726,7 @@ namespace metagl
     // #20
     void glDepthMask(GLboolean flag)
     {
-        assert(detail::g_gl.DepthMask != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DepthMask != nullptr);
         detail::g_gl.DepthMask(flag);
         METAGL_DEBUG_LOG_VOID("glDepthMask", flag);
     }
@@ -1562,8 +1734,9 @@ namespace metagl
     // #21
     void glDepthRangef(GLfloat n, GLfloat f)
     {
-        assert(detail::g_gl.DepthRangef != nullptr
-            || detail::g_gl.DesktopDepthRange != nullptr);
+        assert(detail::g_gl.initialized
+            && (detail::g_gl.DepthRangef != nullptr
+                || detail::g_gl.DesktopDepthRange != nullptr));
         if (detail::g_gl.DepthRangef)
             detail::g_gl.DepthRangef(n, f);
         else
@@ -1575,7 +1748,7 @@ namespace metagl
     // #22
     void glStencilFunc(CompareFunc func, GLint ref, GLuint mask)
     {
-        assert(detail::g_gl.StencilFunc != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.StencilFunc != nullptr);
         detail::g_gl.StencilFunc(detail::to_gl_enum(func), ref, mask);
         METAGL_DEBUG_LOG_VOID("glStencilFunc", func, ref, mask);
     }
@@ -1583,7 +1756,7 @@ namespace metagl
     // #23
     void glStencilFuncSeparate(CullFace face, CompareFunc func, GLint ref, GLuint mask)
     {
-        assert(detail::g_gl.StencilFuncSeparate != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.StencilFuncSeparate != nullptr);
         detail::g_gl.StencilFuncSeparate(detail::to_gl_enum(face), detail::to_gl_enum(func), ref, mask);
         METAGL_DEBUG_LOG_VOID("glStencilFuncSeparate", face, func, ref, mask);
     }
@@ -1591,7 +1764,7 @@ namespace metagl
     // #24
     void glStencilOp(StencilOp fail, StencilOp zfail, StencilOp zpass)
     {
-        assert(detail::g_gl.StencilOp != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.StencilOp != nullptr);
         detail::g_gl.StencilOp(detail::to_gl_enum(fail), detail::to_gl_enum(zfail), detail::to_gl_enum(zpass));
         METAGL_DEBUG_LOG_VOID("glStencilOp", fail, zfail, zpass);
     }
@@ -1599,7 +1772,7 @@ namespace metagl
     // #25
     void glStencilOpSeparate(CullFace face, StencilOp sfail, StencilOp dpfail, StencilOp dppass)
     {
-        assert(detail::g_gl.StencilOpSeparate != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.StencilOpSeparate != nullptr);
         detail::g_gl.StencilOpSeparate(detail::to_gl_enum(face), detail::to_gl_enum(sfail), detail::to_gl_enum(dpfail), detail::to_gl_enum(dppass));
         METAGL_DEBUG_LOG_VOID("glStencilOpSeparate", face, sfail, dpfail, dppass);
     }
@@ -1607,7 +1780,7 @@ namespace metagl
     // #26
     void glStencilMask(GLuint mask)
     {
-        assert(detail::g_gl.StencilMask != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.StencilMask != nullptr);
         detail::g_gl.StencilMask(mask);
         METAGL_DEBUG_LOG_VOID("glStencilMask", mask);
     }
@@ -1615,7 +1788,7 @@ namespace metagl
     // #27
     void glStencilMaskSeparate(CullFace face, GLuint mask)
     {
-        assert(detail::g_gl.StencilMaskSeparate != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.StencilMaskSeparate != nullptr);
         detail::g_gl.StencilMaskSeparate(detail::to_gl_enum(face), mask);
         METAGL_DEBUG_LOG_VOID("glStencilMaskSeparate", face, mask);
     }
@@ -1623,7 +1796,7 @@ namespace metagl
     // #28
     void glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
     {
-        assert(detail::g_gl.Scissor != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Scissor != nullptr);
         detail::g_gl.Scissor(x, y, width, height);
         METAGL_DEBUG_LOG_VOID("glScissor", x, y, width, height);
     }
@@ -1631,7 +1804,7 @@ namespace metagl
     // #29
     void glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
     {
-        assert(detail::g_gl.Viewport != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Viewport != nullptr);
         detail::g_gl.Viewport(x, y, width, height);
         METAGL_DEBUG_LOG_VOID("glViewport", x, y, width, height);
     }
@@ -1639,7 +1812,7 @@ namespace metagl
     // #30
     void glCullFace(CullFace mode)
     {
-        assert(detail::g_gl.CullFace != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CullFace != nullptr);
         detail::g_gl.CullFace(detail::to_gl_enum(mode));
         METAGL_DEBUG_LOG_VOID("glCullFace", mode);
     }
@@ -1647,7 +1820,7 @@ namespace metagl
     // #31
     void glFrontFace(FrontFace mode)
     {
-        assert(detail::g_gl.FrontFace != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.FrontFace != nullptr);
         detail::g_gl.FrontFace(detail::to_gl_enum(mode));
         METAGL_DEBUG_LOG_VOID("glFrontFace", mode);
     }
@@ -1655,7 +1828,7 @@ namespace metagl
     // #32
     void glLineWidth(GLfloat width)
     {
-        assert(detail::g_gl.LineWidth != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.LineWidth != nullptr);
         detail::g_gl.LineWidth(width);
         METAGL_DEBUG_LOG_VOID("glLineWidth", width);
     }
@@ -1663,7 +1836,7 @@ namespace metagl
     // #33
     void glPolygonOffset(GLfloat factor, GLfloat units)
     {
-        assert(detail::g_gl.PolygonOffset != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.PolygonOffset != nullptr);
         detail::g_gl.PolygonOffset(factor, units);
         METAGL_DEBUG_LOG_VOID("glPolygonOffset", factor, units);
     }
@@ -1671,7 +1844,7 @@ namespace metagl
     // #34
     void glSampleCoverage(GLfloat value, GLboolean invert)
     {
-        assert(detail::g_gl.SampleCoverage != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.SampleCoverage != nullptr);
         detail::g_gl.SampleCoverage(value, invert);
         METAGL_DEBUG_LOG_VOID("glSampleCoverage", value, invert);
     }
@@ -1679,7 +1852,7 @@ namespace metagl
     // #35
     void glSampleMaski(GLuint maskNumber, SampleMaskValue mask)
     {
-        assert(detail::g_gl.SampleMaski != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.SampleMaski != nullptr);
         detail::g_gl.SampleMaski(maskNumber, static_cast<GLbitfield>(mask));
         METAGL_DEBUG_LOG_VOID("glSampleMaski", maskNumber, mask);
     }
@@ -1687,7 +1860,7 @@ namespace metagl
     // #36
     void glMinSampleShading(GLfloat value)
     {
-        assert(detail::g_gl.MinSampleShading != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.MinSampleShading != nullptr);
         detail::g_gl.MinSampleShading(value);
         METAGL_DEBUG_LOG_VOID("glMinSampleShading", value);
     }
@@ -1695,7 +1868,7 @@ namespace metagl
     // #37
     void glHint(HintTarget target, HintMode mode)
     {
-        assert(detail::g_gl.Hint != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Hint != nullptr);
         detail::g_gl.Hint(detail::to_gl_enum(target), detail::to_gl_enum(mode));
         METAGL_DEBUG_LOG_VOID("glHint", target, mode);
     }
@@ -1703,7 +1876,7 @@ namespace metagl
     // #38
     void glPixelStorei(PixelStoreParam pname, GLint param)
     {
-        assert(detail::g_gl.PixelStorei != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.PixelStorei != nullptr);
         detail::g_gl.PixelStorei(detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glPixelStorei", pname, param);
     }
@@ -1711,7 +1884,7 @@ namespace metagl
     // #39
     void glFinish(void)
     {
-        assert(detail::g_gl.Finish != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Finish != nullptr);
         detail::g_gl.Finish();
         METAGL_DEBUG_LOG_VOID("glFinish");
     }
@@ -1719,7 +1892,7 @@ namespace metagl
     // #40
     void glFlush(void)
     {
-        assert(detail::g_gl.Flush != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Flush != nullptr);
         detail::g_gl.Flush();
         METAGL_DEBUG_LOG_VOID("glFlush");
     }
@@ -1727,14 +1900,14 @@ namespace metagl
     // #41
     ErrorCode glGetError(void)
     {
-        assert(detail::g_gl.GetError != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetError != nullptr);
         return static_cast<ErrorCode>(detail::g_gl.GetError());
     }
 
     // #42
     void glGetBooleanv(GetParameter pname, GLboolean * data)
     {
-        assert(detail::g_gl.GetBooleanv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetBooleanv != nullptr);
         detail::g_gl.GetBooleanv(detail::to_gl_enum(pname), data);
         METAGL_DEBUG_LOG_VOID("glGetBooleanv", pname, data);
     }
@@ -1742,7 +1915,7 @@ namespace metagl
     // #43
     void glGetIntegerv(GetParameter pname, GLint * data)
     {
-        assert(detail::g_gl.GetIntegerv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetIntegerv != nullptr);
         detail::g_gl.GetIntegerv(detail::to_gl_enum(pname), data);
         METAGL_DEBUG_LOG_VOID("glGetIntegerv", pname, data);
     }
@@ -1750,7 +1923,7 @@ namespace metagl
     // #44
     void glGetFloatv(GetParameter pname, GLfloat * data)
     {
-        assert(detail::g_gl.GetFloatv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetFloatv != nullptr);
         detail::g_gl.GetFloatv(detail::to_gl_enum(pname), data);
         METAGL_DEBUG_LOG_VOID("glGetFloatv", pname, data);
     }
@@ -1758,7 +1931,7 @@ namespace metagl
     // #45
     void glGetInteger64v(GetParameter pname, GLint64 * data)
     {
-        assert(detail::g_gl.GetInteger64v != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetInteger64v != nullptr);
         detail::g_gl.GetInteger64v(detail::to_gl_enum(pname), data);
         METAGL_DEBUG_LOG_VOID("glGetInteger64v", pname, data);
     }
@@ -1766,7 +1939,7 @@ namespace metagl
     // #46
     void glGetIntegeri_v(GetParameter target, GLuint index, GLint * data)
     {
-        assert(detail::g_gl.GetIntegeri_v != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetIntegeri_v != nullptr);
         detail::g_gl.GetIntegeri_v(detail::to_gl_enum(target), index, data);
         METAGL_DEBUG_LOG_VOID("glGetIntegeri_v", target, index, data);
     }
@@ -1774,7 +1947,7 @@ namespace metagl
     // #47
     void glGetInteger64i_v(GetParameter target, GLuint index, GLint64 * data)
     {
-        assert(detail::g_gl.GetInteger64i_v != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetInteger64i_v != nullptr);
         detail::g_gl.GetInteger64i_v(detail::to_gl_enum(target), index, data);
         METAGL_DEBUG_LOG_VOID("glGetInteger64i_v", target, index, data);
     }
@@ -1782,7 +1955,7 @@ namespace metagl
     // #48
     void glGetBooleani_v(GetParameter target, GLuint index, GLboolean * data)
     {
-        assert(detail::g_gl.GetBooleani_v != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetBooleani_v != nullptr);
         detail::g_gl.GetBooleani_v(detail::to_gl_enum(target), index, data);
         METAGL_DEBUG_LOG_VOID("glGetBooleani_v", target, index, data);
     }
@@ -1790,7 +1963,7 @@ namespace metagl
     // #49
     const GLubyte* glGetString(StringName name)
     {
-        assert(detail::g_gl.GetString != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetString != nullptr);
         const auto _r = detail::g_gl.GetString(detail::to_gl_enum(name));
         METAGL_DEBUG_LOG("glGetString", _r, name);
         return _r;
@@ -1799,7 +1972,7 @@ namespace metagl
     // #50
     const GLubyte* glGetStringi(StringName name, GLuint index)
     {
-        assert(detail::g_gl.GetStringi != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetStringi != nullptr);
         const auto _r = detail::g_gl.GetStringi(detail::to_gl_enum(name), index);
         METAGL_DEBUG_LOG("glGetStringi", _r, name, index);
         return _r;
@@ -1808,7 +1981,7 @@ namespace metagl
     // #51
     void glGetPointerv(GetPointerParameter pname, void ** params)
     {
-        assert(detail::g_gl.GetPointerv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetPointerv != nullptr);
         detail::g_gl.GetPointerv(detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetPointerv", pname, params);
     }
@@ -1817,7 +1990,7 @@ namespace metagl
     void glGenBuffers(GLsizei n, BufferId * buffers)
     {
         static_assert(sizeof(BufferId) == sizeof(GLuint), "BufferId must be layout-compatible with GLuint");
-        assert(detail::g_gl.GenBuffers != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GenBuffers != nullptr);
         detail::g_gl.GenBuffers(n, reinterpret_cast<GLuint*>(buffers));
         METAGL_DEBUG_LOG_VOID("glGenBuffers", n, buffers);
     }
@@ -1826,7 +1999,7 @@ namespace metagl
     void glDeleteBuffers(GLsizei n, const BufferId * buffers)
     {
         static_assert(sizeof(BufferId) == sizeof(GLuint), "BufferId must be layout-compatible with GLuint");
-        assert(detail::g_gl.DeleteBuffers != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DeleteBuffers != nullptr);
         detail::g_gl.DeleteBuffers(n, reinterpret_cast<const GLuint*>(buffers));
         METAGL_DEBUG_LOG_VOID("glDeleteBuffers", n, buffers);
     }
@@ -1834,7 +2007,7 @@ namespace metagl
     // #54
     void glBindBuffer(BufferTarget target, BufferId buffer)
     {
-        assert(detail::g_gl.BindBuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BindBuffer != nullptr);
         detail::g_gl.BindBuffer(detail::to_gl_enum(target), buffer.value);
         METAGL_DEBUG_LOG_VOID("glBindBuffer", target, buffer.value);
     }
@@ -1842,7 +2015,7 @@ namespace metagl
     // #55
     void glBindBufferBase(BufferTarget target, GLuint index, BufferId buffer)
     {
-        assert(detail::g_gl.BindBufferBase != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BindBufferBase != nullptr);
         detail::g_gl.BindBufferBase(detail::to_gl_enum(target), index, buffer.value);
         METAGL_DEBUG_LOG_VOID("glBindBufferBase", target, index, buffer.value);
     }
@@ -1850,7 +2023,7 @@ namespace metagl
     // #56
     void glBindBufferRange(BufferTarget target, GLuint index, BufferId buffer, GLintptr offset, GLsizeiptr size)
     {
-        assert(detail::g_gl.BindBufferRange != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BindBufferRange != nullptr);
         detail::g_gl.BindBufferRange(detail::to_gl_enum(target), index, buffer.value, offset, size);
         METAGL_DEBUG_LOG_VOID("glBindBufferRange", target, index, buffer.value, offset, size);
     }
@@ -1858,7 +2031,7 @@ namespace metagl
     // #57
     void glBufferData(BufferTarget target, GLsizeiptr size, const void * data, BufferUsage usage)
     {
-        assert(detail::g_gl.BufferData != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BufferData != nullptr);
         detail::g_gl.BufferData(detail::to_gl_enum(target), size, data, detail::to_gl_enum(usage));
         METAGL_DEBUG_LOG_VOID("glBufferData", target, size, data, usage);
     }
@@ -1866,7 +2039,7 @@ namespace metagl
     // #58
     void glBufferSubData(BufferTarget target, GLintptr offset, GLsizeiptr size, const void * data)
     {
-        assert(detail::g_gl.BufferSubData != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BufferSubData != nullptr);
         detail::g_gl.BufferSubData(detail::to_gl_enum(target), offset, size, data);
         METAGL_DEBUG_LOG_VOID("glBufferSubData", target, offset, size, data);
     }
@@ -1874,7 +2047,7 @@ namespace metagl
     // #59
     void glCopyBufferSubData(BufferTarget readTarget, BufferTarget writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size)
     {
-        assert(detail::g_gl.CopyBufferSubData != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CopyBufferSubData != nullptr);
         detail::g_gl.CopyBufferSubData(detail::to_gl_enum(readTarget), detail::to_gl_enum(writeTarget), readOffset, writeOffset, size);
         METAGL_DEBUG_LOG_VOID("glCopyBufferSubData", readTarget, writeTarget, readOffset, writeOffset, size);
     }
@@ -1882,7 +2055,7 @@ namespace metagl
     // #60
     void* glMapBufferRange(BufferTarget target, GLintptr offset, GLsizeiptr length, MapBufferAccessMask access)
     {
-        assert(detail::g_gl.MapBufferRange != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.MapBufferRange != nullptr);
         void* const _r = detail::g_gl.MapBufferRange(
             detail::to_gl_enum(target), offset, length,
             detail::to_gl_bitfield(access));
@@ -1893,7 +2066,7 @@ namespace metagl
     // #61
     void glFlushMappedBufferRange(BufferTarget target, GLintptr offset, GLsizeiptr length)
     {
-        assert(detail::g_gl.FlushMappedBufferRange != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.FlushMappedBufferRange != nullptr);
         detail::g_gl.FlushMappedBufferRange(detail::to_gl_enum(target), offset, length);
         METAGL_DEBUG_LOG_VOID("glFlushMappedBufferRange", target, offset, length);
     }
@@ -1901,7 +2074,7 @@ namespace metagl
     // #62
     GLboolean glUnmapBuffer(BufferTarget target)
     {
-        assert(detail::g_gl.UnmapBuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.UnmapBuffer != nullptr);
         const auto _r = detail::g_gl.UnmapBuffer(detail::to_gl_enum(target));
         METAGL_DEBUG_LOG("glUnmapBuffer", _r, target);
         return _r;
@@ -1910,7 +2083,7 @@ namespace metagl
     // #63
     bool glIsBuffer(BufferId buffer)
     {
-        assert(detail::g_gl.IsBuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsBuffer != nullptr);
         const auto _r = detail::g_gl.IsBuffer(buffer.value);
         METAGL_DEBUG_LOG("glIsBuffer", _r, buffer.value);
         return _r;
@@ -1919,7 +2092,7 @@ namespace metagl
     // #64
     void glGetBufferParameteriv(BufferTarget target, BufferParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetBufferParameteriv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetBufferParameteriv != nullptr);
         detail::g_gl.GetBufferParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetBufferParameteriv", target, pname, params);
     }
@@ -1927,7 +2100,7 @@ namespace metagl
     // #65
     void glGetBufferParameteri64v(BufferTarget target, BufferParameter pname, GLint64 * params)
     {
-        assert(detail::g_gl.GetBufferParameteri64v != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetBufferParameteri64v != nullptr);
         detail::g_gl.GetBufferParameteri64v(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetBufferParameteri64v", target, pname, params);
     }
@@ -1935,7 +2108,7 @@ namespace metagl
     // #66
     void glGetBufferPointerv(BufferTarget target, BufferPointerParameter pname, void ** params)
     {
-        assert(detail::g_gl.GetBufferPointerv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetBufferPointerv != nullptr);
         detail::g_gl.GetBufferPointerv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetBufferPointerv", target, pname, params);
     }
@@ -1944,7 +2117,7 @@ namespace metagl
     void glGenVertexArrays(GLsizei n, VertexArrayId * arrays)
     {
         static_assert(sizeof(VertexArrayId) == sizeof(GLuint), "VertexArrayId must be layout-compatible with GLuint");
-        assert(detail::g_gl.GenVertexArrays != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GenVertexArrays != nullptr);
         detail::g_gl.GenVertexArrays(n, reinterpret_cast<GLuint*>(arrays));
         METAGL_DEBUG_LOG_VOID("glGenVertexArrays", n, arrays);
     }
@@ -1953,7 +2126,7 @@ namespace metagl
     void glDeleteVertexArrays(GLsizei n, const VertexArrayId * arrays)
     {
         static_assert(sizeof(VertexArrayId) == sizeof(GLuint), "VertexArrayId must be layout-compatible with GLuint");
-        assert(detail::g_gl.DeleteVertexArrays != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DeleteVertexArrays != nullptr);
         detail::g_gl.DeleteVertexArrays(n, reinterpret_cast<const GLuint*>(arrays));
         METAGL_DEBUG_LOG_VOID("glDeleteVertexArrays", n, arrays);
     }
@@ -1961,7 +2134,7 @@ namespace metagl
     // #69
     void glBindVertexArray(VertexArrayId array)
     {
-        assert(detail::g_gl.BindVertexArray != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BindVertexArray != nullptr);
         detail::g_gl.BindVertexArray(array.value);
         METAGL_DEBUG_LOG_VOID("glBindVertexArray", array.value);
     }
@@ -1969,7 +2142,7 @@ namespace metagl
     // #70
     bool glIsVertexArray(VertexArrayId array)
     {
-        assert(detail::g_gl.IsVertexArray != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsVertexArray != nullptr);
         const auto _r = detail::g_gl.IsVertexArray(array.value);
         METAGL_DEBUG_LOG("glIsVertexArray", _r, array.value);
         return _r;
@@ -1978,7 +2151,7 @@ namespace metagl
     // #71
     void glEnableVertexAttribArray(AttribLocation index)
     {
-        assert(detail::g_gl.EnableVertexAttribArray != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.EnableVertexAttribArray != nullptr);
         detail::g_gl.EnableVertexAttribArray(index.value);
         METAGL_DEBUG_LOG_VOID("glEnableVertexAttribArray", index.value);
     }
@@ -1986,7 +2159,7 @@ namespace metagl
     // #72
     void glDisableVertexAttribArray(AttribLocation index)
     {
-        assert(detail::g_gl.DisableVertexAttribArray != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DisableVertexAttribArray != nullptr);
         detail::g_gl.DisableVertexAttribArray(index.value);
         METAGL_DEBUG_LOG_VOID("glDisableVertexAttribArray", index.value);
     }
@@ -1994,7 +2167,7 @@ namespace metagl
     // #73
     void glVertexAttribPointer(AttribLocation index, GLint size, DataType type, GLboolean normalized, GLsizei stride, const void * pointer)
     {
-        assert(detail::g_gl.VertexAttribPointer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttribPointer != nullptr);
         detail::g_gl.VertexAttribPointer(index.value, size, detail::to_gl_enum(type), normalized, stride, pointer);
         METAGL_DEBUG_LOG_VOID("glVertexAttribPointer", index.value, size, type, normalized, stride, pointer);
     }
@@ -2002,7 +2175,7 @@ namespace metagl
     // #74
     void glVertexAttribIPointer(AttribLocation index, GLint size, DataType type, GLsizei stride, const void * pointer)
     {
-        assert(detail::g_gl.VertexAttribIPointer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttribIPointer != nullptr);
         detail::g_gl.VertexAttribIPointer(index.value, size, detail::to_gl_enum(type), stride, pointer);
         METAGL_DEBUG_LOG_VOID("glVertexAttribIPointer", index.value, size, type, stride, pointer);
     }
@@ -2010,7 +2183,7 @@ namespace metagl
     // #75
     void glVertexAttribDivisor(AttribLocation index, GLuint divisor)
     {
-        assert(detail::g_gl.VertexAttribDivisor != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttribDivisor != nullptr);
         detail::g_gl.VertexAttribDivisor(index.value, divisor);
         METAGL_DEBUG_LOG_VOID("glVertexAttribDivisor", index.value, divisor);
     }
@@ -2018,7 +2191,7 @@ namespace metagl
     // #76
     void glVertexAttrib1f(AttribLocation index, GLfloat x)
     {
-        assert(detail::g_gl.VertexAttrib1f != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttrib1f != nullptr);
         detail::g_gl.VertexAttrib1f(index.value, x);
         METAGL_DEBUG_LOG_VOID("glVertexAttrib1f", index.value, x);
     }
@@ -2026,7 +2199,7 @@ namespace metagl
     // #77
     void glVertexAttrib2f(AttribLocation index, GLfloat x, GLfloat y)
     {
-        assert(detail::g_gl.VertexAttrib2f != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttrib2f != nullptr);
         detail::g_gl.VertexAttrib2f(index.value, x, y);
         METAGL_DEBUG_LOG_VOID("glVertexAttrib2f", index.value, x, y);
     }
@@ -2034,7 +2207,7 @@ namespace metagl
     // #78
     void glVertexAttrib3f(AttribLocation index, GLfloat x, GLfloat y, GLfloat z)
     {
-        assert(detail::g_gl.VertexAttrib3f != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttrib3f != nullptr);
         detail::g_gl.VertexAttrib3f(index.value, x, y, z);
         METAGL_DEBUG_LOG_VOID("glVertexAttrib3f", index.value, x, y, z);
     }
@@ -2042,7 +2215,7 @@ namespace metagl
     // #79
     void glVertexAttrib4f(AttribLocation index, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
     {
-        assert(detail::g_gl.VertexAttrib4f != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttrib4f != nullptr);
         detail::g_gl.VertexAttrib4f(index.value, x, y, z, w);
         METAGL_DEBUG_LOG_VOID("glVertexAttrib4f", index.value, x, y, z, w);
     }
@@ -2050,7 +2223,7 @@ namespace metagl
     // #80
     void glVertexAttrib1fv(AttribLocation index, const GLfloat * v)
     {
-        assert(detail::g_gl.VertexAttrib1fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttrib1fv != nullptr);
         detail::g_gl.VertexAttrib1fv(index.value, v);
         METAGL_DEBUG_LOG_VOID("glVertexAttrib1fv", index.value, v);
     }
@@ -2058,7 +2231,7 @@ namespace metagl
     // #81
     void glVertexAttrib2fv(AttribLocation index, const GLfloat * v)
     {
-        assert(detail::g_gl.VertexAttrib2fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttrib2fv != nullptr);
         detail::g_gl.VertexAttrib2fv(index.value, v);
         METAGL_DEBUG_LOG_VOID("glVertexAttrib2fv", index.value, v);
     }
@@ -2066,7 +2239,7 @@ namespace metagl
     // #82
     void glVertexAttrib3fv(AttribLocation index, const GLfloat * v)
     {
-        assert(detail::g_gl.VertexAttrib3fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttrib3fv != nullptr);
         detail::g_gl.VertexAttrib3fv(index.value, v);
         METAGL_DEBUG_LOG_VOID("glVertexAttrib3fv", index.value, v);
     }
@@ -2074,7 +2247,7 @@ namespace metagl
     // #83
     void glVertexAttrib4fv(AttribLocation index, const GLfloat * v)
     {
-        assert(detail::g_gl.VertexAttrib4fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttrib4fv != nullptr);
         detail::g_gl.VertexAttrib4fv(index.value, v);
         METAGL_DEBUG_LOG_VOID("glVertexAttrib4fv", index.value, v);
     }
@@ -2082,7 +2255,7 @@ namespace metagl
     // #84
     void glVertexAttribI4i(AttribLocation index, GLint x, GLint y, GLint z, GLint w)
     {
-        assert(detail::g_gl.VertexAttribI4i != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttribI4i != nullptr);
         detail::g_gl.VertexAttribI4i(index.value, x, y, z, w);
         METAGL_DEBUG_LOG_VOID("glVertexAttribI4i", index.value, x, y, z, w);
     }
@@ -2090,7 +2263,7 @@ namespace metagl
     // #85
     void glVertexAttribI4ui(AttribLocation index, GLuint x, GLuint y, GLuint z, GLuint w)
     {
-        assert(detail::g_gl.VertexAttribI4ui != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttribI4ui != nullptr);
         detail::g_gl.VertexAttribI4ui(index.value, x, y, z, w);
         METAGL_DEBUG_LOG_VOID("glVertexAttribI4ui", index.value, x, y, z, w);
     }
@@ -2098,7 +2271,7 @@ namespace metagl
     // #86
     void glVertexAttribI4iv(AttribLocation index, const GLint * v)
     {
-        assert(detail::g_gl.VertexAttribI4iv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttribI4iv != nullptr);
         detail::g_gl.VertexAttribI4iv(index.value, v);
         METAGL_DEBUG_LOG_VOID("glVertexAttribI4iv", index.value, v);
     }
@@ -2106,7 +2279,7 @@ namespace metagl
     // #87
     void glVertexAttribI4uiv(AttribLocation index, const GLuint * v)
     {
-        assert(detail::g_gl.VertexAttribI4uiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttribI4uiv != nullptr);
         detail::g_gl.VertexAttribI4uiv(index.value, v);
         METAGL_DEBUG_LOG_VOID("glVertexAttribI4uiv", index.value, v);
     }
@@ -2114,7 +2287,7 @@ namespace metagl
     // #88
     void glGetVertexAttribfv(AttribLocation index, VertexAttribParameter pname, GLfloat * params)
     {
-        assert(detail::g_gl.GetVertexAttribfv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetVertexAttribfv != nullptr);
         detail::g_gl.GetVertexAttribfv(index.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetVertexAttribfv", index.value, pname, params);
     }
@@ -2122,7 +2295,7 @@ namespace metagl
     // #89
     void glGetVertexAttribiv(AttribLocation index, VertexAttribParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetVertexAttribiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetVertexAttribiv != nullptr);
         detail::g_gl.GetVertexAttribiv(index.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetVertexAttribiv", index.value, pname, params);
     }
@@ -2130,7 +2303,7 @@ namespace metagl
     // #90
     void glGetVertexAttribIiv(AttribLocation index, VertexAttribParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetVertexAttribIiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetVertexAttribIiv != nullptr);
         detail::g_gl.GetVertexAttribIiv(index.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetVertexAttribIiv", index.value, pname, params);
     }
@@ -2138,7 +2311,7 @@ namespace metagl
     // #91
     void glGetVertexAttribIuiv(AttribLocation index, VertexAttribParameter pname, GLuint * params)
     {
-        assert(detail::g_gl.GetVertexAttribIuiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetVertexAttribIuiv != nullptr);
         detail::g_gl.GetVertexAttribIuiv(index.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetVertexAttribIuiv", index.value, pname, params);
     }
@@ -2146,7 +2319,7 @@ namespace metagl
     // #92
     void glGetVertexAttribPointerv(AttribLocation index, VertexAttribParameter pname, void ** pointer)
     {
-        assert(detail::g_gl.GetVertexAttribPointerv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetVertexAttribPointerv != nullptr);
         detail::g_gl.GetVertexAttribPointerv(index.value, detail::to_gl_enum(pname), pointer);
         METAGL_DEBUG_LOG_VOID("glGetVertexAttribPointerv", index.value, pname, pointer);
     }
@@ -2154,7 +2327,7 @@ namespace metagl
     // #93
     void glVertexAttribFormat(AttribLocation attribindex, GLint size, DataType type, GLboolean normalized, GLuint relativeoffset)
     {
-        assert(detail::g_gl.VertexAttribFormat != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttribFormat != nullptr);
         detail::g_gl.VertexAttribFormat(attribindex.value, size, detail::to_gl_enum(type), normalized, relativeoffset);
         METAGL_DEBUG_LOG_VOID("glVertexAttribFormat", attribindex.value, size, type, normalized, relativeoffset);
     }
@@ -2162,7 +2335,7 @@ namespace metagl
     // #94
     void glVertexAttribIFormat(AttribLocation attribindex, GLint size, DataType type, GLuint relativeoffset)
     {
-        assert(detail::g_gl.VertexAttribIFormat != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttribIFormat != nullptr);
         detail::g_gl.VertexAttribIFormat(attribindex.value, size, detail::to_gl_enum(type), relativeoffset);
         METAGL_DEBUG_LOG_VOID("glVertexAttribIFormat", attribindex.value, size, type, relativeoffset);
     }
@@ -2170,7 +2343,7 @@ namespace metagl
     // #95
     void glVertexAttribBinding(AttribLocation attribindex, GLuint bindingindex)
     {
-        assert(detail::g_gl.VertexAttribBinding != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexAttribBinding != nullptr);
         detail::g_gl.VertexAttribBinding(attribindex.value, bindingindex);
         METAGL_DEBUG_LOG_VOID("glVertexAttribBinding", attribindex.value, bindingindex);
     }
@@ -2178,7 +2351,7 @@ namespace metagl
     // #96
     void glBindVertexBuffer(GLuint bindingindex, BufferId buffer, GLintptr offset, GLsizei stride)
     {
-        assert(detail::g_gl.BindVertexBuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BindVertexBuffer != nullptr);
         detail::g_gl.BindVertexBuffer(bindingindex, buffer.value, offset, stride);
         METAGL_DEBUG_LOG_VOID("glBindVertexBuffer", bindingindex, buffer.value, offset, stride);
     }
@@ -2186,7 +2359,7 @@ namespace metagl
     // #97
     void glVertexBindingDivisor(GLuint bindingindex, GLuint divisor)
     {
-        assert(detail::g_gl.VertexBindingDivisor != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.VertexBindingDivisor != nullptr);
         detail::g_gl.VertexBindingDivisor(bindingindex, divisor);
         METAGL_DEBUG_LOG_VOID("glVertexBindingDivisor", bindingindex, divisor);
     }
@@ -2194,7 +2367,7 @@ namespace metagl
     // #98
     void glDrawArrays(PrimitiveType mode, GLint first, GLsizei count)
     {
-        assert(detail::g_gl.DrawArrays != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DrawArrays != nullptr);
         detail::g_gl.DrawArrays(detail::to_gl_enum(mode), first, count);
         METAGL_DEBUG_LOG_VOID("glDrawArrays", mode, first, count);
     }
@@ -2202,7 +2375,7 @@ namespace metagl
     // #99
     void glDrawArraysInstanced(PrimitiveType mode, GLint first, GLsizei count, GLsizei instancecount)
     {
-        assert(detail::g_gl.DrawArraysInstanced != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DrawArraysInstanced != nullptr);
         detail::g_gl.DrawArraysInstanced(detail::to_gl_enum(mode), first, count, instancecount);
         METAGL_DEBUG_LOG_VOID("glDrawArraysInstanced", mode, first, count, instancecount);
     }
@@ -2210,7 +2383,7 @@ namespace metagl
     // #100
     void glDrawArraysIndirect(PrimitiveType mode, const void * indirect)
     {
-        assert(detail::g_gl.DrawArraysIndirect != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DrawArraysIndirect != nullptr);
         detail::g_gl.DrawArraysIndirect(detail::to_gl_enum(mode), indirect);
         METAGL_DEBUG_LOG_VOID("glDrawArraysIndirect", mode, indirect);
     }
@@ -2218,7 +2391,7 @@ namespace metagl
     // #101
     void glDrawElements(PrimitiveType mode, GLsizei count, DataType type, const void * indices)
     {
-        assert(detail::g_gl.DrawElements != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DrawElements != nullptr);
         detail::g_gl.DrawElements(detail::to_gl_enum(mode), count, detail::to_gl_enum(type), indices);
         METAGL_DEBUG_LOG_VOID("glDrawElements", mode, count, type, indices);
     }
@@ -2226,7 +2399,7 @@ namespace metagl
     // #102
     void glDrawElementsInstanced(PrimitiveType mode, GLsizei count, DataType type, const void * indices, GLsizei instancecount)
     {
-        assert(detail::g_gl.DrawElementsInstanced != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DrawElementsInstanced != nullptr);
         detail::g_gl.DrawElementsInstanced(detail::to_gl_enum(mode), count, detail::to_gl_enum(type), indices, instancecount);
         METAGL_DEBUG_LOG_VOID("glDrawElementsInstanced", mode, count, type, indices, instancecount);
     }
@@ -2234,7 +2407,7 @@ namespace metagl
     // #103
     void glDrawRangeElements(PrimitiveType mode, GLuint start, GLuint end, GLsizei count, DataType type, const void * indices)
     {
-        assert(detail::g_gl.DrawRangeElements != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DrawRangeElements != nullptr);
         detail::g_gl.DrawRangeElements(detail::to_gl_enum(mode), start, end, count, detail::to_gl_enum(type), indices);
         METAGL_DEBUG_LOG_VOID("glDrawRangeElements", mode, start, end, count, type, indices);
     }
@@ -2242,7 +2415,7 @@ namespace metagl
     // #104
     void glDrawElementsBaseVertex(PrimitiveType mode, GLsizei count, DataType type, const void * indices, GLint basevertex)
     {
-        assert(detail::g_gl.DrawElementsBaseVertex != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DrawElementsBaseVertex != nullptr);
         detail::g_gl.DrawElementsBaseVertex(detail::to_gl_enum(mode), count, detail::to_gl_enum(type), indices, basevertex);
         METAGL_DEBUG_LOG_VOID("glDrawElementsBaseVertex", mode, count, type, indices, basevertex);
     }
@@ -2250,7 +2423,7 @@ namespace metagl
     // #105
     void glDrawElementsInstancedBaseVertex(PrimitiveType mode, GLsizei count, DataType type, const void * indices, GLsizei instancecount, GLint basevertex)
     {
-        assert(detail::g_gl.DrawElementsInstancedBaseVertex != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DrawElementsInstancedBaseVertex != nullptr);
         detail::g_gl.DrawElementsInstancedBaseVertex(detail::to_gl_enum(mode), count, detail::to_gl_enum(type), indices, instancecount, basevertex);
         METAGL_DEBUG_LOG_VOID("glDrawElementsInstancedBaseVertex", mode, count, type, indices, instancecount, basevertex);
     }
@@ -2258,7 +2431,7 @@ namespace metagl
     // #106
     void glDrawRangeElementsBaseVertex(PrimitiveType mode, GLuint start, GLuint end, GLsizei count, DataType type, const void * indices, GLint basevertex)
     {
-        assert(detail::g_gl.DrawRangeElementsBaseVertex != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DrawRangeElementsBaseVertex != nullptr);
         detail::g_gl.DrawRangeElementsBaseVertex(detail::to_gl_enum(mode), start, end, count, detail::to_gl_enum(type), indices, basevertex);
         METAGL_DEBUG_LOG_VOID("glDrawRangeElementsBaseVertex", mode, start, end, count, type, indices, basevertex);
     }
@@ -2266,7 +2439,7 @@ namespace metagl
     // #107
     void glDrawElementsIndirect(PrimitiveType mode, DataType type, const void * indirect)
     {
-        assert(detail::g_gl.DrawElementsIndirect != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DrawElementsIndirect != nullptr);
         detail::g_gl.DrawElementsIndirect(detail::to_gl_enum(mode), detail::to_gl_enum(type), indirect);
         METAGL_DEBUG_LOG_VOID("glDrawElementsIndirect", mode, type, indirect);
     }
@@ -2274,7 +2447,7 @@ namespace metagl
     // #108
     void glDrawBuffers(GLsizei n, const DrawBuffer * bufs)
     {
-        assert(detail::g_gl.DrawBuffers != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DrawBuffers != nullptr);
         detail::g_gl.DrawBuffers(n, reinterpret_cast<const GLenum *>(bufs));
         METAGL_DEBUG_LOG_VOID("glDrawBuffers", n, bufs);
     }
@@ -2282,7 +2455,7 @@ namespace metagl
     // #109
     void glReadBuffer(ReadBuffer src)
     {
-        assert(detail::g_gl.ReadBuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ReadBuffer != nullptr);
         detail::g_gl.ReadBuffer(detail::to_gl_enum(src));
         METAGL_DEBUG_LOG_VOID("glReadBuffer", src);
     }
@@ -2290,7 +2463,7 @@ namespace metagl
     // #110
     void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, PixelFormat format, PixelType type, void * pixels)
     {
-        assert(detail::g_gl.ReadPixels != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ReadPixels != nullptr);
         detail::g_gl.ReadPixels(x, y, width, height, detail::to_gl_enum(format), detail::to_gl_enum(type), pixels);
         METAGL_DEBUG_LOG_VOID("glReadPixels", x, y, width, height, format, type, pixels);
     }
@@ -2298,7 +2471,7 @@ namespace metagl
     // #111
     void glReadnPixels(GLint x, GLint y, GLsizei width, GLsizei height, PixelFormat format, PixelType type, GLsizei bufSize, void * data)
     {
-        assert(detail::g_gl.ReadnPixels != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ReadnPixels != nullptr);
         detail::g_gl.ReadnPixels(x, y, width, height, detail::to_gl_enum(format), detail::to_gl_enum(type), bufSize, data);
         METAGL_DEBUG_LOG_VOID("glReadnPixels", x, y, width, height, format, type, bufSize, data);
     }
@@ -2306,7 +2479,7 @@ namespace metagl
     // #112
     void glClear(ClearBufferBit mask)
     {
-        assert(detail::g_gl.Clear != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Clear != nullptr);
         detail::g_gl.Clear(detail::to_gl_bitfield(mask));
         METAGL_DEBUG_LOG_VOID("glClear", mask);
     }
@@ -2314,7 +2487,7 @@ namespace metagl
     // #113
     void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
     {
-        assert(detail::g_gl.ClearColor != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ClearColor != nullptr);
         detail::g_gl.ClearColor(red, green, blue, alpha);
         METAGL_DEBUG_LOG_VOID("glClearColor", red, green, blue, alpha);
     }
@@ -2322,8 +2495,9 @@ namespace metagl
     // #114
     void glClearDepthf(GLfloat d)
     {
-        assert(detail::g_gl.ClearDepthf != nullptr
-            || detail::g_gl.DesktopClearDepth != nullptr);
+        assert(detail::g_gl.initialized
+            && (detail::g_gl.ClearDepthf != nullptr
+                || detail::g_gl.DesktopClearDepth != nullptr));
         if (detail::g_gl.ClearDepthf)
             detail::g_gl.ClearDepthf(d);
         else
@@ -2334,47 +2508,47 @@ namespace metagl
     // #115
     void glClearStencil(GLint s)
     {
-        assert(detail::g_gl.ClearStencil != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ClearStencil != nullptr);
         detail::g_gl.ClearStencil(s);
         METAGL_DEBUG_LOG_VOID("glClearStencil", s);
     }
 
     // #116
-    void glClearBufferfv(ClearBuffer buffer, GLint drawbuffer, const GLfloat * value)
+    void glClearBufferfv(FloatClearBuffer buffer, GLint drawbuffer, const GLfloat * value)
     {
-        assert(detail::g_gl.ClearBufferfv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ClearBufferfv != nullptr);
         detail::g_gl.ClearBufferfv(detail::to_gl_enum(buffer), drawbuffer, value);
         METAGL_DEBUG_LOG_VOID("glClearBufferfv", buffer, drawbuffer, value);
     }
 
     // #117
-    void glClearBufferiv(ClearBuffer buffer, GLint drawbuffer, const GLint * value)
+    void glClearBufferiv(SignedIntegerClearBuffer buffer, GLint drawbuffer, const GLint * value)
     {
-        assert(detail::g_gl.ClearBufferiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ClearBufferiv != nullptr);
         detail::g_gl.ClearBufferiv(detail::to_gl_enum(buffer), drawbuffer, value);
         METAGL_DEBUG_LOG_VOID("glClearBufferiv", buffer, drawbuffer, value);
     }
 
     // #118
-    void glClearBufferuiv(ClearBuffer buffer, GLint drawbuffer, const GLuint * value)
+    void glClearBufferuiv(UnsignedIntegerClearBuffer buffer, GLint drawbuffer, const GLuint * value)
     {
-        assert(detail::g_gl.ClearBufferuiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ClearBufferuiv != nullptr);
         detail::g_gl.ClearBufferuiv(detail::to_gl_enum(buffer), drawbuffer, value);
         METAGL_DEBUG_LOG_VOID("glClearBufferuiv", buffer, drawbuffer, value);
     }
 
     // #119
-    void glClearBufferfi(ClearBuffer buffer, GLint drawbuffer, GLfloat depth, GLint stencil)
+    void glClearBufferfi(GLfloat depth, GLint stencil)
     {
-        assert(detail::g_gl.ClearBufferfi != nullptr);
-        detail::g_gl.ClearBufferfi(detail::to_gl_enum(buffer), drawbuffer, depth, stencil);
-        METAGL_DEBUG_LOG_VOID("glClearBufferfi", buffer, drawbuffer, depth, stencil);
+        assert(detail::g_gl.initialized && detail::g_gl.ClearBufferfi != nullptr);
+        detail::g_gl.ClearBufferfi(GL_DEPTH_STENCIL, 0, depth, stencil);
+        METAGL_DEBUG_LOG_VOID("glClearBufferfi", depth, stencil);
     }
 
     // #120
     ShaderId glCreateShader(ShaderType type)
     {
-        assert(detail::g_gl.CreateShader != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CreateShader != nullptr);
         const ShaderId _r{detail::g_gl.CreateShader(detail::to_gl_enum(type))};
         METAGL_DEBUG_LOG("glCreateShader", _r.value, type);
         return _r;
@@ -2383,7 +2557,7 @@ namespace metagl
     // #121
     void glDeleteShader(ShaderId shader)
     {
-        assert(detail::g_gl.DeleteShader != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DeleteShader != nullptr);
         detail::g_gl.DeleteShader(shader.value);
         METAGL_DEBUG_LOG_VOID("glDeleteShader", shader.value);
     }
@@ -2391,7 +2565,7 @@ namespace metagl
     // #122
     void glShaderSource(ShaderId shader, GLsizei count, const GLchar *const* string, const GLint * length)
     {
-        assert(detail::g_gl.ShaderSource != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ShaderSource != nullptr);
         detail::g_gl.ShaderSource(shader.value, count, string, length);
         METAGL_DEBUG_LOG_VOID("glShaderSource", shader.value, count, string, length);
     }
@@ -2399,7 +2573,7 @@ namespace metagl
     // #123
     void glCompileShader(ShaderId shader)
     {
-        assert(detail::g_gl.CompileShader != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CompileShader != nullptr);
         detail::g_gl.CompileShader(shader.value);
         METAGL_DEBUG_LOG_VOID("glCompileShader", shader.value);
     }
@@ -2408,7 +2582,7 @@ namespace metagl
     void glShaderBinary(GLsizei count, const ShaderId * shaders, ShaderBinaryFormat binaryFormat, const void * binary, GLsizei length)
     {
         static_assert(sizeof(ShaderId) == sizeof(GLuint), "ShaderId must be layout-compatible with GLuint");
-        assert(detail::g_gl.ShaderBinary != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ShaderBinary != nullptr);
         detail::g_gl.ShaderBinary(count, reinterpret_cast<const GLuint*>(shaders), detail::to_gl_enum(binaryFormat), binary, length);
         METAGL_DEBUG_LOG_VOID("glShaderBinary", count, shaders, binaryFormat, binary, length);
     }
@@ -2416,7 +2590,7 @@ namespace metagl
     // #125
     void glReleaseShaderCompiler(void)
     {
-        assert(detail::g_gl.ReleaseShaderCompiler != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ReleaseShaderCompiler != nullptr);
         detail::g_gl.ReleaseShaderCompiler();
         METAGL_DEBUG_LOG_VOID("glReleaseShaderCompiler");
     }
@@ -2424,7 +2598,7 @@ namespace metagl
     // #126
     void glGetShaderiv(ShaderId shader, ShaderParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetShaderiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetShaderiv != nullptr);
         detail::g_gl.GetShaderiv(shader.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetShaderiv", shader.value, pname, params);
     }
@@ -2432,7 +2606,7 @@ namespace metagl
     // #127
     void glGetShaderInfoLog(ShaderId shader, GLsizei bufSize, GLsizei * length, GLchar * infoLog)
     {
-        assert(detail::g_gl.GetShaderInfoLog != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetShaderInfoLog != nullptr);
         detail::g_gl.GetShaderInfoLog(shader.value, bufSize, length, infoLog);
         METAGL_DEBUG_LOG_VOID("glGetShaderInfoLog", shader.value, bufSize, length, infoLog);
     }
@@ -2440,7 +2614,7 @@ namespace metagl
     // #128
     void glGetShaderSource(ShaderId shader, GLsizei bufSize, GLsizei * length, GLchar * source)
     {
-        assert(detail::g_gl.GetShaderSource != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetShaderSource != nullptr);
         detail::g_gl.GetShaderSource(shader.value, bufSize, length, source);
         METAGL_DEBUG_LOG_VOID("glGetShaderSource", shader.value, bufSize, length, source);
     }
@@ -2448,7 +2622,7 @@ namespace metagl
     // #129
     void glGetShaderPrecisionFormat(ShaderType shadertype, PrecisionType precisiontype, GLint * range, GLint * precision)
     {
-        assert(detail::g_gl.GetShaderPrecisionFormat != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetShaderPrecisionFormat != nullptr);
         detail::g_gl.GetShaderPrecisionFormat(detail::to_gl_enum(shadertype), detail::to_gl_enum(precisiontype), range, precision);
         METAGL_DEBUG_LOG_VOID("glGetShaderPrecisionFormat", shadertype, precisiontype, range, precision);
     }
@@ -2456,7 +2630,7 @@ namespace metagl
     // #130
     bool glIsShader(ShaderId shader)
     {
-        assert(detail::g_gl.IsShader != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsShader != nullptr);
         const auto _r = detail::g_gl.IsShader(shader.value);
         METAGL_DEBUG_LOG("glIsShader", _r, shader.value);
         return _r;
@@ -2465,7 +2639,7 @@ namespace metagl
     // #131
     ProgramId glCreateProgram(void)
     {
-        assert(detail::g_gl.CreateProgram != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CreateProgram != nullptr);
         const ProgramId _r{detail::g_gl.CreateProgram()};
         METAGL_DEBUG_LOG("glCreateProgram", _r.value);
         return _r;
@@ -2474,7 +2648,7 @@ namespace metagl
     // #132
     void glDeleteProgram(ProgramId program)
     {
-        assert(detail::g_gl.DeleteProgram != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DeleteProgram != nullptr);
         detail::g_gl.DeleteProgram(program.value);
         METAGL_DEBUG_LOG_VOID("glDeleteProgram", program.value);
     }
@@ -2482,7 +2656,7 @@ namespace metagl
     // #133
     void glAttachShader(ProgramId program, ShaderId shader)
     {
-        assert(detail::g_gl.AttachShader != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.AttachShader != nullptr);
         detail::g_gl.AttachShader(program.value, shader.value);
         METAGL_DEBUG_LOG_VOID("glAttachShader", program.value, shader.value);
     }
@@ -2490,7 +2664,7 @@ namespace metagl
     // #134
     void glDetachShader(ProgramId program, ShaderId shader)
     {
-        assert(detail::g_gl.DetachShader != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DetachShader != nullptr);
         detail::g_gl.DetachShader(program.value, shader.value);
         METAGL_DEBUG_LOG_VOID("glDetachShader", program.value, shader.value);
     }
@@ -2498,7 +2672,7 @@ namespace metagl
     // #135
     void glLinkProgram(ProgramId program)
     {
-        assert(detail::g_gl.LinkProgram != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.LinkProgram != nullptr);
         detail::g_gl.LinkProgram(program.value);
         METAGL_DEBUG_LOG_VOID("glLinkProgram", program.value);
     }
@@ -2506,7 +2680,7 @@ namespace metagl
     // #136
     void glUseProgram(ProgramId program)
     {
-        assert(detail::g_gl.UseProgram != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.UseProgram != nullptr);
         detail::g_gl.UseProgram(program.value);
         METAGL_DEBUG_LOG_VOID("glUseProgram", program.value);
     }
@@ -2514,7 +2688,7 @@ namespace metagl
     // #137
     void glValidateProgram(ProgramId program)
     {
-        assert(detail::g_gl.ValidateProgram != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ValidateProgram != nullptr);
         detail::g_gl.ValidateProgram(program.value);
         METAGL_DEBUG_LOG_VOID("glValidateProgram", program.value);
     }
@@ -2522,7 +2696,7 @@ namespace metagl
     // #138
     void glGetProgramiv(ProgramId program, ProgramParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetProgramiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetProgramiv != nullptr);
         detail::g_gl.GetProgramiv(program.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetProgramiv", program.value, pname, params);
     }
@@ -2530,7 +2704,7 @@ namespace metagl
     // #139
     void glGetProgramInfoLog(ProgramId program, GLsizei bufSize, GLsizei * length, GLchar * infoLog)
     {
-        assert(detail::g_gl.GetProgramInfoLog != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetProgramInfoLog != nullptr);
         detail::g_gl.GetProgramInfoLog(program.value, bufSize, length, infoLog);
         METAGL_DEBUG_LOG_VOID("glGetProgramInfoLog", program.value, bufSize, length, infoLog);
     }
@@ -2538,7 +2712,7 @@ namespace metagl
     // #140
     bool glIsProgram(ProgramId program)
     {
-        assert(detail::g_gl.IsProgram != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsProgram != nullptr);
         const auto _r = detail::g_gl.IsProgram(program.value);
         METAGL_DEBUG_LOG("glIsProgram", _r, program.value);
         return _r;
@@ -2548,7 +2722,7 @@ namespace metagl
     void glGetAttachedShaders(ProgramId program, GLsizei maxCount, GLsizei * count, ShaderId * shaders)
     {
         static_assert(sizeof(ShaderId) == sizeof(GLuint), "ShaderId must be layout-compatible with GLuint");
-        assert(detail::g_gl.GetAttachedShaders != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetAttachedShaders != nullptr);
         detail::g_gl.GetAttachedShaders(program.value, maxCount, count, reinterpret_cast<GLuint*>(shaders));
         METAGL_DEBUG_LOG_VOID("glGetAttachedShaders", program.value, maxCount, count, shaders);
     }
@@ -2556,7 +2730,7 @@ namespace metagl
     // #142
     void glBindAttribLocation(ProgramId program, AttribLocation index, const GLchar * name)
     {
-        assert(detail::g_gl.BindAttribLocation != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BindAttribLocation != nullptr);
         detail::g_gl.BindAttribLocation(program.value, index.value, name);
         METAGL_DEBUG_LOG_VOID("glBindAttribLocation", program.value, index.value, name);
     }
@@ -2564,7 +2738,7 @@ namespace metagl
     // #143
     AttribLocation glGetAttribLocation(ProgramId program, const GLchar * name)
     {
-        assert(detail::g_gl.GetAttribLocation != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetAttribLocation != nullptr);
         const AttribLocation _r{detail::g_gl.GetAttribLocation(program.value, name)};
         METAGL_DEBUG_LOG("glGetAttribLocation", _r.value, program.value, name);
         return _r;
@@ -2573,7 +2747,7 @@ namespace metagl
     // #144
     void glGetActiveAttrib(ProgramId program, ActiveAttribIndex index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name)
     {
-        assert(detail::g_gl.GetActiveAttrib != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetActiveAttrib != nullptr);
         detail::g_gl.GetActiveAttrib(program.value, index.value, bufSize, length, size, reinterpret_cast<GLenum *>(type), name);
         METAGL_DEBUG_LOG_VOID("glGetActiveAttrib", program.value, index.value, bufSize, length, size, type, name);
     }
@@ -2581,7 +2755,7 @@ namespace metagl
     // #145
     void glGetProgramBinary(ProgramId program, GLsizei bufSize, GLsizei * length, ProgramBinaryFormat * binaryFormat, void * binary)
     {
-        assert(detail::g_gl.GetProgramBinary != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetProgramBinary != nullptr);
         detail::g_gl.GetProgramBinary(program.value, bufSize, length, reinterpret_cast<GLenum *>(binaryFormat), binary);
         METAGL_DEBUG_LOG_VOID("glGetProgramBinary", program.value, bufSize, length, binaryFormat, binary);
     }
@@ -2589,7 +2763,7 @@ namespace metagl
     // #146
     void glProgramBinary(ProgramId program, ProgramBinaryFormat binaryFormat, const void * binary, GLsizei length)
     {
-        assert(detail::g_gl.ProgramBinary != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramBinary != nullptr);
         detail::g_gl.ProgramBinary(program.value, detail::to_gl_enum(binaryFormat), binary, length);
         METAGL_DEBUG_LOG_VOID("glProgramBinary", program.value, binaryFormat, binary, length);
     }
@@ -2597,7 +2771,7 @@ namespace metagl
     // #147
     void glProgramParameteri(ProgramId program, ProgramParameter pname, GLint value)
     {
-        assert(detail::g_gl.ProgramParameteri != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramParameteri != nullptr);
         detail::g_gl.ProgramParameteri(program.value, detail::to_gl_enum(pname), value);
         METAGL_DEBUG_LOG_VOID("glProgramParameteri", program.value, pname, value);
     }
@@ -2605,7 +2779,7 @@ namespace metagl
     // #148
     GLint glGetFragDataLocation(ProgramId program, const GLchar * name)
     {
-        assert(detail::g_gl.GetFragDataLocation != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetFragDataLocation != nullptr);
         const auto _r = detail::g_gl.GetFragDataLocation(program.value, name);
         METAGL_DEBUG_LOG("glGetFragDataLocation", _r, program.value, name);
         return _r;
@@ -2614,7 +2788,7 @@ namespace metagl
     // #149
     void glGetProgramInterfaceiv(ProgramId program, ProgramInterface programInterface, ProgramInterfaceParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetProgramInterfaceiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetProgramInterfaceiv != nullptr);
         detail::g_gl.GetProgramInterfaceiv(program.value, detail::to_gl_enum(programInterface), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetProgramInterfaceiv", program.value, programInterface, pname, params);
     }
@@ -2622,7 +2796,7 @@ namespace metagl
     // #150
     GLuint glGetProgramResourceIndex(ProgramId program, ProgramInterface programInterface, const GLchar * name)
     {
-        assert(detail::g_gl.GetProgramResourceIndex != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetProgramResourceIndex != nullptr);
         const auto _r = detail::g_gl.GetProgramResourceIndex(program.value, detail::to_gl_enum(programInterface), name);
         METAGL_DEBUG_LOG("glGetProgramResourceIndex", _r, program.value, programInterface, name);
         return _r;
@@ -2631,7 +2805,7 @@ namespace metagl
     // #151
     void glGetProgramResourceName(ProgramId program, ProgramInterface programInterface, GLuint index, GLsizei bufSize, GLsizei * length, GLchar * name)
     {
-        assert(detail::g_gl.GetProgramResourceName != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetProgramResourceName != nullptr);
         detail::g_gl.GetProgramResourceName(program.value, detail::to_gl_enum(programInterface), index, bufSize, length, name);
         METAGL_DEBUG_LOG_VOID("glGetProgramResourceName", program.value, programInterface, index, bufSize, length, name);
     }
@@ -2639,7 +2813,7 @@ namespace metagl
     // #152
     void glGetProgramResourceiv(ProgramId program, ProgramInterface programInterface, GLuint index, GLsizei propCount, const ProgramResourceProperty * props, GLsizei count, GLsizei * length, GLint * params)
     {
-        assert(detail::g_gl.GetProgramResourceiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetProgramResourceiv != nullptr);
         detail::g_gl.GetProgramResourceiv(program.value, detail::to_gl_enum(programInterface), index, propCount, reinterpret_cast<const GLenum *>(props), count, length, params);
         METAGL_DEBUG_LOG_VOID("glGetProgramResourceiv", program.value, programInterface, index, propCount, props, count, length, params);
     }
@@ -2647,7 +2821,7 @@ namespace metagl
     // #153
     GLint glGetProgramResourceLocation(ProgramId program, ProgramInterface programInterface, const GLchar * name)
     {
-        assert(detail::g_gl.GetProgramResourceLocation != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetProgramResourceLocation != nullptr);
         const auto _r = detail::g_gl.GetProgramResourceLocation(program.value, detail::to_gl_enum(programInterface), name);
         METAGL_DEBUG_LOG("glGetProgramResourceLocation", _r, program.value, programInterface, name);
         return _r;
@@ -2656,7 +2830,7 @@ namespace metagl
     // #154
     UniformLocation glGetUniformLocation(ProgramId program, const GLchar * name)
     {
-        assert(detail::g_gl.GetUniformLocation != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetUniformLocation != nullptr);
         const UniformLocation _r{detail::g_gl.GetUniformLocation(program.value, name)};
         METAGL_DEBUG_LOG("glGetUniformLocation", _r.value, program.value, name);
         return _r;
@@ -2665,7 +2839,7 @@ namespace metagl
     // #155
     void glGetActiveUniform(ProgramId program, GLuint index, GLsizei bufSize, GLsizei * length, GLint * size, UniformType * type, GLchar * name)
     {
-        assert(detail::g_gl.GetActiveUniform != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetActiveUniform != nullptr);
         detail::g_gl.GetActiveUniform(program.value, index, bufSize, length, size, reinterpret_cast<GLenum *>(type), name);
         METAGL_DEBUG_LOG_VOID("glGetActiveUniform", program.value, index, bufSize, length, size, type, name);
     }
@@ -2673,7 +2847,7 @@ namespace metagl
     // #156
     void glGetActiveUniformsiv(ProgramId program, GLsizei uniformCount, const GLuint * uniformIndices, UniformParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetActiveUniformsiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetActiveUniformsiv != nullptr);
         detail::g_gl.GetActiveUniformsiv(program.value, uniformCount, uniformIndices, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetActiveUniformsiv", program.value, uniformCount, uniformIndices, pname, params);
     }
@@ -2681,7 +2855,7 @@ namespace metagl
     // #157
     void glGetUniformIndices(ProgramId program, GLsizei uniformCount, const GLchar *const* uniformNames, GLuint * uniformIndices)
     {
-        assert(detail::g_gl.GetUniformIndices != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetUniformIndices != nullptr);
         detail::g_gl.GetUniformIndices(program.value, uniformCount, uniformNames, uniformIndices);
         METAGL_DEBUG_LOG_VOID("glGetUniformIndices", program.value, uniformCount, uniformNames, uniformIndices);
     }
@@ -2689,7 +2863,7 @@ namespace metagl
     // #158
     GLuint glGetUniformBlockIndex(ProgramId program, const GLchar * uniformBlockName)
     {
-        assert(detail::g_gl.GetUniformBlockIndex != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetUniformBlockIndex != nullptr);
         const auto _r = detail::g_gl.GetUniformBlockIndex(program.value, uniformBlockName);
         METAGL_DEBUG_LOG("glGetUniformBlockIndex", _r, program.value, uniformBlockName);
         return _r;
@@ -2698,7 +2872,7 @@ namespace metagl
     // #159
     void glGetActiveUniformBlockiv(ProgramId program, GLuint uniformBlockIndex, UniformBlockParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetActiveUniformBlockiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetActiveUniformBlockiv != nullptr);
         detail::g_gl.GetActiveUniformBlockiv(program.value, uniformBlockIndex, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetActiveUniformBlockiv", program.value, uniformBlockIndex, pname, params);
     }
@@ -2706,7 +2880,7 @@ namespace metagl
     // #160
     void glGetActiveUniformBlockName(ProgramId program, GLuint uniformBlockIndex, GLsizei bufSize, GLsizei * length, GLchar * uniformBlockName)
     {
-        assert(detail::g_gl.GetActiveUniformBlockName != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetActiveUniformBlockName != nullptr);
         detail::g_gl.GetActiveUniformBlockName(program.value, uniformBlockIndex, bufSize, length, uniformBlockName);
         METAGL_DEBUG_LOG_VOID("glGetActiveUniformBlockName", program.value, uniformBlockIndex, bufSize, length, uniformBlockName);
     }
@@ -2714,7 +2888,7 @@ namespace metagl
     // #161
     void glUniformBlockBinding(ProgramId program, GLuint uniformBlockIndex, GLuint uniformBlockBinding)
     {
-        assert(detail::g_gl.UniformBlockBinding != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.UniformBlockBinding != nullptr);
         detail::g_gl.UniformBlockBinding(program.value, uniformBlockIndex, uniformBlockBinding);
         METAGL_DEBUG_LOG_VOID("glUniformBlockBinding", program.value, uniformBlockIndex, uniformBlockBinding);
     }
@@ -2722,7 +2896,7 @@ namespace metagl
     // #162
     void glUniform1f(UniformLocation location, GLfloat v0)
     {
-        assert(detail::g_gl.Uniform1f != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform1f != nullptr);
         detail::g_gl.Uniform1f(location.value, v0);
         METAGL_DEBUG_LOG_VOID("glUniform1f", location.value, v0);
     }
@@ -2730,7 +2904,7 @@ namespace metagl
     // #163
     void glUniform2f(UniformLocation location, GLfloat v0, GLfloat v1)
     {
-        assert(detail::g_gl.Uniform2f != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform2f != nullptr);
         detail::g_gl.Uniform2f(location.value, v0, v1);
         METAGL_DEBUG_LOG_VOID("glUniform2f", location.value, v0, v1);
     }
@@ -2738,7 +2912,7 @@ namespace metagl
     // #164
     void glUniform3f(UniformLocation location, GLfloat v0, GLfloat v1, GLfloat v2)
     {
-        assert(detail::g_gl.Uniform3f != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform3f != nullptr);
         detail::g_gl.Uniform3f(location.value, v0, v1, v2);
         METAGL_DEBUG_LOG_VOID("glUniform3f", location.value, v0, v1, v2);
     }
@@ -2746,7 +2920,7 @@ namespace metagl
     // #165
     void glUniform4f(UniformLocation location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
     {
-        assert(detail::g_gl.Uniform4f != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform4f != nullptr);
         detail::g_gl.Uniform4f(location.value, v0, v1, v2, v3);
         METAGL_DEBUG_LOG_VOID("glUniform4f", location.value, v0, v1, v2, v3);
     }
@@ -2754,7 +2928,7 @@ namespace metagl
     // #166
     void glUniform1fv(UniformLocation location, GLsizei count, const GLfloat * value)
     {
-        assert(detail::g_gl.Uniform1fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform1fv != nullptr);
         detail::g_gl.Uniform1fv(location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glUniform1fv", location.value, count, value);
     }
@@ -2762,7 +2936,7 @@ namespace metagl
     // #167
     void glUniform2fv(UniformLocation location, GLsizei count, const GLfloat * value)
     {
-        assert(detail::g_gl.Uniform2fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform2fv != nullptr);
         detail::g_gl.Uniform2fv(location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glUniform2fv", location.value, count, value);
     }
@@ -2770,7 +2944,7 @@ namespace metagl
     // #168
     void glUniform3fv(UniformLocation location, GLsizei count, const GLfloat * value)
     {
-        assert(detail::g_gl.Uniform3fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform3fv != nullptr);
         detail::g_gl.Uniform3fv(location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glUniform3fv", location.value, count, value);
     }
@@ -2778,7 +2952,7 @@ namespace metagl
     // #169
     void glUniform4fv(UniformLocation location, GLsizei count, const GLfloat * value)
     {
-        assert(detail::g_gl.Uniform4fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform4fv != nullptr);
         detail::g_gl.Uniform4fv(location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glUniform4fv", location.value, count, value);
     }
@@ -2786,7 +2960,7 @@ namespace metagl
     // #170
     void glUniform1i(UniformLocation location, GLint v0)
     {
-        assert(detail::g_gl.Uniform1i != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform1i != nullptr);
         detail::g_gl.Uniform1i(location.value, v0);
         METAGL_DEBUG_LOG_VOID("glUniform1i", location.value, v0);
     }
@@ -2794,7 +2968,7 @@ namespace metagl
     // #171
     void glUniform2i(UniformLocation location, GLint v0, GLint v1)
     {
-        assert(detail::g_gl.Uniform2i != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform2i != nullptr);
         detail::g_gl.Uniform2i(location.value, v0, v1);
         METAGL_DEBUG_LOG_VOID("glUniform2i", location.value, v0, v1);
     }
@@ -2802,7 +2976,7 @@ namespace metagl
     // #172
     void glUniform3i(UniformLocation location, GLint v0, GLint v1, GLint v2)
     {
-        assert(detail::g_gl.Uniform3i != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform3i != nullptr);
         detail::g_gl.Uniform3i(location.value, v0, v1, v2);
         METAGL_DEBUG_LOG_VOID("glUniform3i", location.value, v0, v1, v2);
     }
@@ -2810,7 +2984,7 @@ namespace metagl
     // #173
     void glUniform4i(UniformLocation location, GLint v0, GLint v1, GLint v2, GLint v3)
     {
-        assert(detail::g_gl.Uniform4i != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform4i != nullptr);
         detail::g_gl.Uniform4i(location.value, v0, v1, v2, v3);
         METAGL_DEBUG_LOG_VOID("glUniform4i", location.value, v0, v1, v2, v3);
     }
@@ -2818,7 +2992,7 @@ namespace metagl
     // #174
     void glUniform1iv(UniformLocation location, GLsizei count, const GLint * value)
     {
-        assert(detail::g_gl.Uniform1iv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform1iv != nullptr);
         detail::g_gl.Uniform1iv(location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glUniform1iv", location.value, count, value);
     }
@@ -2826,7 +3000,7 @@ namespace metagl
     // #175
     void glUniform2iv(UniformLocation location, GLsizei count, const GLint * value)
     {
-        assert(detail::g_gl.Uniform2iv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform2iv != nullptr);
         detail::g_gl.Uniform2iv(location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glUniform2iv", location.value, count, value);
     }
@@ -2834,7 +3008,7 @@ namespace metagl
     // #176
     void glUniform3iv(UniformLocation location, GLsizei count, const GLint * value)
     {
-        assert(detail::g_gl.Uniform3iv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform3iv != nullptr);
         detail::g_gl.Uniform3iv(location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glUniform3iv", location.value, count, value);
     }
@@ -2842,7 +3016,7 @@ namespace metagl
     // #177
     void glUniform4iv(UniformLocation location, GLsizei count, const GLint * value)
     {
-        assert(detail::g_gl.Uniform4iv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform4iv != nullptr);
         detail::g_gl.Uniform4iv(location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glUniform4iv", location.value, count, value);
     }
@@ -2850,7 +3024,7 @@ namespace metagl
     // #178
     void glUniform1ui(UniformLocation location, GLuint v0)
     {
-        assert(detail::g_gl.Uniform1ui != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform1ui != nullptr);
         detail::g_gl.Uniform1ui(location.value, v0);
         METAGL_DEBUG_LOG_VOID("glUniform1ui", location.value, v0);
     }
@@ -2858,7 +3032,7 @@ namespace metagl
     // #179
     void glUniform2ui(UniformLocation location, GLuint v0, GLuint v1)
     {
-        assert(detail::g_gl.Uniform2ui != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform2ui != nullptr);
         detail::g_gl.Uniform2ui(location.value, v0, v1);
         METAGL_DEBUG_LOG_VOID("glUniform2ui", location.value, v0, v1);
     }
@@ -2866,7 +3040,7 @@ namespace metagl
     // #180
     void glUniform3ui(UniformLocation location, GLuint v0, GLuint v1, GLuint v2)
     {
-        assert(detail::g_gl.Uniform3ui != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform3ui != nullptr);
         detail::g_gl.Uniform3ui(location.value, v0, v1, v2);
         METAGL_DEBUG_LOG_VOID("glUniform3ui", location.value, v0, v1, v2);
     }
@@ -2874,7 +3048,7 @@ namespace metagl
     // #181
     void glUniform4ui(UniformLocation location, GLuint v0, GLuint v1, GLuint v2, GLuint v3)
     {
-        assert(detail::g_gl.Uniform4ui != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform4ui != nullptr);
         detail::g_gl.Uniform4ui(location.value, v0, v1, v2, v3);
         METAGL_DEBUG_LOG_VOID("glUniform4ui", location.value, v0, v1, v2, v3);
     }
@@ -2882,7 +3056,7 @@ namespace metagl
     // #182
     void glUniform1uiv(UniformLocation location, GLsizei count, const GLuint * value)
     {
-        assert(detail::g_gl.Uniform1uiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform1uiv != nullptr);
         detail::g_gl.Uniform1uiv(location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glUniform1uiv", location.value, count, value);
     }
@@ -2890,7 +3064,7 @@ namespace metagl
     // #183
     void glUniform2uiv(UniformLocation location, GLsizei count, const GLuint * value)
     {
-        assert(detail::g_gl.Uniform2uiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform2uiv != nullptr);
         detail::g_gl.Uniform2uiv(location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glUniform2uiv", location.value, count, value);
     }
@@ -2898,7 +3072,7 @@ namespace metagl
     // #184
     void glUniform3uiv(UniformLocation location, GLsizei count, const GLuint * value)
     {
-        assert(detail::g_gl.Uniform3uiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform3uiv != nullptr);
         detail::g_gl.Uniform3uiv(location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glUniform3uiv", location.value, count, value);
     }
@@ -2906,7 +3080,7 @@ namespace metagl
     // #185
     void glUniform4uiv(UniformLocation location, GLsizei count, const GLuint * value)
     {
-        assert(detail::g_gl.Uniform4uiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.Uniform4uiv != nullptr);
         detail::g_gl.Uniform4uiv(location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glUniform4uiv", location.value, count, value);
     }
@@ -2914,7 +3088,7 @@ namespace metagl
     // #186
     void glUniformMatrix2fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.UniformMatrix2fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.UniformMatrix2fv != nullptr);
         detail::g_gl.UniformMatrix2fv(location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glUniformMatrix2fv", location.value, count, transpose, value);
     }
@@ -2922,7 +3096,7 @@ namespace metagl
     // #187
     void glUniformMatrix3fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.UniformMatrix3fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.UniformMatrix3fv != nullptr);
         detail::g_gl.UniformMatrix3fv(location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glUniformMatrix3fv", location.value, count, transpose, value);
     }
@@ -2930,7 +3104,7 @@ namespace metagl
     // #188
     void glUniformMatrix4fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.UniformMatrix4fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.UniformMatrix4fv != nullptr);
         detail::g_gl.UniformMatrix4fv(location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glUniformMatrix4fv", location.value, count, transpose, value);
     }
@@ -2938,7 +3112,7 @@ namespace metagl
     // #189
     void glUniformMatrix2x3fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.UniformMatrix2x3fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.UniformMatrix2x3fv != nullptr);
         detail::g_gl.UniformMatrix2x3fv(location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glUniformMatrix2x3fv", location.value, count, transpose, value);
     }
@@ -2946,7 +3120,7 @@ namespace metagl
     // #190
     void glUniformMatrix2x4fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.UniformMatrix2x4fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.UniformMatrix2x4fv != nullptr);
         detail::g_gl.UniformMatrix2x4fv(location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glUniformMatrix2x4fv", location.value, count, transpose, value);
     }
@@ -2954,7 +3128,7 @@ namespace metagl
     // #191
     void glUniformMatrix3x2fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.UniformMatrix3x2fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.UniformMatrix3x2fv != nullptr);
         detail::g_gl.UniformMatrix3x2fv(location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glUniformMatrix3x2fv", location.value, count, transpose, value);
     }
@@ -2962,7 +3136,7 @@ namespace metagl
     // #192
     void glUniformMatrix3x4fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.UniformMatrix3x4fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.UniformMatrix3x4fv != nullptr);
         detail::g_gl.UniformMatrix3x4fv(location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glUniformMatrix3x4fv", location.value, count, transpose, value);
     }
@@ -2970,7 +3144,7 @@ namespace metagl
     // #193
     void glUniformMatrix4x2fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.UniformMatrix4x2fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.UniformMatrix4x2fv != nullptr);
         detail::g_gl.UniformMatrix4x2fv(location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glUniformMatrix4x2fv", location.value, count, transpose, value);
     }
@@ -2978,7 +3152,7 @@ namespace metagl
     // #194
     void glUniformMatrix4x3fv(UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.UniformMatrix4x3fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.UniformMatrix4x3fv != nullptr);
         detail::g_gl.UniformMatrix4x3fv(location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glUniformMatrix4x3fv", location.value, count, transpose, value);
     }
@@ -2986,7 +3160,7 @@ namespace metagl
     // #195
     void glGetUniformfv(ProgramId program, UniformLocation location, GLfloat * params)
     {
-        assert(detail::g_gl.GetUniformfv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetUniformfv != nullptr);
         detail::g_gl.GetUniformfv(program.value, location.value, params);
         METAGL_DEBUG_LOG_VOID("glGetUniformfv", program.value, location.value, params);
     }
@@ -2994,7 +3168,7 @@ namespace metagl
     // #196
     void glGetUniformiv(ProgramId program, UniformLocation location, GLint * params)
     {
-        assert(detail::g_gl.GetUniformiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetUniformiv != nullptr);
         detail::g_gl.GetUniformiv(program.value, location.value, params);
         METAGL_DEBUG_LOG_VOID("glGetUniformiv", program.value, location.value, params);
     }
@@ -3002,7 +3176,7 @@ namespace metagl
     // #197
     void glGetUniformuiv(ProgramId program, UniformLocation location, GLuint * params)
     {
-        assert(detail::g_gl.GetUniformuiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetUniformuiv != nullptr);
         detail::g_gl.GetUniformuiv(program.value, location.value, params);
         METAGL_DEBUG_LOG_VOID("glGetUniformuiv", program.value, location.value, params);
     }
@@ -3010,7 +3184,7 @@ namespace metagl
     // #198
     void glGetnUniformfv(ProgramId program, UniformLocation location, GLsizei bufSize, GLfloat * params)
     {
-        assert(detail::g_gl.GetnUniformfv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetnUniformfv != nullptr);
         detail::g_gl.GetnUniformfv(program.value, location.value, bufSize, params);
         METAGL_DEBUG_LOG_VOID("glGetnUniformfv", program.value, location.value, bufSize, params);
     }
@@ -3018,7 +3192,7 @@ namespace metagl
     // #199
     void glGetnUniformiv(ProgramId program, UniformLocation location, GLsizei bufSize, GLint * params)
     {
-        assert(detail::g_gl.GetnUniformiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetnUniformiv != nullptr);
         detail::g_gl.GetnUniformiv(program.value, location.value, bufSize, params);
         METAGL_DEBUG_LOG_VOID("glGetnUniformiv", program.value, location.value, bufSize, params);
     }
@@ -3026,7 +3200,7 @@ namespace metagl
     // #200
     void glGetnUniformuiv(ProgramId program, UniformLocation location, GLsizei bufSize, GLuint * params)
     {
-        assert(detail::g_gl.GetnUniformuiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetnUniformuiv != nullptr);
         detail::g_gl.GetnUniformuiv(program.value, location.value, bufSize, params);
         METAGL_DEBUG_LOG_VOID("glGetnUniformuiv", program.value, location.value, bufSize, params);
     }
@@ -3034,7 +3208,7 @@ namespace metagl
     // #201
     void glProgramUniform1f(ProgramId program, UniformLocation location, GLfloat v0)
     {
-        assert(detail::g_gl.ProgramUniform1f != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform1f != nullptr);
         detail::g_gl.ProgramUniform1f(program.value, location.value, v0);
         METAGL_DEBUG_LOG_VOID("glProgramUniform1f", program.value, location.value, v0);
     }
@@ -3042,7 +3216,7 @@ namespace metagl
     // #202
     void glProgramUniform2f(ProgramId program, UniformLocation location, GLfloat v0, GLfloat v1)
     {
-        assert(detail::g_gl.ProgramUniform2f != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform2f != nullptr);
         detail::g_gl.ProgramUniform2f(program.value, location.value, v0, v1);
         METAGL_DEBUG_LOG_VOID("glProgramUniform2f", program.value, location.value, v0, v1);
     }
@@ -3050,7 +3224,7 @@ namespace metagl
     // #203
     void glProgramUniform3f(ProgramId program, UniformLocation location, GLfloat v0, GLfloat v1, GLfloat v2)
     {
-        assert(detail::g_gl.ProgramUniform3f != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform3f != nullptr);
         detail::g_gl.ProgramUniform3f(program.value, location.value, v0, v1, v2);
         METAGL_DEBUG_LOG_VOID("glProgramUniform3f", program.value, location.value, v0, v1, v2);
     }
@@ -3058,7 +3232,7 @@ namespace metagl
     // #204
     void glProgramUniform4f(ProgramId program, UniformLocation location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3)
     {
-        assert(detail::g_gl.ProgramUniform4f != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform4f != nullptr);
         detail::g_gl.ProgramUniform4f(program.value, location.value, v0, v1, v2, v3);
         METAGL_DEBUG_LOG_VOID("glProgramUniform4f", program.value, location.value, v0, v1, v2, v3);
     }
@@ -3066,7 +3240,7 @@ namespace metagl
     // #205
     void glProgramUniform1fv(ProgramId program, UniformLocation location, GLsizei count, const GLfloat * value)
     {
-        assert(detail::g_gl.ProgramUniform1fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform1fv != nullptr);
         detail::g_gl.ProgramUniform1fv(program.value, location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniform1fv", program.value, location.value, count, value);
     }
@@ -3074,7 +3248,7 @@ namespace metagl
     // #206
     void glProgramUniform2fv(ProgramId program, UniformLocation location, GLsizei count, const GLfloat * value)
     {
-        assert(detail::g_gl.ProgramUniform2fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform2fv != nullptr);
         detail::g_gl.ProgramUniform2fv(program.value, location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniform2fv", program.value, location.value, count, value);
     }
@@ -3082,7 +3256,7 @@ namespace metagl
     // #207
     void glProgramUniform3fv(ProgramId program, UniformLocation location, GLsizei count, const GLfloat * value)
     {
-        assert(detail::g_gl.ProgramUniform3fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform3fv != nullptr);
         detail::g_gl.ProgramUniform3fv(program.value, location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniform3fv", program.value, location.value, count, value);
     }
@@ -3090,7 +3264,7 @@ namespace metagl
     // #208
     void glProgramUniform4fv(ProgramId program, UniformLocation location, GLsizei count, const GLfloat * value)
     {
-        assert(detail::g_gl.ProgramUniform4fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform4fv != nullptr);
         detail::g_gl.ProgramUniform4fv(program.value, location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniform4fv", program.value, location.value, count, value);
     }
@@ -3098,7 +3272,7 @@ namespace metagl
     // #209
     void glProgramUniform1i(ProgramId program, UniformLocation location, GLint v0)
     {
-        assert(detail::g_gl.ProgramUniform1i != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform1i != nullptr);
         detail::g_gl.ProgramUniform1i(program.value, location.value, v0);
         METAGL_DEBUG_LOG_VOID("glProgramUniform1i", program.value, location.value, v0);
     }
@@ -3106,7 +3280,7 @@ namespace metagl
     // #210
     void glProgramUniform2i(ProgramId program, UniformLocation location, GLint v0, GLint v1)
     {
-        assert(detail::g_gl.ProgramUniform2i != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform2i != nullptr);
         detail::g_gl.ProgramUniform2i(program.value, location.value, v0, v1);
         METAGL_DEBUG_LOG_VOID("glProgramUniform2i", program.value, location.value, v0, v1);
     }
@@ -3114,7 +3288,7 @@ namespace metagl
     // #211
     void glProgramUniform3i(ProgramId program, UniformLocation location, GLint v0, GLint v1, GLint v2)
     {
-        assert(detail::g_gl.ProgramUniform3i != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform3i != nullptr);
         detail::g_gl.ProgramUniform3i(program.value, location.value, v0, v1, v2);
         METAGL_DEBUG_LOG_VOID("glProgramUniform3i", program.value, location.value, v0, v1, v2);
     }
@@ -3122,7 +3296,7 @@ namespace metagl
     // #212
     void glProgramUniform4i(ProgramId program, UniformLocation location, GLint v0, GLint v1, GLint v2, GLint v3)
     {
-        assert(detail::g_gl.ProgramUniform4i != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform4i != nullptr);
         detail::g_gl.ProgramUniform4i(program.value, location.value, v0, v1, v2, v3);
         METAGL_DEBUG_LOG_VOID("glProgramUniform4i", program.value, location.value, v0, v1, v2, v3);
     }
@@ -3130,7 +3304,7 @@ namespace metagl
     // #213
     void glProgramUniform1iv(ProgramId program, UniformLocation location, GLsizei count, const GLint * value)
     {
-        assert(detail::g_gl.ProgramUniform1iv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform1iv != nullptr);
         detail::g_gl.ProgramUniform1iv(program.value, location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniform1iv", program.value, location.value, count, value);
     }
@@ -3138,7 +3312,7 @@ namespace metagl
     // #214
     void glProgramUniform2iv(ProgramId program, UniformLocation location, GLsizei count, const GLint * value)
     {
-        assert(detail::g_gl.ProgramUniform2iv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform2iv != nullptr);
         detail::g_gl.ProgramUniform2iv(program.value, location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniform2iv", program.value, location.value, count, value);
     }
@@ -3146,7 +3320,7 @@ namespace metagl
     // #215
     void glProgramUniform3iv(ProgramId program, UniformLocation location, GLsizei count, const GLint * value)
     {
-        assert(detail::g_gl.ProgramUniform3iv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform3iv != nullptr);
         detail::g_gl.ProgramUniform3iv(program.value, location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniform3iv", program.value, location.value, count, value);
     }
@@ -3154,7 +3328,7 @@ namespace metagl
     // #216
     void glProgramUniform4iv(ProgramId program, UniformLocation location, GLsizei count, const GLint * value)
     {
-        assert(detail::g_gl.ProgramUniform4iv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform4iv != nullptr);
         detail::g_gl.ProgramUniform4iv(program.value, location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniform4iv", program.value, location.value, count, value);
     }
@@ -3162,7 +3336,7 @@ namespace metagl
     // #217
     void glProgramUniform1ui(ProgramId program, UniformLocation location, GLuint v0)
     {
-        assert(detail::g_gl.ProgramUniform1ui != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform1ui != nullptr);
         detail::g_gl.ProgramUniform1ui(program.value, location.value, v0);
         METAGL_DEBUG_LOG_VOID("glProgramUniform1ui", program.value, location.value, v0);
     }
@@ -3170,7 +3344,7 @@ namespace metagl
     // #218
     void glProgramUniform2ui(ProgramId program, UniformLocation location, GLuint v0, GLuint v1)
     {
-        assert(detail::g_gl.ProgramUniform2ui != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform2ui != nullptr);
         detail::g_gl.ProgramUniform2ui(program.value, location.value, v0, v1);
         METAGL_DEBUG_LOG_VOID("glProgramUniform2ui", program.value, location.value, v0, v1);
     }
@@ -3178,7 +3352,7 @@ namespace metagl
     // #219
     void glProgramUniform3ui(ProgramId program, UniformLocation location, GLuint v0, GLuint v1, GLuint v2)
     {
-        assert(detail::g_gl.ProgramUniform3ui != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform3ui != nullptr);
         detail::g_gl.ProgramUniform3ui(program.value, location.value, v0, v1, v2);
         METAGL_DEBUG_LOG_VOID("glProgramUniform3ui", program.value, location.value, v0, v1, v2);
     }
@@ -3186,7 +3360,7 @@ namespace metagl
     // #220
     void glProgramUniform4ui(ProgramId program, UniformLocation location, GLuint v0, GLuint v1, GLuint v2, GLuint v3)
     {
-        assert(detail::g_gl.ProgramUniform4ui != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform4ui != nullptr);
         detail::g_gl.ProgramUniform4ui(program.value, location.value, v0, v1, v2, v3);
         METAGL_DEBUG_LOG_VOID("glProgramUniform4ui", program.value, location.value, v0, v1, v2, v3);
     }
@@ -3194,7 +3368,7 @@ namespace metagl
     // #221
     void glProgramUniform1uiv(ProgramId program, UniformLocation location, GLsizei count, const GLuint * value)
     {
-        assert(detail::g_gl.ProgramUniform1uiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform1uiv != nullptr);
         detail::g_gl.ProgramUniform1uiv(program.value, location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniform1uiv", program.value, location.value, count, value);
     }
@@ -3202,7 +3376,7 @@ namespace metagl
     // #222
     void glProgramUniform2uiv(ProgramId program, UniformLocation location, GLsizei count, const GLuint * value)
     {
-        assert(detail::g_gl.ProgramUniform2uiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform2uiv != nullptr);
         detail::g_gl.ProgramUniform2uiv(program.value, location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniform2uiv", program.value, location.value, count, value);
     }
@@ -3210,7 +3384,7 @@ namespace metagl
     // #223
     void glProgramUniform3uiv(ProgramId program, UniformLocation location, GLsizei count, const GLuint * value)
     {
-        assert(detail::g_gl.ProgramUniform3uiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform3uiv != nullptr);
         detail::g_gl.ProgramUniform3uiv(program.value, location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniform3uiv", program.value, location.value, count, value);
     }
@@ -3218,7 +3392,7 @@ namespace metagl
     // #224
     void glProgramUniform4uiv(ProgramId program, UniformLocation location, GLsizei count, const GLuint * value)
     {
-        assert(detail::g_gl.ProgramUniform4uiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniform4uiv != nullptr);
         detail::g_gl.ProgramUniform4uiv(program.value, location.value, count, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniform4uiv", program.value, location.value, count, value);
     }
@@ -3226,7 +3400,7 @@ namespace metagl
     // #225
     void glProgramUniformMatrix2fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.ProgramUniformMatrix2fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniformMatrix2fv != nullptr);
         detail::g_gl.ProgramUniformMatrix2fv(program.value, location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix2fv", program.value, location.value, count, transpose, value);
     }
@@ -3234,7 +3408,7 @@ namespace metagl
     // #226
     void glProgramUniformMatrix3fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.ProgramUniformMatrix3fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniformMatrix3fv != nullptr);
         detail::g_gl.ProgramUniformMatrix3fv(program.value, location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix3fv", program.value, location.value, count, transpose, value);
     }
@@ -3242,7 +3416,7 @@ namespace metagl
     // #227
     void glProgramUniformMatrix4fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.ProgramUniformMatrix4fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniformMatrix4fv != nullptr);
         detail::g_gl.ProgramUniformMatrix4fv(program.value, location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix4fv", program.value, location.value, count, transpose, value);
     }
@@ -3250,7 +3424,7 @@ namespace metagl
     // #228
     void glProgramUniformMatrix2x3fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.ProgramUniformMatrix2x3fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniformMatrix2x3fv != nullptr);
         detail::g_gl.ProgramUniformMatrix2x3fv(program.value, location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix2x3fv", program.value, location.value, count, transpose, value);
     }
@@ -3258,7 +3432,7 @@ namespace metagl
     // #229
     void glProgramUniformMatrix2x4fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.ProgramUniformMatrix2x4fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniformMatrix2x4fv != nullptr);
         detail::g_gl.ProgramUniformMatrix2x4fv(program.value, location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix2x4fv", program.value, location.value, count, transpose, value);
     }
@@ -3266,7 +3440,7 @@ namespace metagl
     // #230
     void glProgramUniformMatrix3x2fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.ProgramUniformMatrix3x2fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniformMatrix3x2fv != nullptr);
         detail::g_gl.ProgramUniformMatrix3x2fv(program.value, location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix3x2fv", program.value, location.value, count, transpose, value);
     }
@@ -3274,7 +3448,7 @@ namespace metagl
     // #231
     void glProgramUniformMatrix3x4fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.ProgramUniformMatrix3x4fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniformMatrix3x4fv != nullptr);
         detail::g_gl.ProgramUniformMatrix3x4fv(program.value, location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix3x4fv", program.value, location.value, count, transpose, value);
     }
@@ -3282,7 +3456,7 @@ namespace metagl
     // #232
     void glProgramUniformMatrix4x2fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.ProgramUniformMatrix4x2fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniformMatrix4x2fv != nullptr);
         detail::g_gl.ProgramUniformMatrix4x2fv(program.value, location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix4x2fv", program.value, location.value, count, transpose, value);
     }
@@ -3290,7 +3464,7 @@ namespace metagl
     // #233
     void glProgramUniformMatrix4x3fv(ProgramId program, UniformLocation location, GLsizei count, GLboolean transpose, const GLfloat * value)
     {
-        assert(detail::g_gl.ProgramUniformMatrix4x3fv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ProgramUniformMatrix4x3fv != nullptr);
         detail::g_gl.ProgramUniformMatrix4x3fv(program.value, location.value, count, transpose, value);
         METAGL_DEBUG_LOG_VOID("glProgramUniformMatrix4x3fv", program.value, location.value, count, transpose, value);
     }
@@ -3299,7 +3473,7 @@ namespace metagl
     void glGenTextures(GLsizei n, TextureId * textures)
     {
         static_assert(sizeof(TextureId) == sizeof(GLuint), "TextureId must be layout-compatible with GLuint");
-        assert(detail::g_gl.GenTextures != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GenTextures != nullptr);
         detail::g_gl.GenTextures(n, reinterpret_cast<GLuint*>(textures));
         METAGL_DEBUG_LOG_VOID("glGenTextures", n, textures);
     }
@@ -3308,7 +3482,7 @@ namespace metagl
     void glDeleteTextures(GLsizei n, const TextureId * textures)
     {
         static_assert(sizeof(TextureId) == sizeof(GLuint), "TextureId must be layout-compatible with GLuint");
-        assert(detail::g_gl.DeleteTextures != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DeleteTextures != nullptr);
         detail::g_gl.DeleteTextures(n, reinterpret_cast<const GLuint*>(textures));
         METAGL_DEBUG_LOG_VOID("glDeleteTextures", n, textures);
     }
@@ -3316,7 +3490,7 @@ namespace metagl
     // #236
     void glBindTexture(TextureTarget target, TextureId texture)
     {
-        assert(detail::g_gl.BindTexture != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BindTexture != nullptr);
         detail::g_gl.BindTexture(detail::to_gl_enum(target), texture.value);
         METAGL_DEBUG_LOG_VOID("glBindTexture", target, texture.value);
     }
@@ -3324,7 +3498,7 @@ namespace metagl
     // #237
     void glActiveTexture(TextureUnit texture)
     {
-        assert(detail::g_gl.ActiveTexture != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ActiveTexture != nullptr);
         detail::g_gl.ActiveTexture(detail::to_gl_enum(texture));
         METAGL_DEBUG_LOG_VOID("glActiveTexture", texture);
     }
@@ -3332,7 +3506,7 @@ namespace metagl
     // #238
     bool glIsTexture(TextureId texture)
     {
-        assert(detail::g_gl.IsTexture != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsTexture != nullptr);
         const auto _r = detail::g_gl.IsTexture(texture.value);
         METAGL_DEBUG_LOG("glIsTexture", _r, texture.value);
         return _r;
@@ -3341,7 +3515,7 @@ namespace metagl
     // #239
     void glTexImage2D(TextureTarget target, GLint level, InternalFormat internalformat, GLsizei width, GLsizei height, GLint border, PixelFormat format, PixelType type, const void * pixels)
     {
-        assert(detail::g_gl.TexImage2D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexImage2D != nullptr);
         detail::g_gl.TexImage2D(detail::to_gl_enum(target), level, static_cast<GLint>(detail::to_gl_enum(internalformat)), width, height, border, detail::to_gl_enum(format), detail::to_gl_enum(type), pixels);
         METAGL_DEBUG_LOG_VOID("glTexImage2D", target, level, internalformat, width, height, border, format, type, pixels);
     }
@@ -3349,7 +3523,7 @@ namespace metagl
     // #240
     void glTexImage3D(TextureTarget target, GLint level, InternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, PixelFormat format, PixelType type, const void * pixels)
     {
-        assert(detail::g_gl.TexImage3D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexImage3D != nullptr);
         detail::g_gl.TexImage3D(detail::to_gl_enum(target), level, static_cast<GLint>(detail::to_gl_enum(internalformat)), width, height, depth, border, detail::to_gl_enum(format), detail::to_gl_enum(type), pixels);
         METAGL_DEBUG_LOG_VOID("glTexImage3D", target, level, internalformat, width, height, depth, border, format, type, pixels);
     }
@@ -3357,7 +3531,7 @@ namespace metagl
     // #241
     void glTexSubImage2D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, PixelFormat format, PixelType type, const void * pixels)
     {
-        assert(detail::g_gl.TexSubImage2D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexSubImage2D != nullptr);
         detail::g_gl.TexSubImage2D(detail::to_gl_enum(target), level, xoffset, yoffset, width, height, detail::to_gl_enum(format), detail::to_gl_enum(type), pixels);
         METAGL_DEBUG_LOG_VOID("glTexSubImage2D", target, level, xoffset, yoffset, width, height, format, type, pixels);
     }
@@ -3365,7 +3539,7 @@ namespace metagl
     // #242
     void glTexSubImage3D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, PixelFormat format, PixelType type, const void * pixels)
     {
-        assert(detail::g_gl.TexSubImage3D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexSubImage3D != nullptr);
         detail::g_gl.TexSubImage3D(detail::to_gl_enum(target), level, xoffset, yoffset, zoffset, width, height, depth, detail::to_gl_enum(format), detail::to_gl_enum(type), pixels);
         METAGL_DEBUG_LOG_VOID("glTexSubImage3D", target, level, xoffset, yoffset, zoffset, width, height, depth, format, type, pixels);
     }
@@ -3373,7 +3547,7 @@ namespace metagl
     // #243
     void glTexStorage2D(TextureTarget target, GLsizei levels, InternalFormat internalformat, GLsizei width, GLsizei height)
     {
-        assert(detail::g_gl.TexStorage2D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexStorage2D != nullptr);
         detail::g_gl.TexStorage2D(detail::to_gl_enum(target), levels, detail::to_gl_enum(internalformat), width, height);
         METAGL_DEBUG_LOG_VOID("glTexStorage2D", target, levels, internalformat, width, height);
     }
@@ -3381,7 +3555,7 @@ namespace metagl
     // #244
     void glTexStorage3D(TextureTarget target, GLsizei levels, InternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth)
     {
-        assert(detail::g_gl.TexStorage3D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexStorage3D != nullptr);
         detail::g_gl.TexStorage3D(detail::to_gl_enum(target), levels, detail::to_gl_enum(internalformat), width, height, depth);
         METAGL_DEBUG_LOG_VOID("glTexStorage3D", target, levels, internalformat, width, height, depth);
     }
@@ -3389,7 +3563,7 @@ namespace metagl
     // #245
     void glTexStorage2DMultisample(TextureTarget target, GLsizei samples, InternalFormat internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations)
     {
-        assert(detail::g_gl.TexStorage2DMultisample != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexStorage2DMultisample != nullptr);
         detail::g_gl.TexStorage2DMultisample(detail::to_gl_enum(target), samples, detail::to_gl_enum(internalformat), width, height, fixedsamplelocations);
         METAGL_DEBUG_LOG_VOID("glTexStorage2DMultisample", target, samples, internalformat, width, height, fixedsamplelocations);
     }
@@ -3397,7 +3571,7 @@ namespace metagl
     // #246
     void glTexStorage3DMultisample(TextureTarget target, GLsizei samples, InternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLboolean fixedsamplelocations)
     {
-        assert(detail::g_gl.TexStorage3DMultisample != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexStorage3DMultisample != nullptr);
         detail::g_gl.TexStorage3DMultisample(detail::to_gl_enum(target), samples, detail::to_gl_enum(internalformat), width, height, depth, fixedsamplelocations);
         METAGL_DEBUG_LOG_VOID("glTexStorage3DMultisample", target, samples, internalformat, width, height, depth, fixedsamplelocations);
     }
@@ -3405,7 +3579,7 @@ namespace metagl
     // #247
     void glCompressedTexImage2D(TextureTarget target, GLint level, CompressedInternalFormat internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void * data)
     {
-        assert(detail::g_gl.CompressedTexImage2D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CompressedTexImage2D != nullptr);
         detail::g_gl.CompressedTexImage2D(detail::to_gl_enum(target), level, detail::to_gl_enum(internalformat), width, height, border, imageSize, data);
         METAGL_DEBUG_LOG_VOID("glCompressedTexImage2D", target, level, internalformat, width, height, border, imageSize, data);
     }
@@ -3413,7 +3587,7 @@ namespace metagl
     // #248
     void glCompressedTexImage3D(TextureTarget target, GLint level, CompressedInternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const void * data)
     {
-        assert(detail::g_gl.CompressedTexImage3D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CompressedTexImage3D != nullptr);
         detail::g_gl.CompressedTexImage3D(detail::to_gl_enum(target), level, detail::to_gl_enum(internalformat), width, height, depth, border, imageSize, data);
         METAGL_DEBUG_LOG_VOID("glCompressedTexImage3D", target, level, internalformat, width, height, depth, border, imageSize, data);
     }
@@ -3421,7 +3595,7 @@ namespace metagl
     // #249
     void glCompressedTexSubImage2D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, CompressedInternalFormat format, GLsizei imageSize, const void * data)
     {
-        assert(detail::g_gl.CompressedTexSubImage2D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CompressedTexSubImage2D != nullptr);
         detail::g_gl.CompressedTexSubImage2D(detail::to_gl_enum(target), level, xoffset, yoffset, width, height, detail::to_gl_enum(format), imageSize, data);
         METAGL_DEBUG_LOG_VOID("glCompressedTexSubImage2D", target, level, xoffset, yoffset, width, height, format, imageSize, data);
     }
@@ -3429,7 +3603,7 @@ namespace metagl
     // #250
     void glCompressedTexSubImage3D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, CompressedInternalFormat format, GLsizei imageSize, const void * data)
     {
-        assert(detail::g_gl.CompressedTexSubImage3D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CompressedTexSubImage3D != nullptr);
         detail::g_gl.CompressedTexSubImage3D(detail::to_gl_enum(target), level, xoffset, yoffset, zoffset, width, height, depth, detail::to_gl_enum(format), imageSize, data);
         METAGL_DEBUG_LOG_VOID("glCompressedTexSubImage3D", target, level, xoffset, yoffset, zoffset, width, height, depth, format, imageSize, data);
     }
@@ -3437,7 +3611,7 @@ namespace metagl
     // #251
     void glCopyTexImage2D(TextureTarget target, GLint level, InternalFormat internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
     {
-        assert(detail::g_gl.CopyTexImage2D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CopyTexImage2D != nullptr);
         detail::g_gl.CopyTexImage2D(detail::to_gl_enum(target), level, detail::to_gl_enum(internalformat), x, y, width, height, border);
         METAGL_DEBUG_LOG_VOID("glCopyTexImage2D", target, level, internalformat, x, y, width, height, border);
     }
@@ -3445,7 +3619,7 @@ namespace metagl
     // #252
     void glCopyTexSubImage2D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
     {
-        assert(detail::g_gl.CopyTexSubImage2D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CopyTexSubImage2D != nullptr);
         detail::g_gl.CopyTexSubImage2D(detail::to_gl_enum(target), level, xoffset, yoffset, x, y, width, height);
         METAGL_DEBUG_LOG_VOID("glCopyTexSubImage2D", target, level, xoffset, yoffset, x, y, width, height);
     }
@@ -3453,7 +3627,7 @@ namespace metagl
     // #253
     void glCopyTexSubImage3D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height)
     {
-        assert(detail::g_gl.CopyTexSubImage3D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CopyTexSubImage3D != nullptr);
         detail::g_gl.CopyTexSubImage3D(detail::to_gl_enum(target), level, xoffset, yoffset, zoffset, x, y, width, height);
         METAGL_DEBUG_LOG_VOID("glCopyTexSubImage3D", target, level, xoffset, yoffset, zoffset, x, y, width, height);
     }
@@ -3461,15 +3635,35 @@ namespace metagl
     // #254
     void glCopyImageSubData(GLuint srcName, TextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, GLuint dstName, TextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei srcWidth, GLsizei srcHeight, GLsizei srcDepth)
     {
-        assert(detail::g_gl.CopyImageSubData != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CopyImageSubData != nullptr);
         detail::g_gl.CopyImageSubData(srcName, detail::to_gl_enum(srcTarget), srcLevel, srcX, srcY, srcZ, dstName, detail::to_gl_enum(dstTarget), dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth);
         METAGL_DEBUG_LOG_VOID("glCopyImageSubData", srcName, srcTarget, srcLevel, srcX, srcY, srcZ, dstName, dstTarget, dstLevel, dstX, dstY, dstZ, srcWidth, srcHeight, srcDepth);
+    }
+
+    void glCopyImageSubData(TextureId srcName, ImageCopyTextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, TextureId dstName, ImageCopyTextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei width, GLsizei height, GLsizei depth)
+    {
+        glCopyImageSubData(srcName.value, static_cast<TextureTarget>(detail::to_gl_enum(srcTarget)), srcLevel, srcX, srcY, srcZ, dstName.value, static_cast<TextureTarget>(detail::to_gl_enum(dstTarget)), dstLevel, dstX, dstY, dstZ, width, height, depth);
+    }
+
+    void glCopyImageSubData(TextureId srcName, ImageCopyTextureTarget srcTarget, GLint srcLevel, GLint srcX, GLint srcY, GLint srcZ, RenderbufferId dstName, GLint dstX, GLint dstY, GLsizei width, GLsizei height)
+    {
+        glCopyImageSubData(srcName.value, static_cast<TextureTarget>(detail::to_gl_enum(srcTarget)), srcLevel, srcX, srcY, srcZ, dstName.value, static_cast<TextureTarget>(GL_RENDERBUFFER), 0, dstX, dstY, 0, width, height, 1);
+    }
+
+    void glCopyImageSubData(RenderbufferId srcName, GLint srcX, GLint srcY, TextureId dstName, ImageCopyTextureTarget dstTarget, GLint dstLevel, GLint dstX, GLint dstY, GLint dstZ, GLsizei width, GLsizei height)
+    {
+        glCopyImageSubData(srcName.value, static_cast<TextureTarget>(GL_RENDERBUFFER), 0, srcX, srcY, 0, dstName.value, static_cast<TextureTarget>(detail::to_gl_enum(dstTarget)), dstLevel, dstX, dstY, dstZ, width, height, 1);
+    }
+
+    void glCopyImageSubData(RenderbufferId srcName, GLint srcX, GLint srcY, RenderbufferId dstName, GLint dstX, GLint dstY, GLsizei width, GLsizei height)
+    {
+        glCopyImageSubData(srcName.value, static_cast<TextureTarget>(GL_RENDERBUFFER), 0, srcX, srcY, 0, dstName.value, static_cast<TextureTarget>(GL_RENDERBUFFER), 0, dstX, dstY, 0, width, height, 1);
     }
 
     // #255
     void glGenerateMipmap(TextureTarget target)
     {
-        assert(detail::g_gl.GenerateMipmap != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GenerateMipmap != nullptr);
         detail::g_gl.GenerateMipmap(detail::to_gl_enum(target));
         METAGL_DEBUG_LOG_VOID("glGenerateMipmap", target);
     }
@@ -3477,7 +3671,7 @@ namespace metagl
     // #256
     void glTexParameterf(TextureTarget target, TextureParameter pname, GLfloat param)
     {
-        assert(detail::g_gl.TexParameterf != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexParameterf != nullptr);
         detail::g_gl.TexParameterf(detail::to_gl_enum(target), detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glTexParameterf", target, pname, param);
     }
@@ -3485,7 +3679,7 @@ namespace metagl
     // #257
     void glTexParameteri(TextureTarget target, TextureParameter pname, GLint param)
     {
-        assert(detail::g_gl.TexParameteri != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexParameteri != nullptr);
         detail::g_gl.TexParameteri(detail::to_gl_enum(target), detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glTexParameteri", target, pname, param);
     }
@@ -3493,7 +3687,7 @@ namespace metagl
     // #258
     void glTexParameterfv(TextureTarget target, TextureParameter pname, const GLfloat * params)
     {
-        assert(detail::g_gl.TexParameterfv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexParameterfv != nullptr);
         detail::g_gl.TexParameterfv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glTexParameterfv", target, pname, params);
     }
@@ -3501,7 +3695,7 @@ namespace metagl
     // #259
     void glTexParameteriv(TextureTarget target, TextureParameter pname, const GLint * params)
     {
-        assert(detail::g_gl.TexParameteriv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexParameteriv != nullptr);
         detail::g_gl.TexParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glTexParameteriv", target, pname, params);
     }
@@ -3509,7 +3703,7 @@ namespace metagl
     // #260
     void glTexParameterIiv(TextureTarget target, TextureParameter pname, const GLint * params)
     {
-        assert(detail::g_gl.TexParameterIiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexParameterIiv != nullptr);
         detail::g_gl.TexParameterIiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glTexParameterIiv", target, pname, params);
     }
@@ -3517,7 +3711,7 @@ namespace metagl
     // #261
     void glTexParameterIuiv(TextureTarget target, TextureParameter pname, const GLuint * params)
     {
-        assert(detail::g_gl.TexParameterIuiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexParameterIuiv != nullptr);
         detail::g_gl.TexParameterIuiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glTexParameterIuiv", target, pname, params);
     }
@@ -3525,7 +3719,7 @@ namespace metagl
     // #262
     void glGetTexParameterfv(TextureTarget target, TextureParameter pname, GLfloat * params)
     {
-        assert(detail::g_gl.GetTexParameterfv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetTexParameterfv != nullptr);
         detail::g_gl.GetTexParameterfv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetTexParameterfv", target, pname, params);
     }
@@ -3533,7 +3727,7 @@ namespace metagl
     // #263
     void glGetTexParameteriv(TextureTarget target, TextureParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetTexParameteriv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetTexParameteriv != nullptr);
         detail::g_gl.GetTexParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetTexParameteriv", target, pname, params);
     }
@@ -3541,7 +3735,7 @@ namespace metagl
     // #264
     void glGetTexParameterIiv(TextureTarget target, TextureParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetTexParameterIiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetTexParameterIiv != nullptr);
         detail::g_gl.GetTexParameterIiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetTexParameterIiv", target, pname, params);
     }
@@ -3549,7 +3743,7 @@ namespace metagl
     // #265
     void glGetTexParameterIuiv(TextureTarget target, TextureParameter pname, GLuint * params)
     {
-        assert(detail::g_gl.GetTexParameterIuiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetTexParameterIuiv != nullptr);
         detail::g_gl.GetTexParameterIuiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetTexParameterIuiv", target, pname, params);
     }
@@ -3557,7 +3751,7 @@ namespace metagl
     // #266
     void glGetTexLevelParameteriv(TextureTarget target, GLint level, TextureLevelParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetTexLevelParameteriv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetTexLevelParameteriv != nullptr);
         detail::g_gl.GetTexLevelParameteriv(detail::to_gl_enum(target), level, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetTexLevelParameteriv", target, level, pname, params);
     }
@@ -3565,7 +3759,7 @@ namespace metagl
     // #267
     void glGetTexLevelParameterfv(TextureTarget target, GLint level, TextureLevelParameter pname, GLfloat * params)
     {
-        assert(detail::g_gl.GetTexLevelParameterfv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetTexLevelParameterfv != nullptr);
         detail::g_gl.GetTexLevelParameterfv(detail::to_gl_enum(target), level, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetTexLevelParameterfv", target, level, pname, params);
     }
@@ -3573,7 +3767,7 @@ namespace metagl
     // #268
     void glTexBuffer(TextureTarget target, InternalFormat internalformat, BufferId buffer)
     {
-        assert(detail::g_gl.TexBuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexBuffer != nullptr);
         detail::g_gl.TexBuffer(detail::to_gl_enum(target), detail::to_gl_enum(internalformat), buffer.value);
         METAGL_DEBUG_LOG_VOID("glTexBuffer", target, internalformat, buffer.value);
     }
@@ -3581,7 +3775,7 @@ namespace metagl
     // #269
     void glTexBufferRange(TextureTarget target, InternalFormat internalformat, BufferId buffer, GLintptr offset, GLsizeiptr size)
     {
-        assert(detail::g_gl.TexBufferRange != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TexBufferRange != nullptr);
         detail::g_gl.TexBufferRange(detail::to_gl_enum(target), detail::to_gl_enum(internalformat), buffer.value, offset, size);
         METAGL_DEBUG_LOG_VOID("glTexBufferRange", target, internalformat, buffer.value, offset, size);
     }
@@ -3589,7 +3783,7 @@ namespace metagl
     // #270
     void glGetMultisamplefv(MultisampleParameter pname, GLuint index, GLfloat * val)
     {
-        assert(detail::g_gl.GetMultisamplefv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetMultisamplefv != nullptr);
         detail::g_gl.GetMultisamplefv(detail::to_gl_enum(pname), index, val);
         METAGL_DEBUG_LOG_VOID("glGetMultisamplefv", pname, index, val);
     }
@@ -3597,7 +3791,7 @@ namespace metagl
     // #271
     void glGetInternalformativ(InternalFormatTarget target, InternalFormat internalformat, InternalFormatParameter pname, GLsizei count, GLint * params)
     {
-        assert(detail::g_gl.GetInternalformativ != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetInternalformativ != nullptr);
         detail::g_gl.GetInternalformativ(detail::to_gl_enum(target), detail::to_gl_enum(internalformat), detail::to_gl_enum(pname), count, params);
         METAGL_DEBUG_LOG_VOID("glGetInternalformativ", target, internalformat, pname, count, params);
     }
@@ -3605,7 +3799,7 @@ namespace metagl
     // #272
     void glBindImageTexture(ImageUnit unit, TextureId texture, GLint level, GLboolean layered, GLint layer, ImageAccess access, InternalFormat format)
     {
-        assert(detail::g_gl.BindImageTexture != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BindImageTexture != nullptr);
         detail::g_gl.BindImageTexture(unit.value, texture.value, level, layered, layer, detail::to_gl_enum(access), detail::to_gl_enum(format));
         METAGL_DEBUG_LOG_VOID("glBindImageTexture", unit, texture.value, level, layered, layer, access, format);
     }
@@ -3614,7 +3808,7 @@ namespace metagl
     void glGenSamplers(GLsizei count, SamplerId * samplers)
     {
         static_assert(sizeof(SamplerId) == sizeof(GLuint), "SamplerId must be layout-compatible with GLuint");
-        assert(detail::g_gl.GenSamplers != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GenSamplers != nullptr);
         detail::g_gl.GenSamplers(count, reinterpret_cast<GLuint*>(samplers));
         METAGL_DEBUG_LOG_VOID("glGenSamplers", count, samplers);
     }
@@ -3623,7 +3817,7 @@ namespace metagl
     void glDeleteSamplers(GLsizei count, const SamplerId * samplers)
     {
         static_assert(sizeof(SamplerId) == sizeof(GLuint), "SamplerId must be layout-compatible with GLuint");
-        assert(detail::g_gl.DeleteSamplers != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DeleteSamplers != nullptr);
         detail::g_gl.DeleteSamplers(count, reinterpret_cast<const GLuint*>(samplers));
         METAGL_DEBUG_LOG_VOID("glDeleteSamplers", count, samplers);
     }
@@ -3631,7 +3825,7 @@ namespace metagl
     // #275
     void glBindSampler(GLuint unit, SamplerId sampler)
     {
-        assert(detail::g_gl.BindSampler != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BindSampler != nullptr);
         detail::g_gl.BindSampler(unit, sampler.value);
         METAGL_DEBUG_LOG_VOID("glBindSampler", unit, sampler.value);
     }
@@ -3639,7 +3833,7 @@ namespace metagl
     // #276
     bool glIsSampler(SamplerId sampler)
     {
-        assert(detail::g_gl.IsSampler != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsSampler != nullptr);
         const auto _r = detail::g_gl.IsSampler(sampler.value);
         METAGL_DEBUG_LOG("glIsSampler", _r, sampler.value);
         return _r;
@@ -3648,7 +3842,7 @@ namespace metagl
     // #277
     void glSamplerParameterf(SamplerId sampler, SamplerParameter pname, GLfloat param)
     {
-        assert(detail::g_gl.SamplerParameterf != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.SamplerParameterf != nullptr);
         detail::g_gl.SamplerParameterf(sampler.value, detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glSamplerParameterf", sampler.value, pname, param);
     }
@@ -3656,7 +3850,7 @@ namespace metagl
     // #278
     void glSamplerParameteri(SamplerId sampler, SamplerParameter pname, GLint param)
     {
-        assert(detail::g_gl.SamplerParameteri != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.SamplerParameteri != nullptr);
         detail::g_gl.SamplerParameteri(sampler.value, detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glSamplerParameteri", sampler.value, pname, param);
     }
@@ -3664,7 +3858,7 @@ namespace metagl
     // #279
     void glSamplerParameterfv(SamplerId sampler, SamplerParameter pname, const GLfloat * param)
     {
-        assert(detail::g_gl.SamplerParameterfv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.SamplerParameterfv != nullptr);
         detail::g_gl.SamplerParameterfv(sampler.value, detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glSamplerParameterfv", sampler.value, pname, param);
     }
@@ -3672,7 +3866,7 @@ namespace metagl
     // #280
     void glSamplerParameteriv(SamplerId sampler, SamplerParameter pname, const GLint * param)
     {
-        assert(detail::g_gl.SamplerParameteriv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.SamplerParameteriv != nullptr);
         detail::g_gl.SamplerParameteriv(sampler.value, detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glSamplerParameteriv", sampler.value, pname, param);
     }
@@ -3680,7 +3874,7 @@ namespace metagl
     // #281
     void glSamplerParameterIiv(SamplerId sampler, SamplerParameter pname, const GLint * param)
     {
-        assert(detail::g_gl.SamplerParameterIiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.SamplerParameterIiv != nullptr);
         detail::g_gl.SamplerParameterIiv(sampler.value, detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glSamplerParameterIiv", sampler.value, pname, param);
     }
@@ -3688,7 +3882,7 @@ namespace metagl
     // #282
     void glSamplerParameterIuiv(SamplerId sampler, SamplerParameter pname, const GLuint * param)
     {
-        assert(detail::g_gl.SamplerParameterIuiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.SamplerParameterIuiv != nullptr);
         detail::g_gl.SamplerParameterIuiv(sampler.value, detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glSamplerParameterIuiv", sampler.value, pname, param);
     }
@@ -3696,7 +3890,7 @@ namespace metagl
     // #283
     void glGetSamplerParameterfv(SamplerId sampler, SamplerParameter pname, GLfloat * params)
     {
-        assert(detail::g_gl.GetSamplerParameterfv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetSamplerParameterfv != nullptr);
         detail::g_gl.GetSamplerParameterfv(sampler.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetSamplerParameterfv", sampler.value, pname, params);
     }
@@ -3704,7 +3898,7 @@ namespace metagl
     // #284
     void glGetSamplerParameteriv(SamplerId sampler, SamplerParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetSamplerParameteriv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetSamplerParameteriv != nullptr);
         detail::g_gl.GetSamplerParameteriv(sampler.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetSamplerParameteriv", sampler.value, pname, params);
     }
@@ -3712,7 +3906,7 @@ namespace metagl
     // #285
     void glGetSamplerParameterIiv(SamplerId sampler, SamplerParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetSamplerParameterIiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetSamplerParameterIiv != nullptr);
         detail::g_gl.GetSamplerParameterIiv(sampler.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetSamplerParameterIiv", sampler.value, pname, params);
     }
@@ -3720,7 +3914,7 @@ namespace metagl
     // #286
     void glGetSamplerParameterIuiv(SamplerId sampler, SamplerParameter pname, GLuint * params)
     {
-        assert(detail::g_gl.GetSamplerParameterIuiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetSamplerParameterIuiv != nullptr);
         detail::g_gl.GetSamplerParameterIuiv(sampler.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetSamplerParameterIuiv", sampler.value, pname, params);
     }
@@ -3729,7 +3923,7 @@ namespace metagl
     void glGenFramebuffers(GLsizei n, FramebufferId * framebuffers)
     {
         static_assert(sizeof(FramebufferId) == sizeof(GLuint), "FramebufferId must be layout-compatible with GLuint");
-        assert(detail::g_gl.GenFramebuffers != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GenFramebuffers != nullptr);
         detail::g_gl.GenFramebuffers(n, reinterpret_cast<GLuint*>(framebuffers));
         METAGL_DEBUG_LOG_VOID("glGenFramebuffers", n, framebuffers);
     }
@@ -3738,7 +3932,7 @@ namespace metagl
     void glDeleteFramebuffers(GLsizei n, const FramebufferId * framebuffers)
     {
         static_assert(sizeof(FramebufferId) == sizeof(GLuint), "FramebufferId must be layout-compatible with GLuint");
-        assert(detail::g_gl.DeleteFramebuffers != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DeleteFramebuffers != nullptr);
         detail::g_gl.DeleteFramebuffers(n, reinterpret_cast<const GLuint*>(framebuffers));
         METAGL_DEBUG_LOG_VOID("glDeleteFramebuffers", n, framebuffers);
     }
@@ -3746,7 +3940,7 @@ namespace metagl
     // #289
     void glBindFramebuffer(FramebufferTarget target, FramebufferId framebuffer)
     {
-        assert(detail::g_gl.BindFramebuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BindFramebuffer != nullptr);
         detail::g_gl.BindFramebuffer(detail::to_gl_enum(target), framebuffer.value);
         METAGL_DEBUG_LOG_VOID("glBindFramebuffer", target, framebuffer.value);
     }
@@ -3754,7 +3948,7 @@ namespace metagl
     // #290
     bool glIsFramebuffer(FramebufferId framebuffer)
     {
-        assert(detail::g_gl.IsFramebuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsFramebuffer != nullptr);
         const auto _r = detail::g_gl.IsFramebuffer(framebuffer.value);
         METAGL_DEBUG_LOG("glIsFramebuffer", _r, framebuffer.value);
         return _r;
@@ -3763,7 +3957,7 @@ namespace metagl
     // #291
     FramebufferStatus glCheckFramebufferStatus(FramebufferTarget target)
     {
-        assert(detail::g_gl.CheckFramebufferStatus != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CheckFramebufferStatus != nullptr);
         const auto _r = static_cast<FramebufferStatus>(
             detail::g_gl.CheckFramebufferStatus(detail::to_gl_enum(target)));
         METAGL_DEBUG_LOG("glCheckFramebufferStatus", _r, target);
@@ -3773,7 +3967,7 @@ namespace metagl
     // #292
     void glFramebufferTexture2D(FramebufferTarget target, FramebufferAttachment attachment, TextureTarget textarget, TextureId texture, GLint level)
     {
-        assert(detail::g_gl.FramebufferTexture2D != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.FramebufferTexture2D != nullptr);
         detail::g_gl.FramebufferTexture2D(detail::to_gl_enum(target), detail::to_gl_enum(attachment), detail::to_gl_enum(textarget), texture.value, level);
         METAGL_DEBUG_LOG_VOID("glFramebufferTexture2D", target, attachment, textarget, texture.value, level);
     }
@@ -3781,7 +3975,7 @@ namespace metagl
     // #293
     void glFramebufferTextureLayer(FramebufferTarget target, FramebufferAttachment attachment, TextureId texture, GLint level, GLint layer)
     {
-        assert(detail::g_gl.FramebufferTextureLayer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.FramebufferTextureLayer != nullptr);
         detail::g_gl.FramebufferTextureLayer(detail::to_gl_enum(target), detail::to_gl_enum(attachment), texture.value, level, layer);
         METAGL_DEBUG_LOG_VOID("glFramebufferTextureLayer", target, attachment, texture.value, level, layer);
     }
@@ -3789,7 +3983,7 @@ namespace metagl
     // #294
     void glFramebufferTexture(FramebufferTarget target, FramebufferAttachment attachment, TextureId texture, GLint level)
     {
-        assert(detail::g_gl.FramebufferTexture != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.FramebufferTexture != nullptr);
         detail::g_gl.FramebufferTexture(detail::to_gl_enum(target), detail::to_gl_enum(attachment), texture.value, level);
         METAGL_DEBUG_LOG_VOID("glFramebufferTexture", target, attachment, texture.value, level);
     }
@@ -3797,7 +3991,7 @@ namespace metagl
     // #295
     void glFramebufferRenderbuffer(FramebufferTarget target, FramebufferAttachment attachment, RenderbufferTarget renderbuffertarget, RenderbufferId renderbuffer)
     {
-        assert(detail::g_gl.FramebufferRenderbuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.FramebufferRenderbuffer != nullptr);
         detail::g_gl.FramebufferRenderbuffer(detail::to_gl_enum(target), detail::to_gl_enum(attachment), detail::to_gl_enum(renderbuffertarget), renderbuffer.value);
         METAGL_DEBUG_LOG_VOID("glFramebufferRenderbuffer", target, attachment, renderbuffertarget, renderbuffer.value);
     }
@@ -3805,7 +3999,7 @@ namespace metagl
     // #296
     void glFramebufferParameteri(FramebufferTarget target, FramebufferDefaultParameter pname, GLint param)
     {
-        assert(detail::g_gl.FramebufferParameteri != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.FramebufferParameteri != nullptr);
         detail::g_gl.FramebufferParameteri(detail::to_gl_enum(target), detail::to_gl_enum(pname), param);
         METAGL_DEBUG_LOG_VOID("glFramebufferParameteri", target, pname, param);
     }
@@ -3813,7 +4007,7 @@ namespace metagl
     // #297
     void glGetFramebufferParameteriv(FramebufferTarget target, FramebufferDefaultParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetFramebufferParameteriv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetFramebufferParameteriv != nullptr);
         detail::g_gl.GetFramebufferParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetFramebufferParameteriv", target, pname, params);
     }
@@ -3821,7 +4015,7 @@ namespace metagl
     // #298
     void glGetFramebufferAttachmentParameteriv(FramebufferTarget target, FramebufferAttachment attachment, FramebufferAttachmentParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetFramebufferAttachmentParameteriv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetFramebufferAttachmentParameteriv != nullptr);
         detail::g_gl.GetFramebufferAttachmentParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(attachment), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetFramebufferAttachmentParameteriv", target, attachment, pname, params);
     }
@@ -3829,7 +4023,7 @@ namespace metagl
     // #299
     void glBlitFramebuffer(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, ClearBufferBit mask, BlitFilter filter)
     {
-        assert(detail::g_gl.BlitFramebuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BlitFramebuffer != nullptr);
         detail::g_gl.BlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, detail::to_gl_bitfield(mask), detail::to_gl_enum(filter));
         METAGL_DEBUG_LOG_VOID("glBlitFramebuffer", srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter);
     }
@@ -3837,7 +4031,7 @@ namespace metagl
     // #300
     void glInvalidateFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments)
     {
-        assert(detail::g_gl.InvalidateFramebuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.InvalidateFramebuffer != nullptr);
         detail::g_gl.InvalidateFramebuffer(detail::to_gl_enum(target), numAttachments, reinterpret_cast<const GLenum *>(attachments));
         METAGL_DEBUG_LOG_VOID("glInvalidateFramebuffer", target, numAttachments, attachments);
     }
@@ -3845,7 +4039,7 @@ namespace metagl
     // #301
     void glInvalidateSubFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments, GLint x, GLint y, GLsizei width, GLsizei height)
     {
-        assert(detail::g_gl.InvalidateSubFramebuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.InvalidateSubFramebuffer != nullptr);
         detail::g_gl.InvalidateSubFramebuffer(detail::to_gl_enum(target), numAttachments, reinterpret_cast<const GLenum *>(attachments), x, y, width, height);
         METAGL_DEBUG_LOG_VOID("glInvalidateSubFramebuffer", target, numAttachments, attachments, x, y, width, height);
     }
@@ -3854,7 +4048,7 @@ namespace metagl
     void glGenRenderbuffers(GLsizei n, RenderbufferId * renderbuffers)
     {
         static_assert(sizeof(RenderbufferId) == sizeof(GLuint), "RenderbufferId must be layout-compatible with GLuint");
-        assert(detail::g_gl.GenRenderbuffers != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GenRenderbuffers != nullptr);
         detail::g_gl.GenRenderbuffers(n, reinterpret_cast<GLuint*>(renderbuffers));
         METAGL_DEBUG_LOG_VOID("glGenRenderbuffers", n, renderbuffers);
     }
@@ -3863,7 +4057,7 @@ namespace metagl
     void glDeleteRenderbuffers(GLsizei n, const RenderbufferId * renderbuffers)
     {
         static_assert(sizeof(RenderbufferId) == sizeof(GLuint), "RenderbufferId must be layout-compatible with GLuint");
-        assert(detail::g_gl.DeleteRenderbuffers != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DeleteRenderbuffers != nullptr);
         detail::g_gl.DeleteRenderbuffers(n, reinterpret_cast<const GLuint*>(renderbuffers));
         METAGL_DEBUG_LOG_VOID("glDeleteRenderbuffers", n, renderbuffers);
     }
@@ -3871,7 +4065,7 @@ namespace metagl
     // #304
     void glBindRenderbuffer(RenderbufferTarget target, RenderbufferId renderbuffer)
     {
-        assert(detail::g_gl.BindRenderbuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BindRenderbuffer != nullptr);
         detail::g_gl.BindRenderbuffer(detail::to_gl_enum(target), renderbuffer.value);
         METAGL_DEBUG_LOG_VOID("glBindRenderbuffer", target, renderbuffer.value);
     }
@@ -3879,7 +4073,7 @@ namespace metagl
     // #305
     bool glIsRenderbuffer(RenderbufferId renderbuffer)
     {
-        assert(detail::g_gl.IsRenderbuffer != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsRenderbuffer != nullptr);
         const auto _r = detail::g_gl.IsRenderbuffer(renderbuffer.value);
         METAGL_DEBUG_LOG("glIsRenderbuffer", _r, renderbuffer.value);
         return _r;
@@ -3888,7 +4082,7 @@ namespace metagl
     // #306
     void glRenderbufferStorage(RenderbufferTarget target, InternalFormat internalformat, GLsizei width, GLsizei height)
     {
-        assert(detail::g_gl.RenderbufferStorage != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.RenderbufferStorage != nullptr);
         detail::g_gl.RenderbufferStorage(detail::to_gl_enum(target), detail::to_gl_enum(internalformat), width, height);
         METAGL_DEBUG_LOG_VOID("glRenderbufferStorage", target, internalformat, width, height);
     }
@@ -3896,7 +4090,7 @@ namespace metagl
     // #307
     void glRenderbufferStorageMultisample(RenderbufferTarget target, GLsizei samples, InternalFormat internalformat, GLsizei width, GLsizei height)
     {
-        assert(detail::g_gl.RenderbufferStorageMultisample != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.RenderbufferStorageMultisample != nullptr);
         detail::g_gl.RenderbufferStorageMultisample(detail::to_gl_enum(target), samples, detail::to_gl_enum(internalformat), width, height);
         METAGL_DEBUG_LOG_VOID("glRenderbufferStorageMultisample", target, samples, internalformat, width, height);
     }
@@ -3904,7 +4098,7 @@ namespace metagl
     // #308
     void glGetRenderbufferParameteriv(RenderbufferTarget target, RenderbufferParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetRenderbufferParameteriv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetRenderbufferParameteriv != nullptr);
         detail::g_gl.GetRenderbufferParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetRenderbufferParameteriv", target, pname, params);
     }
@@ -3913,7 +4107,7 @@ namespace metagl
     void glGenTransformFeedbacks(GLsizei n, TransformFeedbackId * ids)
     {
         static_assert(sizeof(TransformFeedbackId) == sizeof(GLuint), "TransformFeedbackId must be layout-compatible with GLuint");
-        assert(detail::g_gl.GenTransformFeedbacks != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GenTransformFeedbacks != nullptr);
         detail::g_gl.GenTransformFeedbacks(n, reinterpret_cast<GLuint*>(ids));
         METAGL_DEBUG_LOG_VOID("glGenTransformFeedbacks", n, ids);
     }
@@ -3922,7 +4116,7 @@ namespace metagl
     void glDeleteTransformFeedbacks(GLsizei n, const TransformFeedbackId * ids)
     {
         static_assert(sizeof(TransformFeedbackId) == sizeof(GLuint), "TransformFeedbackId must be layout-compatible with GLuint");
-        assert(detail::g_gl.DeleteTransformFeedbacks != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DeleteTransformFeedbacks != nullptr);
         detail::g_gl.DeleteTransformFeedbacks(n, reinterpret_cast<const GLuint*>(ids));
         METAGL_DEBUG_LOG_VOID("glDeleteTransformFeedbacks", n, ids);
     }
@@ -3930,7 +4124,7 @@ namespace metagl
     // #311
     void glBindTransformFeedback(TransformFeedbackTarget target, TransformFeedbackId id)
     {
-        assert(detail::g_gl.BindTransformFeedback != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BindTransformFeedback != nullptr);
         detail::g_gl.BindTransformFeedback(detail::to_gl_enum(target), id.value);
         METAGL_DEBUG_LOG_VOID("glBindTransformFeedback", target, id.value);
     }
@@ -3938,7 +4132,7 @@ namespace metagl
     // #312
     bool glIsTransformFeedback(TransformFeedbackId id)
     {
-        assert(detail::g_gl.IsTransformFeedback != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsTransformFeedback != nullptr);
         const auto _r = detail::g_gl.IsTransformFeedback(id.value);
         METAGL_DEBUG_LOG("glIsTransformFeedback", _r, id.value);
         return _r;
@@ -3947,7 +4141,7 @@ namespace metagl
     // #313
     void glBeginTransformFeedback(PrimitiveType primitiveMode)
     {
-        assert(detail::g_gl.BeginTransformFeedback != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BeginTransformFeedback != nullptr);
         detail::g_gl.BeginTransformFeedback(detail::to_gl_enum(primitiveMode));
         METAGL_DEBUG_LOG_VOID("glBeginTransformFeedback", primitiveMode);
     }
@@ -3955,7 +4149,7 @@ namespace metagl
     // #314
     void glEndTransformFeedback(void)
     {
-        assert(detail::g_gl.EndTransformFeedback != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.EndTransformFeedback != nullptr);
         detail::g_gl.EndTransformFeedback();
         METAGL_DEBUG_LOG_VOID("glEndTransformFeedback");
     }
@@ -3963,7 +4157,7 @@ namespace metagl
     // #315
     void glPauseTransformFeedback(void)
     {
-        assert(detail::g_gl.PauseTransformFeedback != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.PauseTransformFeedback != nullptr);
         detail::g_gl.PauseTransformFeedback();
         METAGL_DEBUG_LOG_VOID("glPauseTransformFeedback");
     }
@@ -3971,7 +4165,7 @@ namespace metagl
     // #316
     void glResumeTransformFeedback(void)
     {
-        assert(detail::g_gl.ResumeTransformFeedback != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ResumeTransformFeedback != nullptr);
         detail::g_gl.ResumeTransformFeedback();
         METAGL_DEBUG_LOG_VOID("glResumeTransformFeedback");
     }
@@ -3979,7 +4173,7 @@ namespace metagl
     // #317
     void glTransformFeedbackVaryings(ProgramId program, GLsizei count, const GLchar *const* varyings, TransformFeedbackBufferMode bufferMode)
     {
-        assert(detail::g_gl.TransformFeedbackVaryings != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.TransformFeedbackVaryings != nullptr);
         detail::g_gl.TransformFeedbackVaryings(program.value, count, varyings, detail::to_gl_enum(bufferMode));
         METAGL_DEBUG_LOG_VOID("glTransformFeedbackVaryings", program.value, count, varyings, bufferMode);
     }
@@ -3987,7 +4181,7 @@ namespace metagl
     // #318
     void glGetTransformFeedbackVarying(ProgramId program, GLuint index, GLsizei bufSize, GLsizei * length, GLsizei * size, UniformType * type, GLchar * name)
     {
-        assert(detail::g_gl.GetTransformFeedbackVarying != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetTransformFeedbackVarying != nullptr);
         detail::g_gl.GetTransformFeedbackVarying(program.value, index, bufSize, length, size, reinterpret_cast<GLenum *>(type), name);
         METAGL_DEBUG_LOG_VOID("glGetTransformFeedbackVarying", program.value, index, bufSize, length, size, type, name);
     }
@@ -3996,7 +4190,7 @@ namespace metagl
     void glGenQueries(GLsizei n, QueryId * ids)
     {
         static_assert(sizeof(QueryId) == sizeof(GLuint), "QueryId must be layout-compatible with GLuint");
-        assert(detail::g_gl.GenQueries != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GenQueries != nullptr);
         detail::g_gl.GenQueries(n, reinterpret_cast<GLuint*>(ids));
         METAGL_DEBUG_LOG_VOID("glGenQueries", n, ids);
     }
@@ -4005,7 +4199,7 @@ namespace metagl
     void glDeleteQueries(GLsizei n, const QueryId * ids)
     {
         static_assert(sizeof(QueryId) == sizeof(GLuint), "QueryId must be layout-compatible with GLuint");
-        assert(detail::g_gl.DeleteQueries != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DeleteQueries != nullptr);
         detail::g_gl.DeleteQueries(n, reinterpret_cast<const GLuint*>(ids));
         METAGL_DEBUG_LOG_VOID("glDeleteQueries", n, ids);
     }
@@ -4013,7 +4207,7 @@ namespace metagl
     // #321
     bool glIsQuery(QueryId id)
     {
-        assert(detail::g_gl.IsQuery != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsQuery != nullptr);
         const auto _r = detail::g_gl.IsQuery(id.value);
         METAGL_DEBUG_LOG("glIsQuery", _r, id.value);
         return _r;
@@ -4022,7 +4216,7 @@ namespace metagl
     // #322
     void glBeginQuery(QueryTarget target, QueryId id)
     {
-        assert(detail::g_gl.BeginQuery != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BeginQuery != nullptr);
         detail::g_gl.BeginQuery(detail::to_gl_enum(target), id.value);
         METAGL_DEBUG_LOG_VOID("glBeginQuery", target, id.value);
     }
@@ -4030,7 +4224,7 @@ namespace metagl
     // #323
     void glEndQuery(QueryTarget target)
     {
-        assert(detail::g_gl.EndQuery != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.EndQuery != nullptr);
         detail::g_gl.EndQuery(detail::to_gl_enum(target));
         METAGL_DEBUG_LOG_VOID("glEndQuery", target);
     }
@@ -4038,7 +4232,7 @@ namespace metagl
     // #324
     void glGetQueryiv(QueryTarget target, QueryParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetQueryiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetQueryiv != nullptr);
         detail::g_gl.GetQueryiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetQueryiv", target, pname, params);
     }
@@ -4046,7 +4240,7 @@ namespace metagl
     // #325
     void glGetQueryObjectuiv(QueryId id, QueryObjectParameter pname, GLuint * params)
     {
-        assert(detail::g_gl.GetQueryObjectuiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetQueryObjectuiv != nullptr);
         detail::g_gl.GetQueryObjectuiv(id.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetQueryObjectuiv", id.value, pname, params);
     }
@@ -4054,7 +4248,7 @@ namespace metagl
     // #326
     GLsync glFenceSync(SyncCondition condition, SyncFlag flags)
     {
-        assert(detail::g_gl.FenceSync != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.FenceSync != nullptr);
         const auto _r = detail::g_gl.FenceSync(detail::to_gl_enum(condition), detail::to_gl_bitfield(flags));
         METAGL_DEBUG_LOG("glFenceSync", _r, condition, flags);
         return _r;
@@ -4063,7 +4257,7 @@ namespace metagl
     // #327
     void glDeleteSync(GLsync sync)
     {
-        assert(detail::g_gl.DeleteSync != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DeleteSync != nullptr);
         detail::g_gl.DeleteSync(sync);
         METAGL_DEBUG_LOG_VOID("glDeleteSync", sync);
     }
@@ -4071,7 +4265,7 @@ namespace metagl
     // #328
     bool glIsSync(GLsync sync)
     {
-        assert(detail::g_gl.IsSync != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsSync != nullptr);
         const auto _r = detail::g_gl.IsSync(sync);
         METAGL_DEBUG_LOG("glIsSync", _r, sync);
         return _r;
@@ -4080,7 +4274,7 @@ namespace metagl
     // #329
     SyncWaitResult glClientWaitSync(GLsync sync, SyncFlushMask flags, GLuint64 timeout)
     {
-        assert(detail::g_gl.ClientWaitSync != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ClientWaitSync != nullptr);
         const auto _r = static_cast<SyncWaitResult>(
             detail::g_gl.ClientWaitSync(
                 sync, detail::to_gl_bitfield(flags), timeout));
@@ -4091,7 +4285,7 @@ namespace metagl
     // #330
     void glWaitSync(GLsync sync, SyncFlag flags, GLuint64 timeout)
     {
-        assert(detail::g_gl.WaitSync != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.WaitSync != nullptr);
         detail::g_gl.WaitSync(sync, detail::to_gl_bitfield(flags), timeout);
         METAGL_DEBUG_LOG_VOID("glWaitSync", sync, flags, timeout);
     }
@@ -4099,7 +4293,7 @@ namespace metagl
     // #331
     void glGetSynciv(GLsync sync, SyncParameter pname, GLsizei count, GLsizei * length, GLint * values)
     {
-        assert(detail::g_gl.GetSynciv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetSynciv != nullptr);
         detail::g_gl.GetSynciv(sync, detail::to_gl_enum(pname), count, length, values);
         METAGL_DEBUG_LOG_VOID("glGetSynciv", sync, pname, count, length, values);
     }
@@ -4107,7 +4301,7 @@ namespace metagl
     // #332
     void glDispatchCompute(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z)
     {
-        assert(detail::g_gl.DispatchCompute != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DispatchCompute != nullptr);
         detail::g_gl.DispatchCompute(num_groups_x, num_groups_y, num_groups_z);
         METAGL_DEBUG_LOG_VOID("glDispatchCompute", num_groups_x, num_groups_y, num_groups_z);
     }
@@ -4115,7 +4309,7 @@ namespace metagl
     // #333
     void glDispatchComputeIndirect(GLintptr indirect)
     {
-        assert(detail::g_gl.DispatchComputeIndirect != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DispatchComputeIndirect != nullptr);
         detail::g_gl.DispatchComputeIndirect(indirect);
         METAGL_DEBUG_LOG_VOID("glDispatchComputeIndirect", indirect);
     }
@@ -4123,7 +4317,7 @@ namespace metagl
     // #334
     void glMemoryBarrier(MemoryBarrierMask barriers)
     {
-        assert(detail::g_gl.MemoryBarrier != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.MemoryBarrier != nullptr);
         detail::g_gl.MemoryBarrier(detail::to_gl_bitfield(barriers));
         METAGL_DEBUG_LOG_VOID("glMemoryBarrier", barriers);
     }
@@ -4131,7 +4325,7 @@ namespace metagl
     // #335
     void glMemoryBarrierByRegion(MemoryBarrierMask barriers)
     {
-        assert(detail::g_gl.MemoryBarrierByRegion != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.MemoryBarrierByRegion != nullptr);
         detail::g_gl.MemoryBarrierByRegion(detail::to_gl_bitfield(barriers));
         METAGL_DEBUG_LOG_VOID("glMemoryBarrierByRegion", barriers);
     }
@@ -4140,7 +4334,7 @@ namespace metagl
     void glGenProgramPipelines(GLsizei n, ProgramPipelineId * pipelines)
     {
         static_assert(sizeof(ProgramPipelineId) == sizeof(GLuint), "ProgramPipelineId must be layout-compatible with GLuint");
-        assert(detail::g_gl.GenProgramPipelines != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GenProgramPipelines != nullptr);
         detail::g_gl.GenProgramPipelines(n, reinterpret_cast<GLuint*>(pipelines));
         METAGL_DEBUG_LOG_VOID("glGenProgramPipelines", n, pipelines);
     }
@@ -4149,7 +4343,7 @@ namespace metagl
     void glDeleteProgramPipelines(GLsizei n, const ProgramPipelineId * pipelines)
     {
         static_assert(sizeof(ProgramPipelineId) == sizeof(GLuint), "ProgramPipelineId must be layout-compatible with GLuint");
-        assert(detail::g_gl.DeleteProgramPipelines != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DeleteProgramPipelines != nullptr);
         detail::g_gl.DeleteProgramPipelines(n, reinterpret_cast<const GLuint*>(pipelines));
         METAGL_DEBUG_LOG_VOID("glDeleteProgramPipelines", n, pipelines);
     }
@@ -4157,7 +4351,7 @@ namespace metagl
     // #338
     void glBindProgramPipeline(ProgramPipelineId pipeline)
     {
-        assert(detail::g_gl.BindProgramPipeline != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.BindProgramPipeline != nullptr);
         detail::g_gl.BindProgramPipeline(pipeline.value);
         METAGL_DEBUG_LOG_VOID("glBindProgramPipeline", pipeline.value);
     }
@@ -4165,7 +4359,7 @@ namespace metagl
     // #339
     bool glIsProgramPipeline(ProgramPipelineId pipeline)
     {
-        assert(detail::g_gl.IsProgramPipeline != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.IsProgramPipeline != nullptr);
         const auto _r = detail::g_gl.IsProgramPipeline(pipeline.value);
         METAGL_DEBUG_LOG("glIsProgramPipeline", _r, pipeline.value);
         return _r;
@@ -4174,7 +4368,7 @@ namespace metagl
     // #340
     void glUseProgramStages(ProgramPipelineId pipeline, ShaderStageMask stages, ProgramId program)
     {
-        assert(detail::g_gl.UseProgramStages != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.UseProgramStages != nullptr);
         detail::g_gl.UseProgramStages(pipeline.value, detail::to_gl_bitfield(stages), program.value);
         METAGL_DEBUG_LOG_VOID("glUseProgramStages", pipeline.value, stages, program.value);
     }
@@ -4182,7 +4376,7 @@ namespace metagl
     // #341
     void glActiveShaderProgram(ProgramPipelineId pipeline, ProgramId program)
     {
-        assert(detail::g_gl.ActiveShaderProgram != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ActiveShaderProgram != nullptr);
         detail::g_gl.ActiveShaderProgram(pipeline.value, program.value);
         METAGL_DEBUG_LOG_VOID("glActiveShaderProgram", pipeline.value, program.value);
     }
@@ -4190,7 +4384,7 @@ namespace metagl
     // #342
     ProgramId glCreateShaderProgramv(ShaderType type, GLsizei count, const GLchar *const* strings)
     {
-        assert(detail::g_gl.CreateShaderProgramv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.CreateShaderProgramv != nullptr);
         const ProgramId _r{detail::g_gl.CreateShaderProgramv(detail::to_gl_enum(type), count, strings)};
         METAGL_DEBUG_LOG("glCreateShaderProgramv", _r.value, type, count, strings);
         return _r;
@@ -4199,7 +4393,7 @@ namespace metagl
     // #343
     void glValidateProgramPipeline(ProgramPipelineId pipeline)
     {
-        assert(detail::g_gl.ValidateProgramPipeline != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ValidateProgramPipeline != nullptr);
         detail::g_gl.ValidateProgramPipeline(pipeline.value);
         METAGL_DEBUG_LOG_VOID("glValidateProgramPipeline", pipeline.value);
     }
@@ -4207,7 +4401,7 @@ namespace metagl
     // #344
     void glGetProgramPipelineiv(ProgramPipelineId pipeline, ProgramPipelineParameter pname, GLint * params)
     {
-        assert(detail::g_gl.GetProgramPipelineiv != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetProgramPipelineiv != nullptr);
         detail::g_gl.GetProgramPipelineiv(pipeline.value, detail::to_gl_enum(pname), params);
         METAGL_DEBUG_LOG_VOID("glGetProgramPipelineiv", pipeline.value, pname, params);
     }
@@ -4215,7 +4409,7 @@ namespace metagl
     // #345
     void glGetProgramPipelineInfoLog(ProgramPipelineId pipeline, GLsizei bufSize, GLsizei * length, GLchar * infoLog)
     {
-        assert(detail::g_gl.GetProgramPipelineInfoLog != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetProgramPipelineInfoLog != nullptr);
         detail::g_gl.GetProgramPipelineInfoLog(pipeline.value, bufSize, length, infoLog);
         METAGL_DEBUG_LOG_VOID("glGetProgramPipelineInfoLog", pipeline.value, bufSize, length, infoLog);
     }
@@ -4223,7 +4417,7 @@ namespace metagl
     // #346
     void glPatchParameteri(TessellationParameter pname, GLint value)
     {
-        assert(detail::g_gl.PatchParameteri != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.PatchParameteri != nullptr);
         detail::g_gl.PatchParameteri(detail::to_gl_enum(pname), value);
         METAGL_DEBUG_LOG_VOID("glPatchParameteri", pname, value);
     }
@@ -4231,7 +4425,7 @@ namespace metagl
     // #347
     void glPrimitiveBoundingBox(GLfloat minX, GLfloat minY, GLfloat minZ, GLfloat minW, GLfloat maxX, GLfloat maxY, GLfloat maxZ, GLfloat maxW)
     {
-        assert(detail::g_gl.PrimitiveBoundingBox != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.PrimitiveBoundingBox != nullptr);
         detail::g_gl.PrimitiveBoundingBox(minX, minY, minZ, minW, maxX, maxY, maxZ, maxW);
         METAGL_DEBUG_LOG_VOID("glPrimitiveBoundingBox", minX, minY, minZ, minW, maxX, maxY, maxZ, maxW);
     }
@@ -4239,7 +4433,7 @@ namespace metagl
     // #348
     void glDebugMessageCallback(GLDEBUGPROC callback, const void * userParam)
     {
-        assert(detail::g_gl.DebugMessageCallback != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DebugMessageCallback != nullptr);
         detail::g_gl.DebugMessageCallback(callback, userParam);
         METAGL_DEBUG_LOG_VOID("glDebugMessageCallback", callback, userParam);
     }
@@ -4247,7 +4441,7 @@ namespace metagl
     // #349
     void glDebugMessageControl(DebugSource source, DebugType type, DebugSeverity severity, GLsizei count, const GLuint * ids, GLboolean enabled)
     {
-        assert(detail::g_gl.DebugMessageControl != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DebugMessageControl != nullptr);
         detail::g_gl.DebugMessageControl(detail::to_gl_enum(source), detail::to_gl_enum(type), detail::to_gl_enum(severity), count, ids, enabled);
         METAGL_DEBUG_LOG_VOID("glDebugMessageControl", source, type, severity, count, ids, enabled);
     }
@@ -4255,7 +4449,7 @@ namespace metagl
     // #350
     void glDebugMessageInsert(DebugSource source, DebugType type, GLuint id, DebugSeverity severity, GLsizei length, const GLchar * buf)
     {
-        assert(detail::g_gl.DebugMessageInsert != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.DebugMessageInsert != nullptr);
         detail::g_gl.DebugMessageInsert(detail::to_gl_enum(source), detail::to_gl_enum(type), id, detail::to_gl_enum(severity), length, buf);
         METAGL_DEBUG_LOG_VOID("glDebugMessageInsert", source, type, id, severity, length, buf);
     }
@@ -4263,7 +4457,7 @@ namespace metagl
     // #351
     GLuint glGetDebugMessageLog(GLuint count, GLsizei bufSize, DebugSource * sources, DebugType * types, GLuint * ids, DebugSeverity * severities, GLsizei * lengths, GLchar * messageLog)
     {
-        assert(detail::g_gl.GetDebugMessageLog != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetDebugMessageLog != nullptr);
         const auto _r = detail::g_gl.GetDebugMessageLog(count, bufSize, reinterpret_cast<GLenum *>(sources), reinterpret_cast<GLenum *>(types), ids, reinterpret_cast<GLenum *>(severities), lengths, messageLog);
         METAGL_DEBUG_LOG("glGetDebugMessageLog", _r, count, bufSize, sources, types, ids, severities, lengths, messageLog);
         return _r;
@@ -4272,7 +4466,7 @@ namespace metagl
     // #352
     void glPushDebugGroup(DebugSource source, GLuint id, GLsizei length, const GLchar * message)
     {
-        assert(detail::g_gl.PushDebugGroup != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.PushDebugGroup != nullptr);
         detail::g_gl.PushDebugGroup(detail::to_gl_enum(source), id, length, message);
         METAGL_DEBUG_LOG_VOID("glPushDebugGroup", source, id, length, message);
     }
@@ -4280,7 +4474,7 @@ namespace metagl
     // #353
     void glPopDebugGroup(void)
     {
-        assert(detail::g_gl.PopDebugGroup != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.PopDebugGroup != nullptr);
         detail::g_gl.PopDebugGroup();
         METAGL_DEBUG_LOG_VOID("glPopDebugGroup");
     }
@@ -4288,7 +4482,7 @@ namespace metagl
     // #354
     void glObjectLabel(DebugObjectLabel identifier, GLuint name, GLsizei length, const GLchar * label)
     {
-        assert(detail::g_gl.ObjectLabel != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ObjectLabel != nullptr);
         detail::g_gl.ObjectLabel(detail::to_gl_enum(identifier), name, length, label);
         METAGL_DEBUG_LOG_VOID("glObjectLabel", identifier, name, length, label);
     }
@@ -4296,7 +4490,7 @@ namespace metagl
     // #355
     void glObjectPtrLabel(const void * ptr, GLsizei length, const GLchar * label)
     {
-        assert(detail::g_gl.ObjectPtrLabel != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.ObjectPtrLabel != nullptr);
         detail::g_gl.ObjectPtrLabel(ptr, length, label);
         METAGL_DEBUG_LOG_VOID("glObjectPtrLabel", ptr, length, label);
     }
@@ -4304,7 +4498,7 @@ namespace metagl
     // #356
     void glGetObjectLabel(DebugObjectLabel identifier, GLuint name, GLsizei bufSize, GLsizei * length, GLchar * label)
     {
-        assert(detail::g_gl.GetObjectLabel != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetObjectLabel != nullptr);
         detail::g_gl.GetObjectLabel(detail::to_gl_enum(identifier), name, bufSize, length, label);
         METAGL_DEBUG_LOG_VOID("glGetObjectLabel", identifier, name, bufSize, length, label);
     }
@@ -4312,7 +4506,7 @@ namespace metagl
     // #357
     void glGetObjectPtrLabel(const void * ptr, GLsizei bufSize, GLsizei * length, GLchar * label)
     {
-        assert(detail::g_gl.GetObjectPtrLabel != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetObjectPtrLabel != nullptr);
         detail::g_gl.GetObjectPtrLabel(ptr, bufSize, length, label);
         METAGL_DEBUG_LOG_VOID("glGetObjectPtrLabel", ptr, bufSize, length, label);
     }
@@ -4320,7 +4514,7 @@ namespace metagl
     // #358
     GraphicsResetStatus glGetGraphicsResetStatus(void)
     {
-        assert(detail::g_gl.GetGraphicsResetStatus != nullptr);
+        assert(detail::g_gl.initialized && detail::g_gl.GetGraphicsResetStatus != nullptr);
         const auto _r = static_cast<GraphicsResetStatus>(
             detail::g_gl.GetGraphicsResetStatus());
         METAGL_DEBUG_LOG("glGetGraphicsResetStatus", _r);

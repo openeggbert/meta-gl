@@ -804,6 +804,25 @@ namespace metagl
     };
 
     /**
+     * @brief Texture targets legal for glCopyImageSubData().
+     *
+     * Cube-map faces and texture buffers are deliberately excluded. A cube-map
+     * face is selected by the z coordinate while the target remains
+     * GL_TEXTURE_CUBE_MAP. Renderbuffer endpoints are represented by
+     * RenderbufferId overloads and therefore need no enum value here.
+     */
+    enum class ImageCopyTextureTarget : GLenum
+    {
+        Texture2D                 = GL_TEXTURE_2D,
+        TextureCubeMap            = GL_TEXTURE_CUBE_MAP,
+        Texture3D                 = GL_TEXTURE_3D,
+        Texture2DArray            = GL_TEXTURE_2D_ARRAY,
+        Texture2DMultisample      = GL_TEXTURE_2D_MULTISAMPLE,
+        TextureCubeMapArray       = GL_TEXTURE_CUBE_MAP_ARRAY,
+        Texture2DMultisampleArray = GL_TEXTURE_2D_MULTISAMPLE_ARRAY
+    };
+
+    /**
      * @brief Texture parameter names for glTexParameteri / glTexParameterf.
      */
     enum class TextureParameter : GLenum
@@ -1763,13 +1782,29 @@ namespace metagl
     };
 
     /**
-     * @brief Buffer target for glClearBufferfv / glClearBufferiv / glClearBufferuiv.
+     * @brief Legal buffer targets for glClearBufferfv().
      */
-    enum class ClearBuffer : GLenum
+    enum class FloatClearBuffer : GLenum
+    {
+        Color = GL_COLOR,
+        Depth = GL_DEPTH
+    };
+
+    /**
+     * @brief Legal buffer targets for glClearBufferiv().
+     */
+    enum class SignedIntegerClearBuffer : GLenum
     {
         Color   = GL_COLOR,
-        Depth   = GL_DEPTH,
         Stencil = GL_STENCIL
+    };
+
+    /**
+     * @brief Legal buffer target for glClearBufferuiv().
+     */
+    enum class UnsignedIntegerClearBuffer : GLenum
+    {
+        Color = GL_COLOR
     };
 
 

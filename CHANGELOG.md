@@ -31,6 +31,12 @@ All notable changes to meta-gl will be documented here.
   first touched strictly after the buffer it flushes, guaranteeing correct
   destruction order on every supported platform except Windows (which
   already flushes explicitly to avoid the DLL loader-lock deadlock).
+- `include/metagl/Functions.hpp` was missing `#include <exception>` for its
+  `std::terminate()` calls (R07–R11's Invalid Input Contract). This was
+  masked on GCC/libstdc++, where `<exception>` is pulled in transitively by
+  other standard headers, but broke the Emscripten/libc++ toolchain with
+  "no member named 'terminate' in namespace 'std'"; found while building
+  `easy-gl`'s downstream `emscripten` CMake preset against this library.
 
 ## [0.3.0] — 2026-07-19
 

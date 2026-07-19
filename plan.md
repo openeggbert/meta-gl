@@ -243,7 +243,7 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 | R10 | Add negative Release tests for every checked precondition. | Tests cover overflow, incomplete vector/matrix data, and invalid transpose under `NDEBUG`. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R08–R09 |
 | R11 | Synchronize public documentation and `noexcept` declarations with the selected invalid-input contract. | Headers, README, Doxygen, and behavior state the same contract. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R07–R10 |
 | R12 | Make the installed-package consumer call an out-of-line `meta-gl` symbol and execute it. | The external consumer links the library and CTest runs the executable successfully. | [Finding 7](analysis.md#finding-7) | ✅ Done |
-| R13 | Exercise the installed-package consumer with a static library. | A clean external static consumer configures, links, and runs. | [Finding 7](analysis.md#finding-7) | 🚧 Blocked by R12 |
+| R13 | Exercise the installed-package consumer with a static library. | A clean external static consumer configures, links, and runs. | [Finding 7](analysis.md#finding-7) | ✅ Done |
 | R14 | Exercise the installed-package consumer with a shared library on Unix. | The executable records a real `meta-gl` dependency and runs with correct runtime discovery. | [Finding 7](analysis.md#finding-7) | 🚧 Blocked by R12 |
 | R15 | Exercise an installed shared-package consumer on Windows. | The installed DLL is discovered without relying on an in-tree staging shortcut. | [Finding 7](analysis.md#finding-7) | 🌐 Requires Windows runner; blocked by R12 |
 | R16 | Record the 0.3.0 release disposition and accepted residual risks. | Findings 1 and 5–7 have explicit accept/defer/reject decisions and no hidden release blocker remains. | [Finding 21](analysis.md#finding-21) | 🚧 Blocked by R01–R15 |
@@ -317,7 +317,7 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 | R69 | Add a Linux desktop GL/GLX runtime smoke test. | A real desktop context exercises version validation and depth adapters. | [Finding 20](analysis.md#finding-20) | 🌐 Requires GLX-capable runner |
 | R70 | Add macOS OpenGL compile/runtime coverage. | The supported macOS compiler and context path configure, build, and run. | [Finding 20](analysis.md#finding-20) | 🌐 Requires macOS runner |
 | R71 | Add at least one non-Mesa vendor-driver runtime job. | The selected NVIDIA/AMD/Intel vendor path and maintenance expectation are documented. | [Finding 20](analysis.md#finding-20) | 🌐 Requires managed GPU runner |
-| R72 | Add a tag-triggered release workflow. | Only approved version tags start the workflow and untrusted/manual tags cannot overwrite a release. | Previous `NEXT.md` release automation | ⏳ Pending |
+| R72 | Add a tag-triggered release workflow. | Only approved version tags start the workflow and untrusted/manual tags cannot overwrite a release. | Previous `NEXT.md` release automation | ✅ Done |
 | R73 | Build release archives and validate their installed CMake packages. | Each supported archive installs and an external consumer links and runs against it. | Previous `NEXT.md` release automation | 🚧 Blocked by R72 |
 | R74 | Attach validated artifacts and changelog-derived notes to the GitHub release. | Workflow output is checksummed, immutable, and associated with the matching tag. | Previous `NEXT.md` release automation | 🌐 Blocked by R73 |
 | R75 | Decide and verify the Windows buffered-debug-log shutdown policy. | Explicit pre-teardown flush remains a tested contract, or a safe automatic lifecycle replaces it; MSVC shared tests cover the selected behavior. | Previous `NEXT.md` known limitation | 🌐 Requires Windows runner |
@@ -330,5 +330,5 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 |-------|----------:|----------:|------:|
 | A–K — Original plan and comprehensive audit | 113 | 0 | 113 |
 | L — Implemented follow-up findings | 4 | 0 | 4 |
-| R — Remaining individual tasks | 6 | 69 | 75 |
-| **Total** | **123** | **69** | **192** |
+| R — Remaining individual tasks | 8 | 67 | 75 |
+| **Total** | **125** | **67** | **192** |

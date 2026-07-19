@@ -64,3 +64,54 @@ execute_process(
 if(NOT run_result EQUAL 0)
     message(FATAL_ERROR "Installed-package consumer executable failed with exit code: ${run_result}")
 endif()
+
+# R13: Re-run the consumer explicitly as a static-library consumer.
+# This verifies that the installed CMake package works correctly when
+# the downstream project forces BUILD_SHARED_LIBS=OFF (the default for
+# meta-gl, but we make it explicit to guard against regressions).
+set(consumer_build_static "${METAGL_BUILD_DIR}/package-test/consumer-build-static")
+
+execute_process(
+    COMMAND "${CMAKE_COMMAND}"
+        -S "${METAGL_SOURCE_DIR}/tests/package-consumer"
+        -B "${consumer_build_static}"
+        "-DCMAKE_PREFIX_PATH=${install_prefix}"
+        -DBUILD_SHARED_LIBS=OFF
+    RESULT_VARIABLE configure_static_result
+)
+if(NOT configure_static_result EQUAL 0)
+    message(FATAL_ERROR "Static-library consumer configure failed: ${configure_static_result}")
+endif()
+
+set(build_static_command "${CMAKE_COMMAND}" --build "${consumer_build_static}")
+if(METAGL_TEST_CONFIG)
+    list(APPEND build_static_command --config "${METAGL_TEST_CONFIG}")
+endif()
+
+execute_process(
+    COMMAND ${build_static_command}
+    RESULT_VARIABLE build_static_result
+)
+if(NOT build_static_result EQUAL 0)
+    message(FATAL_ERROR "Static-library consumer build failed: ${build_static_result}")
+endif()
+
+# Locate and run the static-library consumer executable.
+if(METAGL_TEST_CONFIG)
+    set(consumer_static_exe "${consumer_build_static}/${METAGL_TEST_CONFIG}/meta-gl-package-consumer")
+else()
+    set(consumer_static_exe "${consumer_build_static}/meta-gl-package-consumer")
+endif()
+
+# Also accept the executable without a config subdirectory (single-config generators on Unix).
+if(NOT EXISTS "${consumer_static_exe}" AND EXISTS "${consumer_build_static}/meta-gl-package-consumer")
+    set(consumer_static_exe "${consumer_build_static}/meta-gl-package-consumer")
+endif()
+
+execute_process(
+    COMMAND "${consumer_static_exe}"
+    RESULT_VARIABLE run_static_result
+)
+if(NOT run_static_result EQUAL 0)
+    message(FATAL_ERROR "Static-library consumer executable failed with exit code: ${run_static_result}")
+endif()

@@ -1,0 +1,256 @@
+name: Release
+
+# R72: Tag-triggered release workflow.
+# Only annotated version tags of the form vMAJOR.MINOR.PATCH start this
+# workflow.  Manual workflow_dispatch is intentionally omitted so that
+# a release can only be created through a proper signed tag pushed by an
+# authorised contributor.
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write   # needed to create the GitHub release and upload assets
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false   # never cancel an in-flight release
+
+jobs:
+  # ------------------------------------------------------------------ #
+  # 1. Build and test on every supported platform                        #
+  # ------------------------------------------------------------------ #
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true           # abort all legs on the first failure
+      matrix:
+        include:
+          - name: Linux GCC static
+            os: ubuntu-latest
+            cc: gcc
+            cxx: g++
+            shared: "OFF"
+            archive_suffix: linux-static
+          - name: Linux Clang shared
+            os: ubuntu-latest
+            cc: clang
+            cxx: clang++
+            shared: "ON"
+            archive_suffix: linux-shared
+          - name: Windows MSVC shared
+            os: windows-latest
+            cc: ""
+            cxx: ""
+            shared: "ON"
+            archive_suffix: windows-shared
+
+    env:
+      CC:  ${{ matrix.cc }}
+      CXX: ${{ matrix.cxx }}
+      VERSION: ${{ github.ref_name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Mesa development packages
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libegl1-mesa-dev libgles2-mesa-dev
+
+      - name: Configure
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_SHARED_LIBS=${{ matrix.shared }}
+          -DMETAGL_BUILD_TESTS=ON
+          -DMETAGL_BUILD_EXAMPLES=ON
+          -DMETAGL_BUILD_GPU_TESTS=${{ runner.os == 'Linux' && 'ON' || 'OFF' }}
+
+      - name: Build (Unix)
+        if: runner.os != 'Windows'
+        run: cmake --build build --config Release --parallel
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          cmake --build build --config Release --parallel 2>&1 |
+            Tee-Object -FilePath build.log
+          $buildExitCode = $LASTEXITCODE
+          if ($buildExitCode -ne 0) {
+            Get-Content build.log |
+              Select-String -Pattern 'error (C|LNK)[0-9]+|fatal error' |
+              ForEach-Object {
+                $message = $_.Line.Replace('%', '%25')
+                Write-Output "::error::$message"
+              }
+            exit $buildExitCode
+          }
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure --timeout 180
+
+      - name: Install into staging area (Unix)
+        if: runner.os != 'Windows'
+        run: cmake --install build --config Release --prefix staging
+
+      - name: Install into staging area (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: cmake --install build --config Release --prefix staging
+
+      - name: Create archive (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          tar -czf "meta-gl-${{ env.VERSION }}-${{ matrix.archive_suffix }}.tar.gz" \
+              -C staging .
+          sha256sum "meta-gl-${{ env.VERSION }}-${{ matrix.archive_suffix }}.tar.gz" \
+              > "meta-gl-${{ env.VERSION }}-${{ matrix.archive_suffix }}.tar.gz.sha256"
+
+      - name: Create archive (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $archive = "meta-gl-${{ env.VERSION }}-${{ matrix.archive_suffix }}.zip"
+          Compress-Archive -Path staging\* -DestinationPath $archive
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+          "$hash  $archive" | Out-File -Encoding utf8 "$archive.sha256"
+
+      - name: Upload archive artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: archive-${{ matrix.archive_suffix }}
+          path: |
+            meta-gl-${{ env.VERSION }}-${{ matrix.archive_suffix }}.*
+          retention-days: 1
+
+  # ------------------------------------------------------------------ #
+  # 2. Validate each archive with an external CMake consumer             #
+  # ------------------------------------------------------------------ #
+  validate:
+    name: Validate ${{ matrix.archive_suffix }}
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - archive_suffix: linux-static
+            os: ubuntu-latest
+          - archive_suffix: linux-shared
+            os: ubuntu-latest
+          - archive_suffix: windows-shared
+            os: windows-latest
+
+    env:
+      VERSION: ${{ github.ref_name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download archive
+        uses: actions/download-artifact@v4
+        with:
+          name: archive-${{ matrix.archive_suffix }}
+
+      - name: Verify checksum (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          sha256sum -c "meta-gl-${{ env.VERSION }}-${{ matrix.archive_suffix }}.tar.gz.sha256"
+
+      - name: Verify checksum (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $file    = "meta-gl-${{ env.VERSION }}-${{ matrix.archive_suffix }}.zip"
+          $sumFile = "$file.sha256"
+          $expected = (Get-Content $sumFile -Raw).Split()[0].Trim()
+          $actual   = (Get-FileHash $file -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) {
+            Write-Error "Checksum mismatch: expected $expected got $actual"
+            exit 1
+          }
+
+      - name: Extract archive (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir install
+          tar -xzf "meta-gl-${{ env.VERSION }}-${{ matrix.archive_suffix }}.tar.gz" -C install
+
+      - name: Extract archive (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path install | Out-Null
+          Expand-Archive -Path "meta-gl-${{ env.VERSION }}-${{ matrix.archive_suffix }}.zip" `
+                         -DestinationPath install
+
+      - name: Configure consumer
+        run: >-
+          cmake -S tests/package-consumer -B consumer-build
+          -DCMAKE_PREFIX_PATH=${{ github.workspace }}/install
+
+      - name: Build consumer
+        run: cmake --build consumer-build --config Release
+
+      - name: Run consumer (Unix)
+        if: runner.os != 'Windows'
+        run: ./consumer-build/meta-gl-package-consumer
+
+      - name: Run consumer (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: .\consumer-build\Release\meta-gl-package-consumer.exe
+
+  # ------------------------------------------------------------------ #
+  # 3. Create the GitHub release and attach validated artifacts          #
+  # ------------------------------------------------------------------ #
+  publish:
+    name: Publish GitHub Release
+    needs: validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed to read the full tag annotation
+
+      - name: Download all archives
+        uses: actions/download-artifact@v4
+        with:
+          pattern: archive-*
+          merge-multiple: true
+
+      - name: Extract changelog section for this tag
+        id: changelog
+        run: |
+          VERSION="${{ github.ref_name }}"
+          # Extract the section between this version header and the next one
+          # (or end of file).  Falls back to the full CHANGELOG if not found.
+          SECTION=$(awk -v ver="$VERSION" '
+            /^## \[/ { if (found) exit; if (index($0, ver)) found=1; next }
+            found { print }
+          ' CHANGELOG.md)
+          if [ -z "$SECTION" ]; then
+            SECTION="See CHANGELOG.md for details."
+          fi
+          # Write to a file to avoid quoting issues with multiline strings
+          printf '%s\n' "$SECTION" > release_notes.md
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.ref_name }}"
+          gh release create "$VERSION" \
+            --title "meta-gl $VERSION" \
+            --notes-file release_notes.md \
+            --verify-tag \
+            meta-gl-${VERSION}-linux-static.tar.gz \
+            meta-gl-${VERSION}-linux-static.tar.gz.sha256 \
+            meta-gl-${VERSION}-linux-shared.tar.gz \
+            meta-gl-${VERSION}-linux-shared.tar.gz.sha256 \
+            meta-gl-${VERSION}-windows-shared.zip \
+            meta-gl-${VERSION}-windows-shared.zip.sha256

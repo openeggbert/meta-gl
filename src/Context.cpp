@@ -11,8 +11,8 @@
 // ---------------------------------------------------------------------------
 namespace metagl::detail
 {
-    static ContextInfo  g_context_info{};
-    static Capabilities g_capabilities{};
+    static thread_local ContextInfo  g_context_info{};
+    static thread_local Capabilities g_capabilities{};
     static std::vector<ContextListener*> g_listeners{};
 
     // Implemented in Functions.cpp. Context loss makes a previously successful
@@ -239,9 +239,16 @@ namespace metagl
     void NotifyContextLost()
     {
         MarkContextLost();
-        const auto listeners = detail::g_listeners;
-        for (auto* l : listeners)
-            if (l) l->OnContextLost();
+        const auto snapshot = detail::g_listeners;
+        for (auto* l : snapshot)
+        {
+            // Check if listener is still in the actual list before calling
+            const auto& current = detail::g_listeners;
+            if (std::find(current.begin(), current.end(), l) != current.end())
+            {
+                if (l) l->OnContextLost();
+            }
+        }
     }
 
     void NotifyContextRestored()
@@ -254,11 +261,17 @@ namespace metagl
         }
 
         MarkContextRestored();
-        const auto listeners = detail::g_listeners;
+        const auto snapshot = detail::g_listeners;
         try
         {
-            for (auto* l : listeners)
-                if (l) l->OnContextRestored();
+            for (auto* l : snapshot)
+            {
+                const auto& current = detail::g_listeners;
+                if (std::find(current.begin(), current.end(), l) != current.end())
+                {
+                    if (l) l->OnContextRestored();
+                }
+            }
         }
         catch (...)
         {

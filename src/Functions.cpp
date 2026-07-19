@@ -391,7 +391,7 @@ namespace metagl::detail
         PFNGLGETGRAPHICSRESETSTATUSPROC GetGraphicsResetStatus = nullptr;
     };
 
-    GlTable g_gl;
+    thread_local GlTable g_gl;
 
     // Forward declarations — implemented in Context.cpp.
     void UpdateContextAfterLoad();
@@ -410,7 +410,7 @@ namespace metagl::detail
     // Maps each GL function name to whether it was successfully loaded.
     // Transparent lookup keeps IsFunctionAvailable noexcept without creating
     // an allocating std::string temporary.
-    std::unordered_map<std::string, bool,
+    thread_local std::unordered_map<std::string, bool,
         TransparentStringHash, std::equal_to<>> g_function_availability;
 
     void InvalidateFunctionsAfterContextLoss() noexcept

@@ -485,11 +485,39 @@ int main()
     check("Removed listener does not receive NotifyContextRestored", ml1.restored_count == 1);
     check("Active listener still receives NotifyContextRestored",    ml2.restored_count == 1);
 
+    // ==========================================================================
+    // R54-R56 — Listener safe dispatch (snapshot + re-check)
+    // ==========================================================================
+
+    struct RemovingOtherListener : metagl::ContextListener
+    {
+        metagl::ContextListener* other;
+        int calls = 0;
+        void OnContextLost() override
+        {
+            ++calls;
+            metagl::RemoveContextListener(other);
+        }
+    } remover;
+
+    MockListener victim;
+    remover.other = &victim;
+    metagl::AddContextListener(&remover);
+    metagl::AddContextListener(&victim);
+
+    check("Reload before safe dispatch test",
+          metagl::LoadCurrentContext(mock_proc_address));
+    metagl::NotifyContextLost();
+
+    check("Remover called", remover.calls == 1);
+    check("Victim NOT called (removed by remover during dispatch)", victim.lost_count == 0);
+
     // Clean up
+    metagl::RemoveContextListener(&remover);
     metagl::RemoveContextListener(&ml2);
     metagl::NotifyContextLost();
     check("No listeners: NotifyContextLost is silent (ml1 unchanged)", ml1.lost_count == 2);
-    check("No listeners: NotifyContextLost is silent (ml2 unchanged)", ml2.lost_count == 1);
+    check("No listeners: NotifyContextLost is silent (ml2 unchanged)", ml2.lost_count == 2);
 
     // Listener mutation during dispatch uses a stable snapshot.
     struct SelfRemovingListener : metagl::ContextListener

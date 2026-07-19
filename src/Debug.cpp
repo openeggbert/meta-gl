@@ -2,12 +2,16 @@
 
 #ifdef METAGLDEBUG
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
+#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include "metagl/EnumNames.hpp"
 
 namespace metagl::debug
 {
@@ -24,10 +28,10 @@ namespace metagl::debug
             std::string              params;
         };
 
-        std::uint64_t    g_call_counter = 0;
-        std::vector<CallRecord> g_buf;
+        thread_local std::uint64_t    g_call_counter = 0;
+        thread_local std::vector<CallRecord> g_buf;
         Clock::time_point g_start      = Clock::now();
-        Clock::time_point g_last_flush = Clock::now();
+        thread_local Clock::time_point g_last_flush = Clock::now();
 
         void flush_buffer()
         {
@@ -56,7 +60,7 @@ namespace metagl::debug
         FlushOnExit g_flush_on_exit;
 #endif
 
-        unsigned int (*g_get_error)() = nullptr;
+        thread_local unsigned int (*g_get_error)() = nullptr;
     }
 
     void set_get_error_fn(unsigned int (*fn)()) noexcept { g_get_error = fn; }
@@ -78,8 +82,12 @@ namespace metagl::debug
         if (!g_get_error) return;
         const unsigned int err = g_get_error();
         if (err == 0) return; // GL_NO_ERROR
+
+        char buffer[64];
+        metagl::FormatGlError(static_cast<metagl::ErrorCode>(err), buffer, sizeof(buffer));
+
         std::cerr << "[METAGL GL_ERROR] "
-                  << metagl::to_string(static_cast<metagl::ErrorCode>(err))
+                  << buffer
                   << " (0x" << std::hex << err << std::dec << ") after "
                   << func << '\n';
     }
@@ -114,6 +122,19 @@ namespace metagl
     {
         debug::flush();
     }
+
+    std::size_t FormatGlError(ErrorCode error, char* buffer, std::size_t size) noexcept
+    {
+        if (!buffer || size == 0) return 0;
+
+        std::string_view sv = metagl::to_string(error);
+        std::size_t to_copy = std::min(sv.size(), size - 1);
+
+        std::memcpy(buffer, sv.data(), to_copy);
+        buffer[to_copy] = '\0';
+
+        return to_copy;
+    }
 }
 
 #else
@@ -121,6 +142,12 @@ namespace metagl
 namespace metagl
 {
     void FlushDebugLog() noexcept {}
+
+    std::size_t FormatGlError(ErrorCode, char* buffer, std::size_t size) noexcept
+    {
+        if (buffer && size > 0) buffer[0] = '\0';
+        return 0;
+    }
 }
 
 #endif // METAGLDEBUG

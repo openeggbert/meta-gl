@@ -20,6 +20,16 @@ metagl_apply_warnings(metagl-mock-tests)
 metagl_stage_runtime(metagl-mock-tests)
 add_test(NAME metagl-mock-loader-test COMMAND metagl-mock-tests)
 
+add_executable(metagl-thread-tests
+    test_threads.cpp
+)
+target_link_libraries(metagl-thread-tests PRIVATE meta-gl::meta-gl)
+target_compile_features(metagl-thread-tests PRIVATE cxx_std_23)
+set_target_properties(metagl-thread-tests PROPERTIES CXX_EXTENSIONS NO)
+metagl_apply_warnings(metagl-thread-tests)
+metagl_stage_runtime(metagl-thread-tests)
+add_test(NAME metagl-thread-test COMMAND metagl-thread-tests)
+
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_test(
     NAME metagl-api-consistency-test

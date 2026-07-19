@@ -30,6 +30,8 @@
 #pragma once
 
 #include "metagl/Export.hpp"
+#include "metagl/Enums.hpp"
+#include <cstddef>
 
 namespace metagl
 {
@@ -42,6 +44,16 @@ namespace metagl
      * avoids automatic I/O while the loader lock is held.
      */
     METAGL_API void FlushDebugLog() noexcept;
+
+    /**
+     * @brief Formats a GL error code into a human-readable string.
+     *
+     * @param error  GL error code to format.
+     * @param buffer Pointer to a character buffer to receive the string.
+     * @param size   Size of the provided buffer.
+     * @return Number of characters written (excluding null terminator).
+     */
+    METAGL_API std::size_t FormatGlError(ErrorCode error, char* buffer, std::size_t size) noexcept;
 }
 
 // Define METAGLDEBUG to enable per-call GL logging.

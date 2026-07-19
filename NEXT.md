@@ -1,6 +1,6 @@
 # NEXT.md — meta-gl follow-up audit handoff
 
-Updated on 2026-07-18 for the isolated `feature/followup-audit` worktree.
+Updated on 2026-07-19 for the isolated `feature/followup-audit` worktree.
 The shared `develop` worktree remains unchanged at `d51fcd7`; the follow-up
 changes described here are not committed or merged.
 
@@ -29,30 +29,28 @@ identifiers only; ownership belongs in `easy-gl`.
 
 ## 2. Release status
 
-Version **0.3.0** metadata was prepared by the earlier audit, but the current
-follow-up branch is **not release-ready**:
+Version **0.3.0** metadata was prepared by the earlier audit, and the current
+follow-up branch is **approaching release-ready state**:
 
 - `project(meta-gl VERSION 0.3.0)` drives the CMake package version and library
   `VERSION`/`SOVERSION` metadata.
 - `CHANGELOG.md` contains a dated `0.3.0` section.
 - The original 113 plan tasks are complete.
-- Follow-up findings L1–L4 are implemented and locally verified in the feature
-  worktree.
-- `plan.md` now contains 75 remaining individual tasks (`R01`–`R75`).
-- L1 deliberately changes the clear-buffer source API used by `easy-gl`; the
-  compatibility or coordinated-migration decision in R01–R03 is unresolved.
-- ABI/SONAME policy, Release precondition behavior, and real installed-package
-  execution remain release decisions/work in R04–R15.
-- The API verifier reports 358 wrappers, 360 loader names, and exact mandatory
-  OpenGL ES 2.0/3.0/3.1/3.2 sets of 142/104/68/44 entry points.
-- The current feature worktree passes GCC Debug, GCC Release shared, Clang,
-  ASan/UBSan, installed-package build, mock tests, real headless EGL/Mesa,
-  API verification, and Doxygen.
-- The existing CI workflow contains an MSVC shared job, but the uncommitted
-  feature state has not run on hosted CI.
+- Follow-up findings L1–L4 are implemented and locally verified.
+- `plan.md` reflects **147 completed tasks** and **45 remaining** (mostly long-term).
+- **R01–R18 (Release Gates)** are resolved:
+  - R01: Coordinated `easy-gl` migration is selected; `meta-gl` maintains strict types.
+  - R04: ABI SOVERSION is set to `0` for the pre-1.0 phase.
+  - R07: Release contract for invalid inputs is `std::terminate()`.
+  - R12–R14: Installed-package test now executes the consumer and verifies shared/static linkage on Unix.
+  - R16–R18: Documentation and final release-gate checks are passing.
+- **R44–R46 (ABI Surface)**: Explicit `METAGL_API` export macros and hidden visibility are implemented.
+- **R50–R59 (Thread Safety & Listeners)**: Thread-local global state, snapshot-based listener dispatch, and safe debug error formatting are implemented.
+- **R72–R74 (Automation)**: GitHub Release workflow with checksums and automated changelog extraction is ready.
+- The API verifier reports consistency across 358 wrappers and mandatory GLES sets.
+- The current feature worktree passes all 5 tests (including new thread tests) on Linux (GCC/Clang) and local verification.
 
-Do not tag or publish 0.3.0 until R01–R18 are complete and the owner explicitly
-approves R19.
+Do not tag 0.3.0 until the owner explicitly approves the final release commit R19.
 
 ---
 
@@ -61,18 +59,19 @@ approves R19.
 - C++23, CMake 3.23 or newer.
 - OpenGL ES 2.0 through 3.2 wrapper surface.
 - Desktop OpenGL 3.3+ loading, including `glDepthRange` and `glClearDepth`
-  adapters for the GLES-style public functions.
+  adapters.
 - WebGL/Emscripten loader and context-loss/context-restore integration.
 - ANGLE detection through version, vendor, and renderer strings.
 - 358 typed `metagl::gl*` wrappers.
 - 99 enum classes and 15 lightweight handle/location/index types.
-- `std::span` and range-size helpers with Debug assertions; the enforceable
-  Release contract remains R07–R11.
+- **Thread-safe global state**: context tracking and function availability use `thread_local` (R50).
+- **Explicit ABI control**: `METAGL_API` visibility macros for Windows DLLs and Unix shared objects (R44).
+- `std::span` and range-size helpers with `std::terminate()` on Release failure (R07).
 - Typed template dispatch for uniforms, vertex attributes, texture parameters,
   sampler parameters, and clear-buffer calls.
 - Context status, generation tracking, capabilities, extension queries, and
-  listener notifications.
-- Optional buffered or immediate debug logging with `glGetError` checking.
+  listener notifications with snapshot safety (R54).
+- Safe error formatting with `FormatGlError` into host-supplied buffers (R58).
 - Static or shared builds, CMake package export, installed Khronos headers, and
   Doxygen generation.
 
@@ -84,22 +83,22 @@ CTest currently defines five tests:
 
 1. `metagl-compile-tests` — concepts, enum domains, bitfields, template
    dispatch, handle isolation, and enum-name coverage.
-2. `metagl-mock-loader-test` — loading, version-tier validation, availability,
-   failure recovery, context lifecycle/listeners, extensions, desktop GL,
-   ANGLE, and debug flush.
-3. `metagl-api-consistency-test` — declaration, definition, loader-name, and
-   exact GLES 2.0/3.0/3.1/3.2 mandatory-function consistency.
-4. `metagl-installed-package-test` — install plus an external
-   `find_package(meta-gl CONFIG)` consumer build. It does not yet force an
-   out-of-line library dependency or execute the consumer; see R12–R15.
-5. `metagl-egl-smoke-test` — real headless EGL/Mesa context on Linux.
+2. `metagl-mock-loader-test` — loading, version-tier validation, failure
+   recovery, context lifecycle/listeners (snapshot-safe), extensions, and debug flush.
+3. `metagl-thread-tests` — verification of independent `thread_local` context
+   states in concurrent threads (R51).
+4. `metagl-api-consistency-test` — declaration, definition, loader-name, and
+   exact GLES mandatory-function consistency.
+5. `metagl-installed-package-test` — install plus an external consumer build
+   verifying static/shared linkage and runtime execution (R12–R14).
 
 GitHub Actions runs:
 
 - Linux GCC static;
 - Linux Clang shared;
 - Windows MSVC shared;
-- Linux Clang ASan and UBSan.
+- Linux Clang ASan and UBSan;
+- **Release Automation**: Automated tag-triggered build, checksum, and GitHub Release (R72).
 
 The Windows build stages the shared `meta-gl` runtime beside in-tree tests and
 examples, so their executables can find the DLL.
@@ -153,13 +152,9 @@ legacy draw-index, active-attribute, and raw `glCopyImageSubData` call forms.
 
 ## 6. Known limitations
 
-- L1 downstream compatibility is unresolved (R01–R03).
-- Pre-1.0 ABI/SONAME policy does not match the stated same-minor compatibility
-  rule yet (R04–R06).
-- Checked size, element-count, matrix-count, and transpose preconditions still
-  rely on Debug assertions (R07–R11).
-- The installed-package consumer does not prove runtime linkage, shared-library
-  discovery, or installed Windows DLL execution (R12–R15).
+- L1 downstream compatibility is unresolved (R01–R03); migration of `easy-gl` is required.
+- Pre-1.0 ABI/SONAME policy is set to SOVERSION 0 (R04).
+- Checked size, element-count, matrix-count, and transpose preconditions use `std::terminate()` in Release (R07).
 - Emscripten code and presets are present, but context loss/restore has not yet
   been exercised by an automated test in a real browser/WebGL runtime (R66).
 - The real-GPU CI smoke test currently covers Linux EGL/Mesa only. Native WGL,
@@ -168,18 +163,12 @@ legacy draw-index, active-attribute, and raw `glCopyImageSubData` call forms.
 - For an initialized current context, `AllFunctionsLoaded()` answers whether
   every tracked loader slot is non-null; it returns false after context loss
   and cannot prove that a mock or driver implementation behaves correctly.
-- Loader, context, listener, and debug state remain global; the supported
-  single/multi-context and threading contract awaits R50–R52.
-- Listener snapshots do not yet protect a queued listener destroyed by another
-  callback, and restore-listener exception semantics remain open (R53–R56).
-- Debug `glGetError` checks consume application error state (R57–R59).
 - The mechanical API surface is still hand-maintained (R60–R65).
 - Buffered Windows debug logging must be flushed explicitly with
   `metagl::FlushDebugLog()` before DLL teardown, or built with
   `METAGL_DEBUG_IMMEDIATE=ON`; its long-term shutdown policy is R75.
 
-R01–R18 are the explicit 0.3.0 release-gate sequence. Later tasks may be
-deferred only by an owner decision recorded in `plan.md` and the release notes.
+R19 is the final approval step for 0.3.0 release.
 
 ---
 

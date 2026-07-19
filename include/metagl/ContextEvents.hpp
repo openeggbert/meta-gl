@@ -34,6 +34,8 @@
  */
 #pragma once
 
+#include "metagl/Export.hpp"
+
 namespace metagl
 {
     /**
@@ -43,7 +45,7 @@ namespace metagl
      * with @ref AddContextListener.  The listener must remain alive until either
      * @ref RemoveContextListener is called or the listener is destroyed.
      */
-    class ContextListener
+    class METAGL_API ContextListener
     {
     public:
         virtual ~ContextListener() = default;
@@ -81,7 +83,7 @@ namespace metagl
      *
      * @param listener  Non-null pointer to a @ref ContextListener instance.
      */
-    void AddContextListener(ContextListener* listener);
+    METAGL_API void AddContextListener(ContextListener* listener);
 
     /**
      * @brief Removes a previously registered listener.
@@ -91,7 +93,7 @@ namespace metagl
      *
      * @param listener  Pointer previously passed to @ref AddContextListener.
      */
-    void RemoveContextListener(ContextListener* listener);
+    METAGL_API void RemoveContextListener(ContextListener* listener);
 
     // -------------------------------------------------------------------------
     // Event dispatch
@@ -105,7 +107,7 @@ namespace metagl
      * Android `onSurfaceDestroyed`).  Do not call any GL function after this
      * point until a successful @ref LoadCurrentContext.
      */
-    void NotifyContextLost();
+    METAGL_API void NotifyContextLost();
 
     /**
      * @brief Dispatches the restored event after a successful explicit reload.
@@ -126,5 +128,5 @@ namespace metagl
      * Listener registration is snapshotted before dispatch. A listener may safely
      * add or remove itself during a callback; changes take effect on the next event.
      */
-    void NotifyContextRestored();
+    METAGL_API void NotifyContextRestored();
 }

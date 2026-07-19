@@ -29,6 +29,8 @@
  */
 #pragma once
 
+#include "metagl/Export.hpp"
+
 namespace metagl
 {
     /**
@@ -39,7 +41,7 @@ namespace metagl
      * when buffered logging is enabled. Windows DLL teardown intentionally
      * avoids automatic I/O while the loader lock is held.
      */
-    void FlushDebugLog() noexcept;
+    METAGL_API void FlushDebugLog() noexcept;
 }
 
 // Define METAGLDEBUG to enable per-call GL logging.

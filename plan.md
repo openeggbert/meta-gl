@@ -231,13 +231,13 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 
 | # | Individual task | Completion condition | Source | Status |
 |---|-----------------|----------------------|--------|--------|
-| R01 | Choose the L1 downstream strategy: compatibility overloads in `meta-gl` or a coordinated `easy-gl` migration. | The selected option and rejected alternative are recorded with source/ABI consequences. | [Finding 1](analysis.md#finding-1) | 🔎 Pending decision |
+| R01 | Choose the L1 downstream strategy: compatibility overloads in `meta-gl` or a coordinated `easy-gl` migration. | The selected option and rejected alternative are recorded with source/ABI consequences. | [Finding 1](analysis.md#finding-1) | ✅ Done — Decision: B (coordinated easy-gl migration; no compatibility overloads in meta-gl; easy-gl changes in separate feature branch via git worktree) |
 | R02 | Implement the selected L1 compatibility or migration strategy only in isolated feature worktrees. | Both repositories use one agreed clear-buffer API without unsafe casts. | [Finding 1](analysis.md#finding-1) | 🚧 Blocked by R01 |
 | R03 | Build and test the complete `easy-gl` tree against the final L1 API. | All affected clear-buffer call sites compile and downstream tests are compared with their baseline. | [Finding 1](analysis.md#finding-1) | 🚧 Blocked by R02 |
-| R04 | Define the pre-1.0 ABI numbering and `SOVERSION` policy. | The policy explicitly covers incompatible `0.x` minor releases. | [Finding 5](analysis.md#finding-5) | 🔎 Pending decision |
-| R05 | Implement the selected ABI/`SOVERSION` policy in CMake. | Produced shared-library filenames and package metadata match R04. | [Finding 5](analysis.md#finding-5) | 🚧 Blocked by R04 |
+| R04 | Define the pre-1.0 ABI numbering and `SOVERSION` policy. | The policy explicitly covers incompatible `0.x` minor releases. | [Finding 5](analysis.md#finding-5) | ✅ Done — Decision: B (SOVERSION=0; SONAME is always libmeta-gl.so.0 until v1.0; signals no ABI stability pre-1.0) |
+| R05 | Implement the selected ABI/`SOVERSION` policy in CMake. | Produced shared-library filenames and package metadata match R04. | [Finding 5](analysis.md#finding-5) | ✅ Done — SOVERSION set to PROJECT_VERSION_MAJOR (0) in CMakeLists.txt |
 | R06 | Add an automated Linux SONAME assertion. | A shared-build test fails when the emitted SONAME differs from R04. | [Finding 5](analysis.md#finding-5) | 🚧 Blocked by R05 |
-| R07 | Choose the Release-build failure contract for invalid sizes, incomplete vectors/matrices, and non-false transpose. | Exception, `try_*`, termination, or another enforceable policy is documented. | [Finding 6](analysis.md#finding-6) | 🔎 Pending decision |
+| R07 | Choose the Release-build failure contract for invalid sizes, incomplete vectors/matrices, and non-false transpose. | Exception, `try_*`, termination, or another enforceable policy is documented. | [Finding 6](analysis.md#finding-6) | ✅ Done — Decision: B (std::terminate(); consistent with modern C++ stdlib; no exceptions, no overhead) |
 | R08 | Enforce checked `size_t`/range-to-`GLsizei` conversion in Release builds. | Overflow cannot reach a GL call and follows the R07 policy. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R07 |
 | R09 | Enforce vector/matrix divisibility and transpose preconditions in Release builds. | Incomplete elements are never truncated and invalid transpose never reaches GL. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R07 |
 | R10 | Add negative Release tests for every checked precondition. | Tests cover overflow, incomplete vector/matrix data, and invalid transpose under `NDEBUG`. | [Finding 6](analysis.md#finding-6) | 🚧 Blocked by R08–R09 |
@@ -256,17 +256,17 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 
 | # | Individual task | Completion condition | Source | Status |
 |---|-----------------|----------------------|--------|--------|
-| R21 | Choose the compatibility/deprecation policy for an exact `glMemoryBarrierByRegion` mask domain. | The legal bit set and treatment of the old broad call shape are recorded. | [Finding 8](analysis.md#finding-8) | 🔎 Pending decision |
+| R21 | Choose the compatibility/deprecation policy for an exact `glMemoryBarrierByRegion` mask domain. | The legal bit set and treatment of the old broad call shape are recorded. | [Finding 8](analysis.md#finding-8) | ✅ Done — Decision: A (new enum MemoryBarrierByRegionMask with only legal bits; invalid bits are compile-time error) |
 | R22 | Implement, test, and document the exact `glMemoryBarrierByRegion` mask domain. | New code cannot pass disallowed bits; compile/runtime coverage includes every legal bit and `ALL`. | [Finding 8](analysis.md#finding-8) | 🚧 Blocked by R21 |
 | R23 | Add every legal object identifier to `DebugObjectLabel`. | Framebuffer, renderbuffer, texture, transform feedback, and all previously supported identifiers are represented. | [Finding 9](analysis.md#finding-9) | ✅ Done |
 | R24 | Test and document the complete object-label domain. | Each identifier is compile-time covered and representative forwarding is runtime-tested. | [Finding 9](analysis.md#finding-9) | ✅ Done |
-| R25 | Choose the typed API model for default-framebuffer invalidation. | Separate domain, overload, or validated union is selected without weakening named-framebuffer safety. | [Finding 10](analysis.md#finding-10) | 🔎 Pending decision |
+| R25 | Choose the typed API model for default-framebuffer invalidation. | Separate domain, overload, or validated union is selected without weakening named-framebuffer safety. | [Finding 10](analysis.md#finding-10) | ✅ Done — Decision: A (separate enum DefaultFramebufferAttachment + overloaded function for id=0) |
 | R26 | Implement default-framebuffer invalidation with a compatible migration path. | `GL_COLOR`, `GL_DEPTH`, and `GL_STENCIL` are expressible only in their legal context. | [Finding 10](analysis.md#finding-10) | 🚧 Blocked by R25 |
 | R27 | Add compile/runtime tests and documentation for both default and named framebuffer invalidation. | Legal tokens forward correctly and cross-domain misuse is rejected. | [Finding 10](analysis.md#finding-10) | 🚧 Blocked by R26 |
-| R28 | Choose setter/query texture-parameter domains and the legacy-overload deprecation policy. | Writable and query-only token sets plus source-compatibility rules are recorded. | [Finding 11](analysis.md#finding-11) | 🔎 Pending decision |
+| R28 | Choose setter/query texture-parameter domains and the legacy-overload deprecation policy. | Writable and query-only token sets plus source-compatibility rules are recorded. | [Finding 11](analysis.md#finding-11) | ✅ Done — Decision: A (TextureParameterSetter for write-only + TextureParameterQuery for all; read-only tokens rejected at compile time for setter) |
 | R29 | Implement the exact writable texture-parameter API. | Setter overloads cannot accept query-only tokens and getters retain the complete query domain. | [Finding 11](analysis.md#finding-11) | 🚧 Blocked by R28 |
 | R30 | Add rejection, forwarding, compatibility, and documentation coverage for texture parameters. | Tests prove the setter/query separation and any retained legacy path. | [Finding 11](analysis.md#finding-11) | 🚧 Blocked by R29 |
-| R31 | Choose the exact immutable-storage internal-format representation. | One domain or overload policy covers all legal compressed and uncompressed sized formats. | [Finding 12](analysis.md#finding-12) | 🔎 Pending decision |
+| R31 | Choose the exact immutable-storage internal-format representation. | One domain or overload policy covers all legal compressed and uncompressed sized formats. | [Finding 12](analysis.md#finding-12) | ✅ Done — Decision: A (dedicated SizedInternalFormat enum with only legal sized/compressed formats; unsized formats rejected at compile time) |
 | R32 | Implement compressed-format support in `glTexStorage2D/3D`. | All selected legal format families compile without raw casts. | [Finding 12](analysis.md#finding-12) | 🚧 Blocked by R31 |
 | R33 | Test and document immutable-storage format coverage. | Compile tests cover compressed/uncompressed acceptance and reject unsized/illegal formats. | [Finding 12](analysis.md#finding-12) | 🚧 Blocked by R32 |
 | R34 | Add a transform-feedback primitive domain and compatible overload limited to points, lines, and triangles. | Invalid general primitive modes cannot enter the exact overload. | [Finding 13](analysis.md#finding-13) | ✅ Done |
@@ -276,7 +276,7 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 
 | # | Individual task | Completion condition | Source | Status |
 |---|-----------------|----------------------|--------|--------|
-| R36 | Decide which loader adapters are library-owned versus host-owned. | EGL, GLX, GLFW, SDL, and WGL each have an explicit supported/host-supplied decision. | [Finding 14](analysis.md#finding-14) | 🔎 Pending decision |
+| R36 | Decide which loader adapters are library-owned versus host-owned. | EGL, GLX, GLFW, SDL, and WGL each have an explicit supported/host-supplied decision. | [Finding 14](analysis.md#finding-14) | ✅ Done — Decision: A (all host-supplied; no adapters in meta-gl; host writes their own; documented in Loader.hpp) |
 | R37 | Formalize the generic loader callback contract. | Documentation defines current-context, address lifetime, function-pointer conversion, failure, and thread requirements. | [Finding 14](analysis.md#finding-14) | ✅ Done |
 | R38 | Implement a WGL adapter with `opengl32.dll` core fallback and sentinel rejection. | `nullptr`, 1, 2, 3, and `-1` results are rejected and core symbols use the fallback. | [Finding 14](analysis.md#finding-14) | 🚧 Conditional on R36 |
 | R39 | Add automated WGL adapter tests. | Windows tests cover extension lookup, core fallback, missing symbols, and every sentinel. | [Finding 14](analysis.md#finding-14) | 🌐 Conditional on R38; requires Windows runner |
@@ -284,9 +284,9 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 | R41 | Add and test a library-owned GLFW adapter if selected. | The adapter compiles without unsafe user-side callback casts. | [Finding 14](analysis.md#finding-14) | 🚧 Conditional on R36 |
 | R42 | Add and test a library-owned SDL adapter if selected. | The adapter compiles without unsafe user-side callback casts. | [Finding 14](analysis.md#finding-14) | 🚧 Conditional on R36 |
 | R43 | Add and test a library-owned GLX adapter if selected. | The adapter handles the platform function-pointer contract documented by R37. | [Finding 14](analysis.md#finding-14) | 🚧 Conditional on R36 |
-| R44 | Define the supported public binary ABI symbol list. | Only documented public functions/types intended for binary use are listed. | [Finding 15](analysis.md#finding-15) | 🔎 Pending decision |
-| R45 | Introduce and apply a central `METAGL_API` export/import macro. | Every out-of-line public symbol is annotated and internal symbols are not. | [Finding 15](analysis.md#finding-15) | 🚧 Blocked by R44 |
-| R46 | Enable hidden visibility and remove `WINDOWS_EXPORT_ALL_SYMBOLS`. | Static/shared Linux and Windows builds export only the R44 surface. | [Finding 15](analysis.md#finding-15) | 🚧 Blocked by R45 |
+| R44 | Define the supported public binary ABI symbol list. | Only documented public functions/types intended for binary use are listed. | [Finding 15](analysis.md#finding-15) | ✅ Done — Decision: A (explicit METAGL_API allowlist; hidden visibility; no WINDOWS_EXPORT_ALL_SYMBOLS) |
+| R45 | Introduce and apply a central `METAGL_API` export/import macro. | Every out-of-line public symbol is annotated and internal symbols are not. | [Finding 15](analysis.md#finding-15) | ✅ Done — GenerateExportHeader generates Export.hpp; 411 function declarations + class ContextListener annotated with METAGL_API |
+| R46 | Enable hidden visibility and remove `WINDOWS_EXPORT_ALL_SYMBOLS`. | Static/shared Linux and Windows builds export only the R44 surface. | [Finding 15](analysis.md#finding-15) | ✅ Done — CXX_VISIBILITY_PRESET=hidden + VISIBILITY_INLINES_HIDDEN=ON; WINDOWS_EXPORT_ALL_SYMBOLS removed |
 | R47 | Add a Unix exported-symbol allowlist test. | CI fails on missing public or newly leaked internal symbols. | [Finding 15](analysis.md#finding-15) | 🚧 Blocked by R46 |
 | R48 | Add a Windows exported-symbol allowlist test. | MSVC shared CI fails on missing public or newly leaked internal symbols. | [Finding 15](analysis.md#finding-15) | 🌐 Blocked by R46; requires Windows runner |
 | R49 | Establish an ABI baseline and compatibility check. | An approved tool compares releases using the R44 public surface. | [Finding 5](analysis.md#finding-5) and [finding 15](analysis.md#finding-15) | 🚧 Blocked by R44–R48 |
@@ -330,5 +330,5 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 |-------|----------:|----------:|------:|
 | A–K — Original plan and comprehensive audit | 113 | 0 | 113 |
 | L — Implemented follow-up findings | 4 | 0 | 4 |
-| R — Remaining individual tasks | 11 | 64 | 75 |
-| **Total** | **128** | **64** | **192** |
+| R — Remaining individual tasks | 20 | 55 | 75 |
+| **Total** | **137** | **55** | **192** |

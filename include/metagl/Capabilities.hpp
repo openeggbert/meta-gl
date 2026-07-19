@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include "metagl/Export.hpp"
 #include <string>
 #include <string_view>
 #include <vector>
@@ -73,13 +74,13 @@ namespace metagl
      * @note Do not retain this reference across context loss/restore events;
      *       copy any diagnostic data that must outlive the current context.
      */
-    [[nodiscard]] const Capabilities& GetCapabilities() noexcept;
+    [[nodiscard]] METAGL_API const Capabilities& GetCapabilities() noexcept;
 
     /**
      * @brief Returns `true` for OpenGL ES 2.0+ or its WebGL equivalent.
      * @note Equivalent to `GetCapabilities().gles20`.
      */
-    [[nodiscard]] bool SupportsGLES20() noexcept;
+    [[nodiscard]] METAGL_API bool SupportsGLES20() noexcept;
 
     /**
      * @brief Returns `true` for OpenGL ES 3.0+ or its WebGL 2 equivalent.
@@ -89,35 +90,35 @@ namespace metagl
      * entry point that is not part of that subset.
      * @note Equivalent to `GetCapabilities().gles30`.
      */
-    [[nodiscard]] bool SupportsGLES30() noexcept;
+    [[nodiscard]] METAGL_API bool SupportsGLES30() noexcept;
 
     /**
      * @brief Returns `true` if the context supports at least OpenGL ES 3.1.
      * @note Equivalent to `GetCapabilities().gles31`.
      */
-    [[nodiscard]] bool SupportsGLES31() noexcept;
+    [[nodiscard]] METAGL_API bool SupportsGLES31() noexcept;
 
     /**
      * @brief Returns `true` if the context supports at least OpenGL ES 3.2.
      * @note Equivalent to `GetCapabilities().gles32`.
      */
-    [[nodiscard]] bool SupportsGLES32() noexcept;
+    [[nodiscard]] METAGL_API bool SupportsGLES32() noexcept;
 
     /**
      * @brief Returns `true` only when compiling with Emscripten and the runtime provides WebGL 2.
      * @note Always returns `false` on non-Emscripten builds.
      */
-    [[nodiscard]] bool SupportsWebGL2() noexcept;
+    [[nodiscard]] METAGL_API bool SupportsWebGL2() noexcept;
 
     /**
      * @brief Returns `true` when the loaded context is desktop OpenGL.
      */
-    [[nodiscard]] bool SupportsDesktopOpenGL() noexcept;
+    [[nodiscard]] METAGL_API bool SupportsDesktopOpenGL() noexcept;
 
     /**
      * @brief Returns `true` when the context strings identify an ANGLE backend.
      */
-    [[nodiscard]] bool IsAngle() noexcept;
+    [[nodiscard]] METAGL_API bool IsAngle() noexcept;
 
     /**
      * @brief Returns `true` if the named extension was present in the last @ref LoadCurrentContext call.
@@ -127,5 +128,5 @@ namespace metagl
      * @param extensionName  Extension string to look up (e.g. `"GL_EXT_texture_filter_anisotropic"`).
      * @return `true` if the extension is present; `false` otherwise or if not yet initialised.
      */
-    [[nodiscard]] bool HasExtension(std::string_view extensionName) noexcept;
+    [[nodiscard]] METAGL_API bool HasExtension(std::string_view extensionName) noexcept;
 }

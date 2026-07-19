@@ -40,6 +40,7 @@
  */
 #pragma once
 
+#include "metagl/Export.hpp"
 #include "Types.hpp"
 
 #include <string_view>
@@ -81,7 +82,7 @@ namespace metagl
      *         by the detected supported API level loaded successfully; `false`
      *         for an invalid/unsupported version or a missing required function.
      */
-    bool Initialize(GlGetProcAddressFn loader);
+    METAGL_API bool Initialize(GlGetProcAddressFn loader);
 
     /**
      * @brief Convenience alias for @ref Initialize; provided for API consistency.
@@ -125,7 +126,7 @@ namespace metagl
      * @param getProcAddress Platform `GetProcAddress` function.
      * @return `true` after a complete reload and notification; `false` on load failure.
      */
-    [[nodiscard]] bool RestoreCurrentContext(GlGetProcAddressFn getProcAddress);
+    [[nodiscard]] METAGL_API bool RestoreCurrentContext(GlGetProcAddressFn getProcAddress);
 
     /**
      * @brief Returns `true` while a successfully loaded context remains current.
@@ -133,7 +134,7 @@ namespace metagl
      * Context loss immediately changes the result to `false`; a successful
      * @ref Initialize or @ref RestoreCurrentContext makes it `true` again.
      */
-    [[nodiscard]] bool IsInitialized() noexcept;
+    [[nodiscard]] METAGL_API bool IsInitialized() noexcept;
 
     /**
      * @brief Returns `true` if the named GL function is available for the
@@ -146,7 +147,7 @@ namespace metagl
      * @return `true` if the current context is initialized and the function
      *         pointer is non-null; `false` after context loss or when absent.
      */
-    [[nodiscard]] bool IsFunctionAvailable(std::string_view name) noexcept;
+    [[nodiscard]] METAGL_API bool IsFunctionAvailable(std::string_view name) noexcept;
 
     /**
      * @brief Returns `true` if every OpenGL ES 3.2 function pointer was loaded successfully.
@@ -159,5 +160,5 @@ namespace metagl
      *       satisfy this check even without a real GPU.  It is intended as a
      *       completeness sanity-check, not a GPU presence check.
      */
-    [[nodiscard]] bool AllFunctionsLoaded() noexcept;
+    [[nodiscard]] METAGL_API bool AllFunctionsLoaded() noexcept;
 }

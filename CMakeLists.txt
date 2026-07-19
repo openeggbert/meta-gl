@@ -37,7 +37,15 @@ set_target_properties(meta-gl PROPERTIES
     CXX_EXTENSIONS NO
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_VERSION_MAJOR}
-    WINDOWS_EXPORT_ALL_SYMBOLS ON)
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN ON)
+
+include(GenerateExportHeader)
+generate_export_header(meta-gl
+    EXPORT_MACRO_NAME   METAGL_API
+    EXPORT_FILE_NAME    include/metagl/Export.hpp
+    BASE_NAME           METAGL
+)
 
 target_compile_features(meta-gl PUBLIC cxx_std_23)
 
@@ -66,9 +74,19 @@ target_sources(meta-gl
         include/metagl/EnumNames.hpp
 )
 
+target_sources(meta-gl
+    PUBLIC
+    FILE_SET generated_headers
+    TYPE HEADERS
+    BASE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/include"
+    FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/include/metagl/Export.hpp"
+)
+
 target_include_directories(meta-gl
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/third_party/Khronos>
         $<INSTALL_INTERFACE:include>
 )
@@ -143,7 +161,8 @@ include(CMakePackageConfigHelpers)
 
 install(TARGETS meta-gl
         EXPORT meta-gl-targets
-        FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILE_SET HEADERS           DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILE_SET generated_headers DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
 install(DIRECTORY

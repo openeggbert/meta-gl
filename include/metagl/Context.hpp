@@ -16,6 +16,7 @@
  */
 #pragma once
 
+#include "metagl/Export.hpp"
 #include <cstdint>
 
 namespace metagl
@@ -87,21 +88,21 @@ namespace metagl
      * The returned struct is a snapshot; it does not update automatically.
      * Call @ref GetContextStatus for a cheap single-field check.
      */
-    [[nodiscard]] ContextInfo GetContextInfo() noexcept;
+    [[nodiscard]] METAGL_API ContextInfo GetContextInfo() noexcept;
 
     /**
      * @brief Returns the current context generation counter.
      *
      * Equivalent to `GetContextInfo().generation` but avoids copying the full struct.
      */
-    [[nodiscard]] std::uint64_t GetContextGeneration() noexcept;
+    [[nodiscard]] METAGL_API std::uint64_t GetContextGeneration() noexcept;
 
     /**
      * @brief Returns the current @ref ContextStatus.
      *
      * Cheap single-field read; prefer over @ref GetContextInfo when only the status is needed.
      */
-    [[nodiscard]] ContextStatus GetContextStatus() noexcept;
+    [[nodiscard]] METAGL_API ContextStatus GetContextStatus() noexcept;
 
     /**
      * @brief Returns `true` when the context is in the `Lost` state.
@@ -113,7 +114,7 @@ namespace metagl
      *     metagl::glDrawArrays(...);
      * @endcode
      */
-    [[nodiscard]] bool IsContextLost() noexcept;
+    [[nodiscard]] METAGL_API bool IsContextLost() noexcept;
 
     // -------------------------------------------------------------------------
     // Context state mutation API
@@ -133,7 +134,7 @@ namespace metagl
      *
      * Prefer @ref NotifyContextLost, which also dispatches @ref ContextListener events.
      */
-    void MarkContextLost() noexcept;
+    METAGL_API void MarkContextLost() noexcept;
 
     /**
      * @brief Marks the context as restored.
@@ -144,12 +145,12 @@ namespace metagl
      *          @ref RestoreCurrentContext, which reloads function pointers,
      *          dispatches listeners, and returns the status to `Current`.
      */
-    void MarkContextRestored() noexcept;
+    METAGL_API void MarkContextRestored() noexcept;
 
     /**
      * @brief Internal: writes the full @ref ContextInfo (used by @ref LoadCurrentContext).
      *
      * Not intended for direct use by application code.
      */
-    void SetContextInfo(ContextInfo info) noexcept;
+    METAGL_API void SetContextInfo(ContextInfo info) noexcept;
 }

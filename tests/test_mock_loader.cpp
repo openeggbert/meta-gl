@@ -482,7 +482,7 @@ int main()
     check("Reload before manual restored notification",
           metagl::LoadCurrentContext(mock_proc_address));
     metagl::NotifyContextRestored();
-    check("Removed listener does not receive NotifyContextRestored via snapshot", ml1.restored_count == 2);
+    check("Removed listener does not receive NotifyContextRestored", ml1.restored_count == 1);
     check("Active listener still receives NotifyContextRestored",    ml2.restored_count == 1);
 
     // ==========================================================================
@@ -510,7 +510,7 @@ int main()
     metagl::NotifyContextLost();
 
     check("Remover called", remover.calls == 1);
-    check("Victim still called (snapshot-based dispatch)", victim.lost_count == 1);
+    check("Victim NOT called (removed by remover during dispatch)", victim.lost_count == 0);
 
     // Clean up
     metagl::RemoveContextListener(&remover);

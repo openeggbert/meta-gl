@@ -257,18 +257,18 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 | # | Individual task | Completion condition | Source | Status |
 |---|-----------------|----------------------|--------|--------|
 | R21 | Choose the compatibility/deprecation policy for an exact `glMemoryBarrierByRegion` mask domain. | The legal bit set and treatment of the old broad call shape are recorded. | [Finding 8](analysis.md#finding-8) | ✅ Done — Decision: A (new enum MemoryBarrierByRegionMask with only legal bits; invalid bits are compile-time error) |
-| R22 | Implement, test, and document the exact `glMemoryBarrierByRegion` mask domain. | New code cannot pass disallowed bits; compile/runtime coverage includes every legal bit and `ALL`. | [Finding 8](analysis.md#finding-8) | 🚧 Blocked by R21 |
+| R22 | Implement, test, and document the exact `glMemoryBarrierByRegion` mask domain. | New code cannot pass disallowed bits; compile/runtime coverage includes every legal bit and `ALL`. | [Finding 8](analysis.md#finding-8) | ✅ Done |
 | R23 | Add every legal object identifier to `DebugObjectLabel`. | Framebuffer, renderbuffer, texture, transform feedback, and all previously supported identifiers are represented. | [Finding 9](analysis.md#finding-9) | ✅ Done |
 | R24 | Test and document the complete object-label domain. | Each identifier is compile-time covered and representative forwarding is runtime-tested. | [Finding 9](analysis.md#finding-9) | ✅ Done |
 | R25 | Choose the typed API model for default-framebuffer invalidation. | Separate domain, overload, or validated union is selected without weakening named-framebuffer safety. | [Finding 10](analysis.md#finding-10) | ✅ Done — Decision: A (separate enum DefaultFramebufferAttachment + overloaded function for id=0) |
-| R26 | Implement default-framebuffer invalidation with a compatible migration path. | `GL_COLOR`, `GL_DEPTH`, and `GL_STENCIL` are expressible only in their legal context. | [Finding 10](analysis.md#finding-10) | 🚧 Blocked by R25 |
-| R27 | Add compile/runtime tests and documentation for both default and named framebuffer invalidation. | Legal tokens forward correctly and cross-domain misuse is rejected. | [Finding 10](analysis.md#finding-10) | 🚧 Blocked by R26 |
+| R26 | Implement default-framebuffer invalidation with a compatible migration path. | `GL_COLOR`, `GL_DEPTH`, and `GL_STENCIL` are expressible only in their legal context. | [Finding 10](analysis.md#finding-10) | ✅ Done |
+| R27 | Add compile/runtime tests and documentation for both default and named framebuffer invalidation. | Legal tokens forward correctly and cross-domain misuse is rejected. | [Finding 10](analysis.md#finding-10) | ✅ Done |
 | R28 | Choose setter/query texture-parameter domains and the legacy-overload deprecation policy. | Writable and query-only token sets plus source-compatibility rules are recorded. | [Finding 11](analysis.md#finding-11) | ✅ Done — Decision: A (TextureParameterSetter for write-only + TextureParameterQuery for all; read-only tokens rejected at compile time for setter) |
-| R29 | Implement the exact writable texture-parameter API. | Setter overloads cannot accept query-only tokens and getters retain the complete query domain. | [Finding 11](analysis.md#finding-11) | 🚧 Blocked by R28 |
-| R30 | Add rejection, forwarding, compatibility, and documentation coverage for texture parameters. | Tests prove the setter/query separation and any retained legacy path. | [Finding 11](analysis.md#finding-11) | 🚧 Blocked by R29 |
+| R29 | Implement the exact writable texture-parameter API. | Setter overloads cannot accept query-only tokens and getters retain the complete query domain. | [Finding 11](analysis.md#finding-11) | ✅ Done |
+| R30 | Add rejection, forwarding, compatibility, and documentation coverage for texture parameters. | Tests prove the setter/query separation and any retained legacy path. | [Finding 11](analysis.md#finding-11) | ✅ Done |
 | R31 | Choose the exact immutable-storage internal-format representation. | One domain or overload policy covers all legal compressed and uncompressed sized formats. | [Finding 12](analysis.md#finding-12) | ✅ Done — Decision: A (dedicated SizedInternalFormat enum with only legal sized/compressed formats; unsized formats rejected at compile time) |
-| R32 | Implement compressed-format support in `glTexStorage2D/3D`. | All selected legal format families compile without raw casts. | [Finding 12](analysis.md#finding-12) | 🚧 Blocked by R31 |
-| R33 | Test and document immutable-storage format coverage. | Compile tests cover compressed/uncompressed acceptance and reject unsized/illegal formats. | [Finding 12](analysis.md#finding-12) | 🚧 Blocked by R32 |
+| R32 | Implement compressed-format support in `glTexStorage2D/3D`. | All selected legal format families compile without raw casts. | [Finding 12](analysis.md#finding-12) | ✅ Done |
+| R33 | Test and document immutable-storage format coverage. | Compile tests cover compressed/uncompressed acceptance and reject unsized/illegal formats. | [Finding 12](analysis.md#finding-12) | ✅ Done |
 | R34 | Add a transform-feedback primitive domain and compatible overload limited to points, lines, and triangles. | Invalid general primitive modes cannot enter the exact overload. | [Finding 13](analysis.md#finding-13) | ✅ Done |
 | R35 | Test and document transform-feedback primitive isolation and forwarding. | All three legal modes forward and representative illegal modes fail at compile time. | [Finding 13](analysis.md#finding-13) | ✅ Done |
 
@@ -298,8 +298,8 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 | R55 | Implement the selected restore-listener exception semantics. | Published status and partially restored resources follow the R53 rule after an exception. | [Finding 17](analysis.md#finding-17) | ✅ Done — Status remains Current after partial restore failure as decided in R53=A |
 | R56 | Add listener lifetime, removal, reentrancy, and exception tests. | Tests reproduce the original hazards and verify R54–R55. | [Finding 17](analysis.md#finding-17) | ✅ Done — Added tests in test_mock_loader.cpp for safe dispatch during removal |
 | R57 | Decide whether debug logging may consume application `glGetError` state. | Default/opt-in behavior, reporting, and queue-draining limits are recorded. | [Finding 18](analysis.md#finding-18) | ✅ Done — Decision: B (host-supplied buffer for errors) |
-| R58 | Implement and document the selected debug-error policy. | Debug checks follow R57 and expose no undocumented error-state mutation. | [Finding 18](analysis.md#finding-18) | 🚧 Blocked by R57 |
-| R59 | Add tests for debug error ownership, multiple queued errors, and reporting. | Tests verify both configured modes and the documented drain limit. | [Finding 18](analysis.md#finding-18) | 🚧 Blocked by R58 |
+| R58 | Implement and document the selected debug-error policy. | Debug checks follow R57 and expose no undocumented error-state mutation. | [Finding 18](analysis.md#finding-18) | ✅ Done |
+| R59 | Add tests for debug error ownership, multiple queued errors, and reporting. | Tests verify both configured modes and the documented drain limit. | [Finding 18](analysis.md#finding-18) | ✅ Done |
 
 ### R60–R75 — Generation, runtime coverage, release automation, and shutdown
 
@@ -330,5 +330,5 @@ Status legend: 🔎 pending decision · ⏳ pending implementation ·
 |-------|----------:|----------:|------:|
 | A–K — Original plan and comprehensive audit | 113 | 0 | 113 |
 | L — Implemented follow-up findings | 4 | 0 | 4 |
-| R — Remaining individual tasks | 20 | 55 | 75 |
-| **Total** | **137** | **55** | **192** |
+| R — Remaining individual tasks | 30 | 45 | 75 |
+| **Total** | **147** | **45** | **192** |

@@ -242,7 +242,12 @@ namespace metagl
         const auto snapshot = detail::g_listeners;
         for (auto* l : snapshot)
         {
-            if (l) l->OnContextLost();
+            // Check if listener is still in the actual list before calling
+            const auto& current = detail::g_listeners;
+            if (std::find(current.begin(), current.end(), l) != current.end())
+            {
+                if (l) l->OnContextLost();
+            }
         }
     }
 
@@ -261,7 +266,11 @@ namespace metagl
         {
             for (auto* l : snapshot)
             {
-                if (l) l->OnContextRestored();
+                const auto& current = detail::g_listeners;
+                if (std::find(current.begin(), current.end(), l) != current.end())
+                {
+                    if (l) l->OnContextRestored();
+                }
             }
         }
         catch (...)

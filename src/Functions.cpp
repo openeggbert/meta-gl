@@ -3545,7 +3545,14 @@ namespace metagl
     }
 
     // #243
-    void glTexStorage2D(TextureTarget target, GLsizei levels, InternalFormat internalformat, GLsizei width, GLsizei height)
+    void glTexStorage2D(TextureTarget target, GLsizei levels, SizedInternalFormat internalformat, GLsizei width, GLsizei height)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.TexStorage2D != nullptr);
+        detail::g_gl.TexStorage2D(detail::to_gl_enum(target), levels, detail::to_gl_enum(internalformat), width, height);
+        METAGL_DEBUG_LOG_VOID("glTexStorage2D", target, levels, internalformat, width, height);
+    }
+
+    void glTexStorage2D(TextureTarget target, GLsizei levels, CompressedInternalFormat internalformat, GLsizei width, GLsizei height)
     {
         assert(detail::g_gl.initialized && detail::g_gl.TexStorage2D != nullptr);
         detail::g_gl.TexStorage2D(detail::to_gl_enum(target), levels, detail::to_gl_enum(internalformat), width, height);
@@ -3553,7 +3560,14 @@ namespace metagl
     }
 
     // #244
-    void glTexStorage3D(TextureTarget target, GLsizei levels, InternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth)
+    void glTexStorage3D(TextureTarget target, GLsizei levels, SizedInternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.TexStorage3D != nullptr);
+        detail::g_gl.TexStorage3D(detail::to_gl_enum(target), levels, detail::to_gl_enum(internalformat), width, height, depth);
+        METAGL_DEBUG_LOG_VOID("glTexStorage3D", target, levels, internalformat, width, height, depth);
+    }
+
+    void glTexStorage3D(TextureTarget target, GLsizei levels, CompressedInternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth)
     {
         assert(detail::g_gl.initialized && detail::g_gl.TexStorage3D != nullptr);
         detail::g_gl.TexStorage3D(detail::to_gl_enum(target), levels, detail::to_gl_enum(internalformat), width, height, depth);
@@ -3561,7 +3575,7 @@ namespace metagl
     }
 
     // #245
-    void glTexStorage2DMultisample(TextureTarget target, GLsizei samples, InternalFormat internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations)
+    void glTexStorage2DMultisample(TextureTarget target, GLsizei samples, SizedInternalFormat internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations)
     {
         assert(detail::g_gl.initialized && detail::g_gl.TexStorage2DMultisample != nullptr);
         detail::g_gl.TexStorage2DMultisample(detail::to_gl_enum(target), samples, detail::to_gl_enum(internalformat), width, height, fixedsamplelocations);
@@ -3569,7 +3583,7 @@ namespace metagl
     }
 
     // #246
-    void glTexStorage3DMultisample(TextureTarget target, GLsizei samples, InternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLboolean fixedsamplelocations)
+    void glTexStorage3DMultisample(TextureTarget target, GLsizei samples, SizedInternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLboolean fixedsamplelocations)
     {
         assert(detail::g_gl.initialized && detail::g_gl.TexStorage3DMultisample != nullptr);
         detail::g_gl.TexStorage3DMultisample(detail::to_gl_enum(target), samples, detail::to_gl_enum(internalformat), width, height, depth, fixedsamplelocations);
@@ -3669,6 +3683,13 @@ namespace metagl
     }
 
     // #256
+    void glTexParameterf(TextureTarget target, TextureParameterSetter pname, GLfloat param)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.TexParameterf != nullptr);
+        detail::g_gl.TexParameterf(detail::to_gl_enum(target), detail::to_gl_enum(pname), param);
+        METAGL_DEBUG_LOG_VOID("glTexParameterf", target, pname, param);
+    }
+
     void glTexParameterf(TextureTarget target, TextureParameter pname, GLfloat param)
     {
         assert(detail::g_gl.initialized && detail::g_gl.TexParameterf != nullptr);
@@ -3677,6 +3698,13 @@ namespace metagl
     }
 
     // #257
+    void glTexParameteri(TextureTarget target, TextureParameterSetter pname, GLint param)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.TexParameteri != nullptr);
+        detail::g_gl.TexParameteri(detail::to_gl_enum(target), detail::to_gl_enum(pname), param);
+        METAGL_DEBUG_LOG_VOID("glTexParameteri", target, pname, param);
+    }
+
     void glTexParameteri(TextureTarget target, TextureParameter pname, GLint param)
     {
         assert(detail::g_gl.initialized && detail::g_gl.TexParameteri != nullptr);
@@ -3685,6 +3713,13 @@ namespace metagl
     }
 
     // #258
+    void glTexParameterfv(TextureTarget target, TextureParameterSetter pname, const GLfloat * params)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.TexParameterfv != nullptr);
+        detail::g_gl.TexParameterfv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glTexParameterfv", target, pname, params);
+    }
+
     void glTexParameterfv(TextureTarget target, TextureParameter pname, const GLfloat * params)
     {
         assert(detail::g_gl.initialized && detail::g_gl.TexParameterfv != nullptr);
@@ -3693,6 +3728,13 @@ namespace metagl
     }
 
     // #259
+    void glTexParameteriv(TextureTarget target, TextureParameterSetter pname, const GLint * params)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.TexParameteriv != nullptr);
+        detail::g_gl.TexParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glTexParameteriv", target, pname, params);
+    }
+
     void glTexParameteriv(TextureTarget target, TextureParameter pname, const GLint * params)
     {
         assert(detail::g_gl.initialized && detail::g_gl.TexParameteriv != nullptr);
@@ -3701,6 +3743,13 @@ namespace metagl
     }
 
     // #260
+    void glTexParameterIiv(TextureTarget target, TextureParameterSetter pname, const GLint * params)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.TexParameterIiv != nullptr);
+        detail::g_gl.TexParameterIiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glTexParameterIiv", target, pname, params);
+    }
+
     void glTexParameterIiv(TextureTarget target, TextureParameter pname, const GLint * params)
     {
         assert(detail::g_gl.initialized && detail::g_gl.TexParameterIiv != nullptr);
@@ -3709,6 +3758,13 @@ namespace metagl
     }
 
     // #261
+    void glTexParameterIuiv(TextureTarget target, TextureParameterSetter pname, const GLuint * params)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.TexParameterIuiv != nullptr);
+        detail::g_gl.TexParameterIuiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glTexParameterIuiv", target, pname, params);
+    }
+
     void glTexParameterIuiv(TextureTarget target, TextureParameter pname, const GLuint * params)
     {
         assert(detail::g_gl.initialized && detail::g_gl.TexParameterIuiv != nullptr);
@@ -3717,6 +3773,13 @@ namespace metagl
     }
 
     // #262
+    void glGetTexParameterfv(TextureTarget target, TextureParameterQuery pname, GLfloat * params)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.GetTexParameterfv != nullptr);
+        detail::g_gl.GetTexParameterfv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetTexParameterfv", target, pname, params);
+    }
+
     void glGetTexParameterfv(TextureTarget target, TextureParameter pname, GLfloat * params)
     {
         assert(detail::g_gl.initialized && detail::g_gl.GetTexParameterfv != nullptr);
@@ -3725,6 +3788,13 @@ namespace metagl
     }
 
     // #263
+    void glGetTexParameteriv(TextureTarget target, TextureParameterQuery pname, GLint * params)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.GetTexParameteriv != nullptr);
+        detail::g_gl.GetTexParameteriv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetTexParameteriv", target, pname, params);
+    }
+
     void glGetTexParameteriv(TextureTarget target, TextureParameter pname, GLint * params)
     {
         assert(detail::g_gl.initialized && detail::g_gl.GetTexParameteriv != nullptr);
@@ -3733,6 +3803,13 @@ namespace metagl
     }
 
     // #264
+    void glGetTexParameterIiv(TextureTarget target, TextureParameterQuery pname, GLint * params)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.GetTexParameterIiv != nullptr);
+        detail::g_gl.GetTexParameterIiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetTexParameterIiv", target, pname, params);
+    }
+
     void glGetTexParameterIiv(TextureTarget target, TextureParameter pname, GLint * params)
     {
         assert(detail::g_gl.initialized && detail::g_gl.GetTexParameterIiv != nullptr);
@@ -3741,6 +3818,13 @@ namespace metagl
     }
 
     // #265
+    void glGetTexParameterIuiv(TextureTarget target, TextureParameterQuery pname, GLuint * params)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.GetTexParameterIuiv != nullptr);
+        detail::g_gl.GetTexParameterIuiv(detail::to_gl_enum(target), detail::to_gl_enum(pname), params);
+        METAGL_DEBUG_LOG_VOID("glGetTexParameterIuiv", target, pname, params);
+    }
+
     void glGetTexParameterIuiv(TextureTarget target, TextureParameter pname, GLuint * params)
     {
         assert(detail::g_gl.initialized && detail::g_gl.GetTexParameterIuiv != nullptr);
@@ -4036,8 +4120,22 @@ namespace metagl
         METAGL_DEBUG_LOG_VOID("glInvalidateFramebuffer", target, numAttachments, attachments);
     }
 
+    void glInvalidateFramebuffer(FramebufferTarget target, GLsizei numAttachments, const DefaultFramebufferAttachment * attachments)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.InvalidateFramebuffer != nullptr);
+        detail::g_gl.InvalidateFramebuffer(detail::to_gl_enum(target), numAttachments, reinterpret_cast<const GLenum *>(attachments));
+        METAGL_DEBUG_LOG_VOID("glInvalidateFramebuffer", target, numAttachments, attachments);
+    }
+
     // #301
     void glInvalidateSubFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments, GLint x, GLint y, GLsizei width, GLsizei height)
+    {
+        assert(detail::g_gl.initialized && detail::g_gl.InvalidateSubFramebuffer != nullptr);
+        detail::g_gl.InvalidateSubFramebuffer(detail::to_gl_enum(target), numAttachments, reinterpret_cast<const GLenum *>(attachments), x, y, width, height);
+        METAGL_DEBUG_LOG_VOID("glInvalidateSubFramebuffer", target, numAttachments, attachments, x, y, width, height);
+    }
+
+    void glInvalidateSubFramebuffer(FramebufferTarget target, GLsizei numAttachments, const DefaultFramebufferAttachment * attachments, GLint x, GLint y, GLsizei width, GLsizei height)
     {
         assert(detail::g_gl.initialized && detail::g_gl.InvalidateSubFramebuffer != nullptr);
         detail::g_gl.InvalidateSubFramebuffer(detail::to_gl_enum(target), numAttachments, reinterpret_cast<const GLenum *>(attachments), x, y, width, height);
@@ -4323,7 +4421,7 @@ namespace metagl
     }
 
     // #335
-    void glMemoryBarrierByRegion(MemoryBarrierMask barriers)
+    void glMemoryBarrierByRegion(MemoryBarrierByRegionMask barriers)
     {
         assert(detail::g_gl.initialized && detail::g_gl.MemoryBarrierByRegion != nullptr);
         detail::g_gl.MemoryBarrierByRegion(detail::to_gl_bitfield(barriers));

@@ -441,6 +441,71 @@ namespace metagl
     };
 
     /**
+     * @brief Sized internal formats (uncompressed) for immutable storage (ES 3.0+).
+     */
+    enum class SizedInternalFormat : GLenum
+    {
+        // ES 3.0 colour formats
+        R8           = GL_R8,
+        R8Snorm      = GL_R8_SNORM,
+        R16F         = GL_R16F,
+        R32F         = GL_R32F,
+        R8UI         = GL_R8UI,
+        R8I          = GL_R8I,
+        R16UI        = GL_R16UI,
+        R16I         = GL_R16I,
+        R32UI        = GL_R32UI,
+        R32I         = GL_R32I,
+        Rg8          = GL_RG8,
+        Rg8Snorm     = GL_RG8_SNORM,
+        Rg16F        = GL_RG16F,
+        Rg32F        = GL_RG32F,
+        Rg8UI        = GL_RG8UI,
+        Rg8I         = GL_RG8I,
+        Rg16UI       = GL_RG16UI,
+        Rg16I        = GL_RG16I,
+        Rg32UI       = GL_RG32UI,
+        Rg32I        = GL_RG32I,
+        Rgb8         = GL_RGB8,
+        Srgb8        = GL_SRGB8,
+        Rgb565       = GL_RGB565,
+        Rgb8Snorm    = GL_RGB8_SNORM,
+        R11FG11FB10F = GL_R11F_G11F_B10F,
+        Rgb9E5       = GL_RGB9_E5,
+        Rgb16F       = GL_RGB16F,
+        Rgb32F       = GL_RGB32F,
+        Rgb8UI       = GL_RGB8UI,
+        Rgb8I        = GL_RGB8I,
+        Rgb16UI      = GL_RGB16UI,
+        Rgb16I       = GL_RGB16I,
+        Rgb32UI      = GL_RGB32UI,
+        Rgb32I       = GL_RGB32I,
+        Rgba8        = GL_RGBA8,
+        Srgb8Alpha8  = GL_SRGB8_ALPHA8,
+        Rgba8Snorm   = GL_RGBA8_SNORM,
+        Rgb10A2      = GL_RGB10_A2,
+        Rgb10A2UI    = GL_RGB10_A2UI,
+        Rgba4        = GL_RGBA4,
+        Rgb5A1       = GL_RGB5_A1,
+        Rgba16F      = GL_RGBA16F,
+        Rgba32F      = GL_RGBA32F,
+        Rgba8UI      = GL_RGBA8UI,
+        Rgba8I       = GL_RGBA8I,
+        Rgba16UI     = GL_RGBA16UI,
+        Rgba16I      = GL_RGBA16I,
+        Rgba32UI     = GL_RGBA32UI,
+        Rgba32I      = GL_RGBA32I,
+
+        // Depth/stencil ES 3.0
+        DepthComponent16  = GL_DEPTH_COMPONENT16,
+        DepthComponent24  = GL_DEPTH_COMPONENT24,
+        DepthComponent32F = GL_DEPTH_COMPONENT32F,
+        Depth24Stencil8   = GL_DEPTH24_STENCIL8,
+        Depth32FStencil8  = GL_DEPTH32F_STENCIL8,
+        StencilIndex8     = GL_STENCIL_INDEX8
+    };
+
+    /**
      * @brief ETC2 / EAC and ASTC compressed internal formats (ES 3.0+).
      */
     enum class CompressedInternalFormat : GLenum
@@ -823,9 +888,9 @@ namespace metagl
     };
 
     /**
-     * @brief Texture parameter names for glTexParameteri / glTexParameterf.
+     * @brief Texture parameter names for glTexParameteri / glTexParameterf (write-only or read-write).
      */
-    enum class TextureParameter : GLenum
+    enum class TextureParameterSetter : GLenum
     {
         MinFilter              = GL_TEXTURE_MIN_FILTER,
         MagFilter              = GL_TEXTURE_MAG_FILTER,
@@ -842,16 +907,72 @@ namespace metagl
         SwizzleG               = GL_TEXTURE_SWIZZLE_G,            ///< ES 3.0+
         SwizzleB               = GL_TEXTURE_SWIZZLE_B,            ///< ES 3.0+
         SwizzleA               = GL_TEXTURE_SWIZZLE_A,            ///< ES 3.0+
-        ImmutableFormat        = GL_TEXTURE_IMMUTABLE_FORMAT,     ///< ES 3.0+
-        ImmutableLevels        = GL_TEXTURE_IMMUTABLE_LEVELS,     ///< ES 3.0+
-        Samples                = GL_TEXTURE_SAMPLES,              ///< ES 3.1+ multisample
-        FixedSampleLocations   = GL_TEXTURE_FIXED_SAMPLE_LOCATIONS, ///< ES 3.1+
         DepthStencilTextureMode = GL_DEPTH_STENCIL_TEXTURE_MODE,  ///< ES 3.1+
-        ImageFormatCompatibilityType = GL_IMAGE_FORMAT_COMPATIBILITY_TYPE, ///< ES 3.1+
-        BorderColor            = GL_TEXTURE_BORDER_COLOR,         ///< ES 3.2+
-        BufferDataStoreBinding = GL_TEXTURE_BUFFER_DATA_STORE_BINDING, ///< ES 3.2+
-        BufferOffset           = GL_TEXTURE_BUFFER_OFFSET,        ///< ES 3.2+
-        BufferSize             = GL_TEXTURE_BUFFER_SIZE           ///< ES 3.2+
+        BorderColor            = GL_TEXTURE_BORDER_COLOR          ///< ES 3.2+
+    };
+
+    /**
+     * @brief Texture parameter names for glGetTexParameter* (read-only or read-write).
+     */
+    enum class TextureParameterQuery : GLenum
+    {
+        MinFilter              = GL_TEXTURE_MIN_FILTER,
+        MagFilter              = GL_TEXTURE_MAG_FILTER,
+        WrapS                  = GL_TEXTURE_WRAP_S,
+        WrapT                  = GL_TEXTURE_WRAP_T,
+        WrapR                  = GL_TEXTURE_WRAP_R,
+        MinLod                 = GL_TEXTURE_MIN_LOD,
+        MaxLod                 = GL_TEXTURE_MAX_LOD,
+        BaseLevel              = GL_TEXTURE_BASE_LEVEL,
+        MaxLevel               = GL_TEXTURE_MAX_LEVEL,
+        CompareMode            = GL_TEXTURE_COMPARE_MODE,
+        CompareFunc            = GL_TEXTURE_COMPARE_FUNC,
+        SwizzleR               = GL_TEXTURE_SWIZZLE_R,
+        SwizzleG               = GL_TEXTURE_SWIZZLE_G,
+        SwizzleB               = GL_TEXTURE_SWIZZLE_B,
+        SwizzleA               = GL_TEXTURE_SWIZZLE_A,
+        DepthStencilTextureMode = GL_DEPTH_STENCIL_TEXTURE_MODE,
+        BorderColor            = GL_TEXTURE_BORDER_COLOR,
+        ImmutableFormat        = GL_TEXTURE_IMMUTABLE_FORMAT,     ///< Read-only, ES 3.0+
+        ImmutableLevels        = GL_TEXTURE_IMMUTABLE_LEVELS,     ///< Read-only, ES 3.0+
+        Samples                = GL_TEXTURE_SAMPLES,              ///< Read-only, ES 3.1+
+        FixedSampleLocations   = GL_TEXTURE_FIXED_SAMPLE_LOCATIONS, ///< Read-only, ES 3.1+
+        ImageFormatCompatibilityType = GL_IMAGE_FORMAT_COMPATIBILITY_TYPE, ///< Read-only, ES 3.1+
+        BufferDataStoreBinding = GL_TEXTURE_BUFFER_DATA_STORE_BINDING, ///< Read-only, ES 3.2+
+        BufferOffset           = GL_TEXTURE_BUFFER_OFFSET,        ///< Read-only, ES 3.2+
+        BufferSize             = GL_TEXTURE_BUFFER_SIZE           ///< Read-only, ES 3.2+
+    };
+
+    /**
+     * @brief Texture parameter names (combined setter/query). Use TextureParameterSetter or TextureParameterQuery for specific API calls.
+     */
+    enum class TextureParameter : GLenum
+    {
+        MinFilter              = GL_TEXTURE_MIN_FILTER,
+        MagFilter              = GL_TEXTURE_MAG_FILTER,
+        WrapS                  = GL_TEXTURE_WRAP_S,
+        WrapT                  = GL_TEXTURE_WRAP_T,
+        WrapR                  = GL_TEXTURE_WRAP_R,
+        MinLod                 = GL_TEXTURE_MIN_LOD,
+        MaxLod                 = GL_TEXTURE_MAX_LOD,
+        BaseLevel              = GL_TEXTURE_BASE_LEVEL,
+        MaxLevel               = GL_TEXTURE_MAX_LEVEL,
+        CompareMode            = GL_TEXTURE_COMPARE_MODE,
+        CompareFunc            = GL_TEXTURE_COMPARE_FUNC,
+        SwizzleR               = GL_TEXTURE_SWIZZLE_R,
+        SwizzleG               = GL_TEXTURE_SWIZZLE_G,
+        SwizzleB               = GL_TEXTURE_SWIZZLE_B,
+        SwizzleA               = GL_TEXTURE_SWIZZLE_A,
+        ImmutableFormat        = GL_TEXTURE_IMMUTABLE_FORMAT,
+        ImmutableLevels        = GL_TEXTURE_IMMUTABLE_LEVELS,
+        Samples                = GL_TEXTURE_SAMPLES,
+        FixedSampleLocations   = GL_TEXTURE_FIXED_SAMPLE_LOCATIONS,
+        DepthStencilTextureMode = GL_DEPTH_STENCIL_TEXTURE_MODE,
+        ImageFormatCompatibilityType = GL_IMAGE_FORMAT_COMPATIBILITY_TYPE,
+        BorderColor            = GL_TEXTURE_BORDER_COLOR,
+        BufferDataStoreBinding = GL_TEXTURE_BUFFER_DATA_STORE_BINDING,
+        BufferOffset           = GL_TEXTURE_BUFFER_OFFSET,
+        BufferSize             = GL_TEXTURE_BUFFER_SIZE
     };
 
     /** @brief Texture coordinate selector for a wrap-mode parameter. */
@@ -1113,6 +1234,16 @@ namespace metagl
     };
 
     /**
+     * @brief Framebuffer attachment points for the default framebuffer (id=0).
+     */
+    enum class DefaultFramebufferAttachment : GLenum
+    {
+        Color   = GL_COLOR,
+        Depth   = GL_DEPTH,
+        Stencil = GL_STENCIL
+    };
+
+    /**
      * @brief Framebuffer attachment points. Color attachments are represented by ColorAttachment; use to_framebuffer_attachment() to convert.
      */
     enum class FramebufferAttachment : GLenum
@@ -1321,7 +1452,7 @@ namespace metagl
     };
 
     /**
-     * @brief Memory barrier bits for glMemoryBarrier() / glMemoryBarrierByRegion() (ES 3.1+).
+     * @brief Memory barrier bits for glMemoryBarrier() (ES 3.1+).
      */
     enum class MemoryBarrierMask : GLbitfield
     {
@@ -1339,6 +1470,20 @@ namespace metagl
         AtomicCounter       = GL_ATOMIC_COUNTER_BARRIER_BIT,
         ShaderStorage       = GL_SHADER_STORAGE_BARRIER_BIT,
         AllBarrierBits      = GL_ALL_BARRIER_BITS
+    };
+
+    /**
+     * @brief Memory barrier bits for glMemoryBarrierByRegion() (ES 3.1+).
+     */
+    enum class MemoryBarrierByRegionMask : GLbitfield
+    {
+        AtomicCounter     = GL_ATOMIC_COUNTER_BARRIER_BIT,
+        Framebuffer       = GL_FRAMEBUFFER_BARRIER_BIT,
+        ShaderImageAccess = GL_SHADER_IMAGE_ACCESS_BARRIER_BIT,
+        ShaderStorage     = GL_SHADER_STORAGE_BARRIER_BIT,
+        TextureFetch      = GL_TEXTURE_FETCH_BARRIER_BIT,
+        Uniform           = GL_UNIFORM_BARRIER_BIT,
+        AllBarrierBits    = GL_ALL_BARRIER_BITS
     };
 
     /**
@@ -1949,6 +2094,12 @@ namespace metagl
     };
 
     template<> struct GlBitfieldTraits<MemoryBarrierMask>
+    {
+        static constexpr bool enabled = true;
+        static constexpr GLbitfield all_bits = GL_ALL_BARRIER_BITS;
+    };
+
+    template<> struct GlBitfieldTraits<MemoryBarrierByRegionMask>
     {
         static constexpr bool enabled = true;
         static constexpr GLbitfield all_bits = GL_ALL_BARRIER_BITS;

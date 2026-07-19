@@ -665,14 +665,21 @@ namespace metagl
     METAGL_API void glTexSubImage2D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, PixelFormat format, PixelType type, const void * pixels);
     /// @brief Updates a sub-region of an existing 3D or 2D-array texture (GL ES 3.0+)
     METAGL_API void glTexSubImage3D(TextureTarget target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, PixelFormat format, PixelType type, const void * pixels);
-    /// @brief Allocates immutable storage for all mip levels of a 2D texture (GL ES 3.0+)
-    METAGL_API void glTexStorage2D(TextureTarget target, GLsizei levels, InternalFormat internalformat, GLsizei width, GLsizei height);
-    /// @brief Allocates immutable storage for all mip levels of a 3D or array texture (GL ES 3.0+)
-    METAGL_API void glTexStorage3D(TextureTarget target, GLsizei levels, InternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth);
+    /// @brief Allocates immutable storage for all mip levels of a 2D texture with a sized format (GL ES 3.0+)
+    METAGL_API void glTexStorage2D(TextureTarget target, GLsizei levels, SizedInternalFormat internalformat, GLsizei width, GLsizei height);
+    /// @brief Allocates immutable storage for all mip levels of a 2D texture with a compressed format (GL ES 3.0+)
+    METAGL_API void glTexStorage2D(TextureTarget target, GLsizei levels, CompressedInternalFormat internalformat, GLsizei width, GLsizei height);
+
+    /// @brief Allocates immutable storage for all mip levels of a 3D or array texture with a sized format (GL ES 3.0+)
+    METAGL_API void glTexStorage3D(TextureTarget target, GLsizei levels, SizedInternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth);
+    /// @brief Allocates immutable storage for all mip levels of a 3D or array texture with a compressed format (GL ES 3.0+)
+    METAGL_API void glTexStorage3D(TextureTarget target, GLsizei levels, CompressedInternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth);
+
     /// @brief Allocates immutable multisample storage for a 2D MSAA texture (GL ES 3.1+)
-    METAGL_API void glTexStorage2DMultisample(TextureTarget target, GLsizei samples, InternalFormat internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations);
+    METAGL_API void glTexStorage2DMultisample(TextureTarget target, GLsizei samples, SizedInternalFormat internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations);
+
     /// @brief Allocates immutable multisample storage for a 2D MSAA array texture (GL ES 3.2+)
-    METAGL_API void glTexStorage3DMultisample(TextureTarget target, GLsizei samples, InternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLboolean fixedsamplelocations);
+    METAGL_API void glTexStorage3DMultisample(TextureTarget target, GLsizei samples, SizedInternalFormat internalformat, GLsizei width, GLsizei height, GLsizei depth, GLboolean fixedsamplelocations);
     /// @brief Loads compressed image data (ETC2, ASTC, etc.) into a 2D texture (GL ES 2.0+)
     METAGL_API void glCompressedTexImage2D(TextureTarget target, GLint level, CompressedInternalFormat internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const void * data);
     /// @brief Loads compressed image data into a 3D or 2D-array texture (GL ES 3.0+)
@@ -706,25 +713,25 @@ namespace metagl
     /// @brief Auto-generates all mipmap levels below the base level by downsampling (GL ES 2.0+)
     METAGL_API void glGenerateMipmap(TextureTarget target);
     /// @brief Sets a float texture sampling parameter (filter, LOD, wrap mode) (GL ES 2.0+)
-    METAGL_API void glTexParameterf(TextureTarget target, TextureParameter pname, GLfloat param);
+    METAGL_API void glTexParameterf(TextureTarget target, TextureParameterSetter pname, GLfloat param);
     /// @brief Sets an integer texture sampling parameter (GL ES 2.0+)
-    METAGL_API void glTexParameteri(TextureTarget target, TextureParameter pname, GLint param);
+    METAGL_API void glTexParameteri(TextureTarget target, TextureParameterSetter pname, GLint param);
     /// @brief Sets multiple float texture parameters from a pointer (GL ES 2.0+)
-    METAGL_API void glTexParameterfv(TextureTarget target, TextureParameter pname, const GLfloat * params);
+    METAGL_API void glTexParameterfv(TextureTarget target, TextureParameterSetter pname, const GLfloat * params);
     /// @brief Sets multiple integer texture parameters from a pointer (GL ES 2.0+)
-    METAGL_API void glTexParameteriv(TextureTarget target, TextureParameter pname, const GLint * params);
+    METAGL_API void glTexParameteriv(TextureTarget target, TextureParameterSetter pname, const GLint * params);
     /// @brief Sets integer texture parameters without integer-to-float conversion (GL ES 3.2+)
-    METAGL_API void glTexParameterIiv(TextureTarget target, TextureParameter pname, const GLint * params);
+    METAGL_API void glTexParameterIiv(TextureTarget target, TextureParameterSetter pname, const GLint * params);
     /// @brief Sets unsigned integer texture parameters without conversion (GL ES 3.2+)
-    METAGL_API void glTexParameterIuiv(TextureTarget target, TextureParameter pname, const GLuint * params);
+    METAGL_API void glTexParameterIuiv(TextureTarget target, TextureParameterSetter pname, const GLuint * params);
     /// @brief Returns float texture sampling parameters (GL ES 2.0+)
-    METAGL_API void glGetTexParameterfv(TextureTarget target, TextureParameter pname, GLfloat * params);
+    METAGL_API void glGetTexParameterfv(TextureTarget target, TextureParameterQuery pname, GLfloat * params);
     /// @brief Returns integer texture sampling parameters (GL ES 2.0+)
-    METAGL_API void glGetTexParameteriv(TextureTarget target, TextureParameter pname, GLint * params);
+    METAGL_API void glGetTexParameteriv(TextureTarget target, TextureParameterQuery pname, GLint * params);
     /// @brief Returns integer texture parameters as raw integers (GL ES 3.2+)
-    METAGL_API void glGetTexParameterIiv(TextureTarget target, TextureParameter pname, GLint * params);
+    METAGL_API void glGetTexParameterIiv(TextureTarget target, TextureParameterQuery pname, GLint * params);
     /// @brief Returns unsigned integer texture parameters as raw unsigned integers (GL ES 3.2+)
-    METAGL_API void glGetTexParameterIuiv(TextureTarget target, TextureParameter pname, GLuint * params);
+    METAGL_API void glGetTexParameterIuiv(TextureTarget target, TextureParameterQuery pname, GLuint * params);
     /// @brief Returns integer parameters of a specific texture mipmap level (GL ES 3.1+)
     METAGL_API void glGetTexLevelParameteriv(TextureTarget target, GLint level, TextureLevelParameter pname, GLint * params);
     /// @brief Returns float parameters of a specific texture mipmap level (GL ES 3.1+)
@@ -810,9 +817,18 @@ namespace metagl
     /// @brief Hints that attachment contents are no longer needed (bandwidth optimization) (GL ES 3.0+)
     METAGL_API void glInvalidateFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments);
     inline void glInvalidateFramebuffer(FramebufferTarget target, std::span<const FramebufferAttachment> attachments) { glInvalidateFramebuffer(target, detail::checked_glsizei(attachments.size()), attachments.data()); }
+
+    /// @brief Invalidates default framebuffer (id=0) attachments (GL ES 3.0+)
+    METAGL_API void glInvalidateFramebuffer(FramebufferTarget target, GLsizei numAttachments, const DefaultFramebufferAttachment * attachments);
+    inline void glInvalidateFramebuffer(FramebufferTarget target, std::span<const DefaultFramebufferAttachment> attachments) { glInvalidateFramebuffer(target, detail::checked_glsizei(attachments.size()), attachments.data()); }
+
     /// @brief Invalidates a sub-rectangle of framebuffer attachments (GL ES 3.0+)
     METAGL_API void glInvalidateSubFramebuffer(FramebufferTarget target, GLsizei numAttachments, const FramebufferAttachment * attachments, GLint x, GLint y, GLsizei width, GLsizei height);
     inline void glInvalidateSubFramebuffer(FramebufferTarget target, std::span<const FramebufferAttachment> attachments, GLint x, GLint y, GLsizei width, GLsizei height) { glInvalidateSubFramebuffer(target, detail::checked_glsizei(attachments.size()), attachments.data(), x, y, width, height); }
+
+    /// @brief Invalidates a sub-rectangle of default framebuffer (id=0) attachments (GL ES 3.0+)
+    METAGL_API void glInvalidateSubFramebuffer(FramebufferTarget target, GLsizei numAttachments, const DefaultFramebufferAttachment * attachments, GLint x, GLint y, GLsizei width, GLsizei height);
+    inline void glInvalidateSubFramebuffer(FramebufferTarget target, std::span<const DefaultFramebufferAttachment> attachments, GLint x, GLint y, GLsizei width, GLsizei height) { glInvalidateSubFramebuffer(target, detail::checked_glsizei(attachments.size()), attachments.data(), x, y, width, height); }
 
     /// @}
     /// @name Renderbuffer Objects
@@ -913,7 +929,7 @@ namespace metagl
     /// @brief Inserts a memory barrier ensuring visibility of image/SSBO/atomic writes (GL ES 3.1+)
     METAGL_API void glMemoryBarrier(MemoryBarrierMask barriers);
     /// @brief Tile-friendly memory barrier guaranteeing visibility within the current region (GL ES 3.1+)
-    METAGL_API void glMemoryBarrierByRegion(MemoryBarrierMask barriers);
+    METAGL_API void glMemoryBarrierByRegion(MemoryBarrierByRegionMask barriers);
 
     /// @}
     /// @name Program Pipelines
@@ -1615,7 +1631,7 @@ namespace metagl
     // #256-#257 - typed dispatch: glTexParameter<float/int>(target, pname, param)
     template<typename T>
         requires std::same_as<std::remove_cvref_t<T>, GLfloat> || std::same_as<std::remove_cvref_t<T>, GLint>
-    inline void glTexParameter(TextureTarget target, TextureParameter pname, T param)
+    inline void glTexParameter(TextureTarget target, TextureParameterSetter pname, T param)
     {
         using Value = std::remove_cvref_t<T>;
         if constexpr (std::same_as<Value, GLfloat>) { glTexParameterf(target, pname, param); }
@@ -1624,39 +1640,39 @@ namespace metagl
 
     inline void glTexParameter(TextureTarget target, TextureMinFilter value)
     {
-        glTexParameteri(target, TextureParameter::MinFilter,
+        glTexParameteri(target, TextureParameterSetter::MinFilter,
             static_cast<GLint>(value));
     }
 
     inline void glTexParameter(TextureTarget target, TextureMagFilter value)
     {
-        glTexParameteri(target, TextureParameter::MagFilter,
+        glTexParameteri(target, TextureParameterSetter::MagFilter,
             static_cast<GLint>(value));
     }
 
     inline void glTexParameter(TextureTarget target,
         TextureWrapParameter pname, TextureWrapMode value)
     {
-        glTexParameteri(target, static_cast<TextureParameter>(pname),
+        glTexParameteri(target, static_cast<TextureParameterSetter>(pname),
             static_cast<GLint>(value));
     }
 
     inline void glTexParameter(TextureTarget target, TextureCompareMode value)
     {
-        glTexParameteri(target, TextureParameter::CompareMode,
+        glTexParameteri(target, TextureParameterSetter::CompareMode,
             static_cast<GLint>(value));
     }
 
     inline void glTexParameter(TextureTarget target, CompareFunc value)
     {
-        glTexParameteri(target, TextureParameter::CompareFunc,
+        glTexParameteri(target, TextureParameterSetter::CompareFunc,
             static_cast<GLint>(value));
     }
 
     inline void glTexParameter(TextureTarget target,
         TextureSwizzleParameter pname, TextureSwizzle value)
     {
-        glTexParameteri(target, static_cast<TextureParameter>(pname),
+        glTexParameteri(target, static_cast<TextureParameterSetter>(pname),
             static_cast<GLint>(value));
     }
 

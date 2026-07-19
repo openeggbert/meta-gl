@@ -3,8 +3,34 @@
 
 using namespace metagl;
 
-// =============================================================================
-// I2 — Template dispatch: verify all typed overloads resolve at compile time.
+// R32/R33 — Sized formats for glTexStorage
+static_assert(requires { glTexStorage2D(TextureTarget::Texture2D, 1, SizedInternalFormat::R8, 1, 1); });
+static_assert(requires { glTexStorage2D(TextureTarget::Texture2D, 1, CompressedInternalFormat::R11Eac, 1, 1); });
+
+// R29/R30 — Texture parameter domains
+static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureParameterSetter::MinFilter, 0); });
+static_assert(requires { glGetTexParameteriv(TextureTarget::Texture2D, TextureParameterQuery::ImmutableFormat, nullptr); });
+
+// R26/R27 — Default framebuffer invalidation
+static_assert(requires { glInvalidateFramebuffer(FramebufferTarget::DrawFramebuffer, std::span<const FramebufferAttachment>{}); });
+static_assert(requires { glInvalidateFramebuffer(FramebufferTarget::DrawFramebuffer, std::span<const DefaultFramebufferAttachment>{}); });
+
+template<typename T>
+concept CanInvalidateFramebuffer = requires(std::span<const T> s) { glInvalidateFramebuffer(FramebufferTarget::DrawFramebuffer, s); };
+
+static_assert(CanInvalidateFramebuffer<FramebufferAttachment>);
+static_assert(CanInvalidateFramebuffer<DefaultFramebufferAttachment>);
+static_assert(!CanInvalidateFramebuffer<GLenum>);
+
+// R21/R22 — glMemoryBarrierByRegion mask domain
+static_assert(requires { glMemoryBarrierByRegion(MemoryBarrierByRegionMask::AtomicCounter); });
+static_assert(requires { glMemoryBarrierByRegion(MemoryBarrierByRegionMask::AllBarrierBits); });
+
+template<typename T>
+concept CanCallMemoryBarrierByRegion = requires(T t) { glMemoryBarrierByRegion(t); };
+
+static_assert(!CanCallMemoryBarrierByRegion<MemoryBarrierMask>);
+static_assert(!CanCallMemoryBarrierByRegion<GLbitfield>);
 // Note: requires-expressions with local declarations are not allowed in C++23
 // simple requirements; use the parameter form (requires(T* p){...}) instead.
 // =============================================================================
@@ -20,8 +46,8 @@ static_assert(requires(int* p)          { glGetnUniform(ProgramId{}, UniformLoca
 static_assert(requires(unsigned int* p) { glGetnUniform(ProgramId{}, UniformLocation{}, 4, p); });
 
 // glTexParameter<T>
-static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureParameter::MinFilter, 0.0f); });
-static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureParameter::MinFilter, 0); });
+static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureParameterSetter::MinFilter, 0.0f); });
+static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureParameterSetter::MinFilter, 0); });
 static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureMinFilter::Linear); });
 static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureMagFilter::Linear); });
 static_assert(requires { glTexParameter(TextureTarget::Texture2D, TextureWrapParameter::WrapS, TextureWrapMode::Repeat); });
@@ -108,6 +134,7 @@ static_assert(std::is_same_v<decltype(~ClearBufferBit::Color),                  
 static_assert(std::is_same_v<decltype(MapBufferAccessMask::Read | MapBufferAccessMask::Write),   MapBufferAccessMask>);
 static_assert(std::is_same_v<decltype(ShaderStageMask::Vertex   | ShaderStageMask::Fragment),    ShaderStageMask>);
 static_assert(std::is_same_v<decltype(MemoryBarrierMask::VertexAttribArray | MemoryBarrierMask::ElementArray), MemoryBarrierMask>);
+static_assert(std::is_same_v<decltype(MemoryBarrierByRegionMask::AtomicCounter | MemoryBarrierByRegionMask::Framebuffer), MemoryBarrierByRegionMask>);
 static_assert(std::is_same_v<decltype(ContextFlagMask::Debug | ContextFlagMask::RobustAccess),   ContextFlagMask>);
 static_assert(static_cast<GLbitfield>(~ClearBufferBit::Color)
               == (GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT));

@@ -12,6 +12,25 @@ All notable changes to meta-gl will be documented here.
   `GL_ARB_ES3_2_compatibility` as a fast additional signal. It never affects
   `Capabilities` or `Initialize()`'s success/failure, and is not part of the
   stable public API surface.
+- `metagl-export-symbols-test` (`tests/test_export_symbols.py`, R47): an
+  automated Unix exported-symbol policy check enforcing the R44 ABI surface
+  decision via `nm -D` — every exported dynamic symbol must be a function in
+  the `metagl::` namespace, any `metagl::detail::` symbol must be on a small
+  explicit allowlist, and a set of landmark public entry points must remain
+  present.
+- A GNU ld/lld version script (`cmake/metagl.version`) applied on ELF
+  (Unix, non-Apple) shared builds, keeping the dynamic symbol table limited
+  to the `metagl::` namespace even when internal implementation details pull
+  in vague-linkage `libstdc++` template symbols.
+
+### Fixed
+- A `METAGLDEBUG`-only use-after-free: the process-wide, non-thread-local
+  guard that flushed the buffered debug log on exit could be destroyed
+  *after* a thread's log buffer, corrupting or crashing the program during
+  normal shutdown. The flush guard is now itself `thread_local` and is
+  first touched strictly after the buffer it flushes, guaranteeing correct
+  destruction order on every supported platform except Windows (which
+  already flushes explicitly to avoid the DLL loader-lock deadlock).
 
 ## [0.3.0] — 2026-07-19
 

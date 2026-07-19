@@ -1,0 +1,16 @@
+# GNU ld/lld version script enforcing the R44-R47 exported-symbol policy on
+# ELF (Unix, non-Apple) shared builds. Only functions whose demangled name
+# lives in the metagl:: namespace are exported; everything else - including
+# vague-linkage libstdc++ template instantiations pulled in by internal
+# implementation details such as the thread-local function-availability
+# cache in Functions.cpp - stays local to the shared object. See
+# tests/test_export_symbols.py (metagl-export-symbols-test) for the
+# automated check that this script keeps holding.
+{
+  global:
+    extern "C++" {
+      metagl::*;
+    };
+  local:
+    *;
+};

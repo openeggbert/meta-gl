@@ -52,12 +52,20 @@ add_test(NAME metagl-desktop-tier-test COMMAND metagl-desktop-tier-tests)
 
 if(UNIX AND BUILD_SHARED_LIBS AND NOT APPLE)
     find_program(READELF_EXE readelf)
+    find_program(NM_EXE nm)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     if(READELF_EXE AND Python3_Interpreter_FOUND)
         add_test(NAME metagl-soname-test
             COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_soname.py
             $<TARGET_FILE:meta-gl>
             "libmeta-gl.so.0"
+        )
+    endif()
+    if(NM_EXE AND Python3_Interpreter_FOUND)
+        # R47 - Unix exported-symbol allowlist/policy test (finding 15).
+        add_test(NAME metagl-export-symbols-test
+            COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_export_symbols.py
+            $<TARGET_FILE:meta-gl>
         )
     endif()
 endif()

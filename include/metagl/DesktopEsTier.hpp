@@ -14,7 +14,6 @@
  * additionally satisfies the same mandatory-function set required by a
  * higher OpenGL ES tier. Publicly unifying those flags across desktop and
  * ES was considered and rejected as out of scope (see
- * [analysis.md finding 22](../../../analysis.md#finding-22) and
  * [plan.md R76](../../../plan.md)) to keep `Capabilities` unambiguous about
  * the actual context kind. This header instead exposes the tier purely for
  * internal validation/diagnostics during @ref metagl::Initialize.

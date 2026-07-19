@@ -48,7 +48,7 @@ follow-up branch is **approaching release-ready state**:
   - R16: Findings 1–7 are accepted and implemented.
   - R17: Release notes and metadata are synchronized.
   - R18: Build/test matrix is green.
-- **R44–R46 (ABI Surface)**: Explicit `METAGL_API` export macros and hidden visibility are implemented.
+- **R44–R47 (ABI Surface)**: Explicit `METAGL_API` export macros, hidden visibility, and an automated Unix exported-symbol policy test are implemented.
 - **R50–R59 (Thread Safety & Listeners)**: Thread-local global state, snapshot-based listener dispatch, and safe debug error formatting are implemented.
 - **R72–R74 (Automation)**: GitHub Release workflow with checksums and automated changelog extraction is ready.
 - The API verifier reports consistency across 358 wrappers and mandatory GLES sets.
@@ -83,7 +83,7 @@ Do not tag 0.3.0 until the owner explicitly approves the final release commit R1
 
 ## 4. Tests and CI
 
-CTest currently defines eight tests:
+CTest currently defines nine tests:
 
 1. `metagl-compile-tests` — concepts, enum domains, bitfields, template
    dispatch, handle isolation, and enum-name coverage.
@@ -97,9 +97,12 @@ CTest currently defines eight tests:
    consistency with the R04 policy (R06).
 6. `metagl-desktop-tier-test` — desktop OpenGL ES-tier boundary coverage at
    3.3/4.1/4.3, with and without `GL_ARB_ES3_1/3_2_compatibility` (R76–R78).
-7. `metagl-api-consistency-test` — declaration, definition, loader-name, and
+7. `metagl-export-symbols-test` — Linux exported dynamic-symbol policy check
+   (`nm -D`: function-only, `metagl::` namespace, `detail::` allowlist,
+   landmark public symbols) enforcing the R44 ABI surface (R47).
+8. `metagl-api-consistency-test` — declaration, definition, loader-name, and
    exact GLES mandatory-function consistency.
-8. `metagl-installed-package-test` — install plus an external consumer build
+9. `metagl-installed-package-test` — install plus an external consumer build
    verifying static/shared linkage and runtime execution (R12–R14).
 
 GitHub Actions runs:
@@ -178,11 +181,10 @@ legacy draw-index, active-attribute, and raw `glCopyImageSubData` call forms.
   `metagl::FlushDebugLog()` before DLL teardown, or built with
   `METAGL_DEBUG_IMMEDIATE=ON`; its long-term shutdown policy is R75.
 - Desktop OpenGL 3.3+ ES-tier equivalence is an internal-only diagnostic
-  (`metagl::detail::GetDesktopEsTier()`, R76–R78,
-  [finding 22](analysis.md#finding-22)); it never affects `Capabilities` or
-  `Initialize()`'s success/failure, by design.
+  (`metagl::detail::GetDesktopEsTier()`, R76–R78); it never affects
+  `Capabilities` or `Initialize()`'s success/failure, by design.
 
-R19 is the final approval step for 0.3.0 release.
+R47 (exported-symbol policy test) is complete; R19 is the final approval step for 0.3.0 release.
 
 ---
 
@@ -248,6 +250,5 @@ lists in this document.
 | `src/Debug.cpp` | Debug records, error checks, and flushing |
 | `tools/verify_api.py` | API/loader/version-required-function consistency verifier |
 | `.github/workflows/ci.yml` | Cross-platform build and test matrix |
-| `analysis.md` | Detailed findings and rationale |
-| `plan.md` | The authoritative R01–R78 backlog |
+| `plan.md` | The authoritative R01–R78 backlog, including the findings and rationale behind each task |
 | `archive/plan20260719.md` | Archived, fully completed themes A–L (2026-07-19) |

@@ -47,6 +47,20 @@ generate_export_header(meta-gl
     BASE_NAME           METAGL
 )
 
+# R44-R47: on ELF (Unix, non-Apple) shared builds, enforce the public export
+# policy at link time with a version script, so that vague-linkage libstdc++
+# template symbols (e.g. from the internal std::unordered_map cache in
+# Functions.cpp) never leak into the dynamic symbol table alongside the
+# metagl:: public API. See cmake/metagl.version and
+# tests/test_export_symbols.py.
+if(UNIX AND NOT APPLE)
+    set(METAGL_VERSION_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/metagl.version")
+    target_link_options(meta-gl PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang>:LINKER:--version-script=${METAGL_VERSION_SCRIPT}>
+    )
+    set_target_properties(meta-gl PROPERTIES LINK_DEPENDS "${METAGL_VERSION_SCRIPT}")
+endif()
+
 target_compile_features(meta-gl PUBLIC cxx_std_23)
 
 target_sources(meta-gl

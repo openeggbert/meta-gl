@@ -55,9 +55,26 @@ namespace metagl::debug
         // Windows invokes DLL static destructors while holding the loader lock.
         // Performing iostream I/O there can deadlock, so Windows callers use
         // FlushDebugLog() explicitly (or METAGLDEBUG_IMMEDIATE).
+        //
+        // On other platforms, flushing on exit must itself be a *thread_local*
+        // object constructed (lazily, on first use) strictly after g_buf: for
+        // thread-local objects, destruction order is the reverse of the order
+        // in which their construction completed on that thread, so a guard
+        // that is first touched from inside record() - after g_buf has
+        // already been touched - is guaranteed to be destroyed, and therefore
+        // to flush, before g_buf itself is torn down. A plain (non-thread_local)
+        // global here would instead be destroyed by the process-wide atexit
+        // chain, whose order relative to per-thread TLS destructors is
+        // unspecified in practice and previously caused a use-after-free of
+        // g_buf on normal program exit.
 #ifndef _WIN32
-        struct FlushOnExit { ~FlushOnExit() { metagl::FlushDebugLog(); } };
-        FlushOnExit g_flush_on_exit;
+        struct FlushOnThreadExit
+        {
+            ~FlushOnThreadExit()
+            {
+                try { flush_buffer(); } catch (...) { /* never affect shutdown */ }
+            }
+        };
 #endif
 
         thread_local unsigned int (*g_get_error)() = nullptr;
@@ -101,6 +118,14 @@ namespace metagl::debug
             std::string(retval),
             std::move(params)
         });
+
+#ifndef _WIN32
+        // First touch on this thread happens right here, strictly after
+        // g_buf above, so this guard's destructor - which flushes g_buf -
+        // is guaranteed to run before g_buf's own destructor at thread exit.
+        thread_local FlushOnThreadExit flush_on_thread_exit_guard;
+        (void)flush_on_thread_exit_guard;
+#endif
 
 #ifdef METAGLDEBUG_IMMEDIATE
         flush_buffer();
